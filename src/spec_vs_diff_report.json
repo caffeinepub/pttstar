@@ -1,0 +1,81 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-11T09:27:53.887Z",
+  "summary": "Diff adds frontend WebRTC PTT scaffolding (room key/label derivation, status badge, PTT page updates, polling-based activity page refresh) and begins adding backend signaling storage/migration. However, the backend signaling API required for room-scoped join/leave and bounded, authenticated message exchange is not evidenced in the provided backend diff, and the real-time Activity bridge from transmit events to Now Hearing is not shown as being triggered from the new PTT transmit flow.",
+  "missing_requirements": [
+    {
+      "id": "REQ-31",
+      "requirement": "Real-time PTT transmit/receive via peer-to-peer WebRTC with canister-call/polling signaling, including actionable failure UI that returns to safe non-transmitting state, and license acknowledgement gate blocking transmit.",
+      "reason": "Frontend includes WebRTC hook and status UI, but the signaling flow appears to rely on backend methods (e.g., sendSignal/getSignals) and robust failure handling; the backend implementations and complete signaling loop are not evidenced in the truncated backend diff. Also, explicit “safe non-transmitting state on signaling failure” behavior cannot be confirmed from the truncated hook.",
+      "evidence": [
+        "frontend/src/hooks/useWebRtcPtt.ts (truncated: calls actor.sendSignal(), actor.getSignals(), but full handling not shown)",
+        "backend/main.mo (truncated: only shows signalMessages state type/var, no visible signaling methods)"
+      ]
+    },
+    {
+      "id": "REQ-32",
+      "requirement": "Backend signaling in single Motoko actor: authenticated join/post/fetch-since/leave APIs; room-scoped messages; bounded storage (cap/TTL); prevent unauthorized read/post across principals/rooms.",
+      "reason": "backend/main.mo shows only addition of a SignalMessage type and a signalMessages list (and migration adds signalMessages to stable state), but does not show any of the required authenticated methods (join room, post message, fetch since cursor/timestamp, leave), nor room scoping (roomKey), nor storage bounds/TTL, nor authorization checks for signaling access.",
+      "evidence": [
+        "backend/main.mo (truncated: defines SignalMessage and signalMessages but no join/post/fetch/leave functions shown)",
+        "backend/migration.mo (adds signalMessages : List.List<SignalMessage>, but no room scoping/bounds/auth logic)"
+      ]
+    },
+    {
+      "id": "REQ-33",
+      "requirement": "PTT page UI supports live receive/transmit states with clear room status; indicates receiving while audio plays; mic-permission denied shows error and does not attempt transmit; demote/remove “Last Recording”; update IAX/DVSwitch copy to not contradict real-time voice.",
+      "reason": "Connection status badge and updated IAX/DVSwitch copy are present, and mic permission error is displayed, but the requirement to remove or clearly demote the “Last Recording” feature cannot be fully confirmed because PttPage is truncated and still includes “Fallback recorder for testing” and lastRecording state without showing whether it is demoted in the UI.",
+      "evidence": [
+        "frontend/src/pages/PttPage.tsx (truncated: has lastRecording state and 'Fallback recorder for testing')",
+        "frontend/src/components/RealTimeStatusBadge.tsx",
+        "frontend/src/components/PttControl.tsx"
+      ]
+    },
+    {
+      "id": "REQ-34",
+      "requirement": "Real-time activity bridge: when a user begins transmitting, others in same room see a Now Hearing/Activity entry appear without manual refresh (via polling), including callsign, timestamp, and room/connection label; existing updateNowHearing mock admin method remains available or separated.",
+      "reason": "Frontend Activity polling was added (refetchInterval), but there is no evidence that starting transmission posts an activity event (callsign + timestamp + room label) to the backend or that backend Now Hearing is updated from real transmit events. The existing updateNowHearing mutation remains, but the new real-time path is not evidenced.",
+      "evidence": [
+        "frontend/src/hooks/useNowHearing.ts (polling added, still uses actor.getNowHearing() / actor.updateNowHearing())",
+        "frontend/src/pages/ActivityPage.tsx (copy updated; relies on polling)",
+        "frontend/src/pages/PttPage.tsx (truncated: uses useWebRtcPtt, but no shown linkage to Now Hearing updates)",
+        "backend/main.mo (truncated: no shown method that records transmissions on TX start)"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "QRZ Callsign Lookup section added to Settings page.",
+      "reason": "Not requested by REQ-31..REQ-34; appears as a new feature in the diff summary.",
+      "evidence": [
+        "frontend-file-summaries.txt (SettingsPage: 'new QRZ Callsign Lookup section')"
+      ]
+    },
+    {
+      "description": "Backend stable-state migration adding signalMessages without corresponding requested room-based signaling API shown.",
+      "reason": "REQ-32 requires room-scoped signaling with specific authenticated methods; diff adds a global signalMessages list and migration support, which is an implementation detail not explicitly requested and (as shown) does not match the required room-scoped model.",
+      "evidence": [
+        "backend/migration.mo",
+        "backend/main.mo (truncated: 'let signalMessages = List.empty<SignalMessage>();')"
+      ]
+    }
+  ],
+  "confidence": 0.62,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/NowHearingList.tsx",
+    "frontend/src/components/PttControl.tsx",
+    "frontend/src/components/RealTimeStatusBadge.tsx",
+    "frontend/src/components/TransmitDisclaimer.tsx",
+    "frontend/src/hooks/useMicPttRecorder.ts",
+    "frontend/src/hooks/useNowHearing.ts",
+    "frontend/src/hooks/useWebRtcPtt.ts",
+    "frontend/src/pages/ActivityPage.tsx",
+    "frontend/src/pages/PttPage.tsx",
+    "frontend/src/utils/roomKey.ts",
+    "project_state.json"
+  ]
+}

@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 19,
+  "summary": "PTTStar: a cross-platform (phone + computer) internet-connected ham radio app that provides software-based access to multiple digital voice modes (DMR, D-Star, YSF, P25, NXDN, etc.), allowing users to select mode/host/talkgroup and use push-to-talk with callsign/ID display, without dedicated radios/hotspots or external AMBE hardware, and with license/DMR-ID compliance.",
+  "architectural_notes": [
+    "Consider adding an IAX/DVSwitch-compatible connection path (or gateway abstraction) alongside existing mode/host/talkgroup connection model.",
+    "IAX/DVSwitch connection model should support additional fields (ports, node numbers, username/password) and handle credential storage securely (avoid logging; prefer secure storage/encryption if persisted).",
+    "In the IAX/DVSwitch connection configuration, remove generic optional username/password fields and use explicitly labeled fields: IAX Username and IAX Password (handle credential storage securely; avoid logging; prefer secure storage/encryption if persisted).",
+    "If removing the IAX/DVSwitch destination/channel field, decide whether the stored connection model should drop `destination` as well, and handle backward compatibility for any existing sessionStorage values.",
+    "QRZ callsign lookup integration: decide API/access method (QRZ XML subscription vs alternative), credential handling, caching/rate-limits, and how returned callsign profile data maps into the app’s directory/user profile fields.",
+    "Decide navigation impact/alternate access path if the Directory tab is removed (e.g., where saved hosts/talkgroups are managed).",
+    "Define the behavior and scope of an IAX/DVSwitch “Disconnect” tab (UI-only vs also clearing sessionStorage preferred connection / backend preferred connection).",
+    "Real-time TX/RX will require defining a live networking/audio pipeline (protocols per mode or via gateways), PTT state machine, latency/jitter buffering, and safe mic/speaker handling across mobile+desktop."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-create-the-core-pttstar-app-ux-with-responsive-navigation-mobile-desktop-and-the-following-screens-1-landing-overview-2-connect-select-mode-host-talkgroup-room-3-ptt-push-to-talk-controls-4-activity-recent-heard-stations-list-5-directory-manage-saved-hosts-talkgroups-6-settings-callsign-dmr-id-preferences-7-about-compliance",
+      "title": "Create the core PTTStar app UX with responsive navigation (mobile + desktop) and the following screens: (1) Landing/Overview, (2) Connect (select mode, host, talkgroup/room), (3) PTT (push-to-talk controls), (4) Activity (recent/heard stations list), (5) Directory (manage saved hosts/talkgroups), (6) Settings (callsign, DMR ID, preferences), (7) About/Compliance.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-internet-identity-login-and-implement-a-user-profile-flow-that-collects-and-stores-callsign-optional-name-optional-dmr-id-and-an-explicit-acknowledgement-checkbox-that-the-user-holds-a-valid-amateur-radio-license-and-understands-network-rules",
+      "title": "Add Internet Identity login and implement a user profile flow that collects and stores: callsign, optional name, optional DMR ID, and an explicit acknowledgement checkbox that the user holds a valid amateur radio license and understands network rules.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-directory-data-model-for-digital-voice-networks-that-supports-mode-dmr-d-star-ysf-p25-nxdn-etc-host-reflector-repeater-label-address-identifier-fields-as-free-form-strings-and-available-talkgroups-rooms-name-numeric-string-id-allow-users-to-browse-built-in-presets-and-save-personal-favorites",
+      "title": "Implement a directory data model for digital voice networks that supports: mode (DMR, D-Star, YSF, P25, NXDN, etc.), host/reflector/repeater label, address/identifier fields (as free-form strings), and available talkgroups/rooms (name + numeric/string ID). Allow users to browse built-in presets and save personal favorites.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-ptt-interaction-ui-using-browser-microphone-access-a-large-push-to-talk-button-a-hold-to-transmit-interaction-on-desktop-and-mobile-live-input-level-meter-and-a-local-transmit-simulation-that-records-short-audio-while-pressed-and-can-play-back-after-release-no-real-network-transmit",
+      "title": "Build the PTT interaction UI using browser microphone access: a large push-to-talk button, a hold-to-transmit interaction on desktop and mobile, live input level meter, and a local transmit simulation that records short audio while pressed and can play back after release (no real network transmit).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-radio-style-now-hearing-activity-panel-that-shows-callsign-and-id-information-for-received-transmissions-using-backend-provided-mock-activity-events-for-mvp-that-update-on-manual-refresh-and-when-returning-to-the-page",
+      "title": "Implement a radio-style “Now Hearing”/Activity panel that shows callsign and ID information for received transmissions, using backend-provided mock activity events (for MVP) that update on manual refresh and when returning to the page.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-about-compliance-section-and-inline-compliance-messaging-that-explains-license-requirement-to-transmit-dmr-id-requirement-for-many-networks-and-that-pttstar-is-a-software-client-that-requires-adherence-to-local-regulations-include-a-prominent-disclaimer-before-enabling-any-transmit-like-feature",
+      "title": "Add an About/Compliance section and inline compliance messaging that explains: license requirement to transmit, DMR ID requirement for many networks, and that PTTStar is a software client that requires adherence to local regulations. Include a prominent disclaimer before enabling any transmit-like feature.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-cohesive-visual-theme-for-pttstar-distinct-from-blue-purple-with-consistent-typography-spacing-and-component-styling-across-all-screens-include-a-radio-inspired-ui-motif-e-g-dark-panel-high-contrast-status-lights-mono-readouts-while-remaining-accessible",
+      "title": "Apply a cohesive visual theme for PTTStar (distinct from blue/purple) with consistent typography, spacing, and component styling across all screens; include a radio-inspired UI motif (e.g., dark panel, high-contrast status lights, mono readouts) while remaining accessible.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-generate-and-include-static-image-assets-for-pttstar-logo-app-icon-subtle-background-store-them-under-frontend-public-assets-generated-and-use-them-in-the-ui-header-landing-about-without-routing-images-through-the-backend",
+      "title": "Generate and include static image assets for PTTStar (logo + app icon + subtle background), store them under frontend/public/assets/generated, and use them in the UI (header/landing/about) without routing images through the backend.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-connect-flow-to-automatically-load-the-authenticated-user-s-saved-preferred-connection-and-preselect-the-corresponding-network-and-talkgroup-when-the-connect-page-opens",
+      "title": "Update the Connect flow to automatically load the authenticated user’s saved preferred connection and preselect the corresponding network and talkgroup when the Connect page opens.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-when-the-user-connects-navigates-from-connect-to-ptt-persist-the-selected-network-and-talkgroup-as-the-user-s-preferred-connection-in-the-backend-in-addition-to-the-existing-in-session-storage",
+      "title": "When the user connects (navigates from Connect to PTT), persist the selected network and talkgroup as the user’s preferred connection in the backend in addition to the existing in-session storage.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-second-connection-method-on-the-connect-page-that-lets-the-user-configure-an-iax-dvswitch-style-gateway-connection-in-addition-to-the-existing-directory-based-mode-network-talkgroup-selection",
+      "title": "Add a second connection method on the Connect page that lets the user configure an IAX / DVSwitch-style gateway connection (in addition to the existing directory-based mode/network/talkgroup selection).",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-persist-iax-dvswitch-connection-selections-in-the-same-sessionstorage-key-used-by-the-existing-connect-flow-pttstar-connection-in-a-way-that-does-not-break-existing-directory-based-connections",
+      "title": "Persist IAX / DVSwitch connection selections in the same sessionStorage key used by the existing Connect flow (pttstar-connection), in a way that does not break existing directory-based connections.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-ptt-page-to-correctly-load-and-display-connection-info-for-both-directory-based-connections-and-iax-dvswitch-style-connections-and-show-a-clear-message-that-gateway-connectivity-is-configuration-only-no-real-network-transmit",
+      "title": "Update the PTT page to correctly load and display connection info for both directory-based connections and IAX / DVSwitch-style connections, and show a clear message that gateway connectivity is configuration-only (no real network transmit).",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-extend-the-stored-iax-dvswitch-connection-model-to-include-optional-port-s-and-node-number-fields-so-users-can-configure-gateway-ports-and-allstar-style-node-numbers-along-with-existing-gateway-destination-username-password",
+      "title": "Extend the stored IAX / DVSwitch connection model to include optional port(s) and node number fields so users can configure gateway ports and AllStar-style node numbers along with existing gateway/destination/username/password.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-iax-dvswitch-configuration-form-to-add-a-clearly-labeled-section-for-ports-and-node-numbers-allstar-style-and-persist-the-entered-values-into-sessionstorage-when-the-user-clicks-connect",
+      "title": "Update the IAX / DVSwitch configuration form to add a clearly labeled section for ports and node numbers (AllStar-style), and persist the entered values into sessionStorage when the user clicks Connect.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-ptt-page-iax-dvswitch-info-panel-to-display-the-configured-port-s-and-node-number-when-present-alongside-existing-gateway-destination-username-fields",
+      "title": "Update the PTT page IAX / DVSwitch Info panel to display the configured port(s) and node number when present, alongside existing gateway/destination/username fields.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-iax-dvswitch-connection-model-stored-in-sessionstorage-to-remove-the-generic-username-and-password-properties-and-replace-them-with-iaxusername-and-iaxpassword-properties-both-optional-while-keeping-existing-fields-gateway-destination-port-nodenumber-unchanged",
+      "title": "Update the IAX / DVSwitch connection model stored in sessionStorage to remove the generic `username` and `password` properties and replace them with `iaxUsername` and `iaxPassword` properties (both optional), while keeping existing fields (`gateway`, `destination`, `port`, `nodeNumber`) unchanged.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-modify-the-iax-dvswitch-configuration-form-to-delete-the-existing-optional-username-and-password-inputs-and-replace-them-with-clearly-labeled-iax-username-and-iax-password-inputs-persisting-their-values-into-the-stored-iax-dvswitch-connection-as-iaxusername-and-iaxpassword-when-the-user-clicks-connect",
+      "title": "Modify the IAX / DVSwitch configuration form to delete the existing optional “Username” and “Password” inputs and replace them with clearly labeled “IAX Username” and “IAX Password” inputs, persisting their values into the stored IAX / DVSwitch connection as `iaxUsername` and `iaxPassword` when the user clicks Connect.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-ptt-page-iax-dvswitch-info-panel-to-display-the-new-credentials-fields-using-the-labels-iax-username-and-optionally-iax-password-only-if-present-and-in-a-safe-display-format-and-remove-any-references-to-the-old-username-password-fields",
+      "title": "Update the PTT page IAX / DVSwitch Info panel to display the new credentials fields using the labels “IAX Username” (and optionally “IAX Password” only if present, and in a safe display format), and remove any references to the old `username`/`password` fields.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-destination-channel-input-and-its-helper-text-from-the-iax-dvswitch-configuration-form-and-update-the-form-s-validation-so-the-user-can-connect-without-providing-a-destination-channel-value",
+      "title": "Remove the “Destination / Channel” input (and its helper text) from the IAX / DVSwitch configuration form, and update the form’s validation so the user can connect without providing a destination/channel value.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-word-optional-from-all-user-facing-text-in-the-iax-dvswitch-configuration-form-labels-and-helper-text-while-keeping-the-fields-optional-behavior-unchanged",
+      "title": "Remove the word “optional” from all user-facing text in the IAX / DVSwitch configuration form (labels and helper text), while keeping the fields’ optional behavior unchanged.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-stored-iax-dvswitch-connection-model-in-frontend-src-hooks-usepreferredconnection-ts-to-remove-the-destination-field-while-preserving-backward-compatibility-when-loading-existing-sessionstorage-values-that-still-include-destination-and-or-legacy-username-password-fields",
+      "title": "Update the stored IAX / DVSwitch connection model in `frontend/src/hooks/usePreferredConnection.ts` to remove the `destination` field, while preserving backward compatibility when loading existing sessionStorage values that still include `destination` and/or legacy `username`/`password` fields.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-destination-channel-display-from-the-ptt-page-s-iax-dvswitch-connection-info-panel-so-the-ui-does-not-show-a-destination-channel-value-for-iax-dvswitch-connections",
+      "title": "Remove destination/channel display from the PTT page’s IAX / DVSwitch connection info panel so the UI does not show a destination/channel value for IAX / DVSwitch connections.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-dmr-id-field-from-the-user-profile-data-model-end-to-end-backend-candid-types-frontend-forms-so-users-can-no-longer-enter-or-save-a-dmr-id-in-pttstar",
+      "title": "Remove the DMR ID field from the user profile data model end-to-end (backend Candid types + frontend forms), so users can no longer enter or save a DMR ID in PTTStar.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-removed-dmr-id-input-experience-with-a-qrz-callsign-lookup-ui-add-a-clearly-labeled-qrz-callsign-lookup-section-that-allows-users-to-look-up-a-callsign-and-view-returned-details-or-an-error-without-editing-a-dmr-id-field",
+      "title": "Replace the removed DMR ID input experience with a QRZ callsign lookup UI: add a clearly labeled \"QRZ Callsign Lookup\" section that allows users to look up a callsign and view returned details (or an error) without editing a DMR ID field.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-compliance-about-copy-that-specifically-instructs-users-to-enter-a-dmr-id-in-profile-settings-so-it-no-longer-refers-to-a-removed-dmr-id-profile-field-while-preserving-general-dmr-id-requirement-guidance",
+      "title": "Update compliance/about copy that specifically instructs users to enter a DMR ID in profile settings, so it no longer refers to a removed DMR ID profile field while preserving general DMR ID requirement guidance.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-directory-item-from-the-main-application-navigation-desktop-header-navigation-and-mobile-bottom-tab-bar-so-authenticated-users-no-longer-see-a-directory-tab",
+      "title": "Remove the \"Directory\" item from the main application navigation (desktop header navigation and mobile bottom tab bar) so authenticated users no longer see a Directory tab.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-directory-connection-method-tab-from-the-connect-page-so-the-connect-screen-no-longer-offers-a-directory-tab-and-instead-focuses-on-iax-dvswitch-connection-configuration",
+      "title": "Remove the \"Directory\" connection-method tab from the Connect page so the Connect screen no longer offers a \"Directory\" tab and instead focuses on IAX / DVSwitch connection configuration.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-disconnect-tab-within-the-iax-dvswitch-settings-on-the-connect-page-that-allows-the-user-to-clear-the-saved-iax-dvswitch-connection-from-sessionstorage-and-return-to-an-unconnected-state",
+      "title": "Add a \"Disconnect\" tab within the IAX / DVSwitch settings on the Connect page that allows the user to clear the saved IAX / DVSwitch connection from sessionStorage and return to an unconnected state.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-real-time-transmit-receive-capability-for-pttstar-where-one-authenticated-user-can-push-to-talk-and-other-authenticated-users-can-hear-the-audio-with-low-latency-using-peer-to-peer-browser-audio-streaming-webrtc-and-internet-computer-canister-calls-as-the-signaling-layer-no-websockets",
+      "title": "Add a real-time transmit/receive capability for PTTStar where one authenticated user can push-to-talk and other authenticated users can hear the audio with low latency, using peer-to-peer browser audio streaming (WebRTC) and Internet Computer canister calls as the signaling layer (no WebSockets).",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-ptt-page-ui-to-support-live-receive-and-live-transmit-states-show-connection-room-status-disconnected-connecting-connected-show-when-the-user-is-actively-transmitting-show-when-the-user-is-receiving-audio-playing-and-remove-or-clearly-demote-the-current-last-recording-playback-as-a-non-real-time-fallback-testing-feature",
+      "title": "Update the PTT page UI to support live receive and live transmit states: show connection/room status (Disconnected/Connecting/Connected), show when the user is actively transmitting, show when the user is receiving (audio playing), and remove or clearly demote the current “Last Recording” playback as a non-real-time fallback/testing feature.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-minimal-real-time-activity-bridge-so-the-activity-now-hearing-screen-can-reflect-real-time-in-app-voice-activity-when-a-user-begins-transmitting-receivers-should-see-a-corresponding-activity-item-callsign-timestamp-selected-connection-label-update-without-manual-refresh-via-polling",
+      "title": "Add a minimal real-time activity bridge so the Activity / Now Hearing screen can reflect real-time in-app voice activity: when a user begins transmitting, receivers should see a corresponding activity item (callsign + timestamp + selected connection label) update without manual refresh (via polling).",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Build PTTStar app to access multiple digital voice modes (DMR, D-Star, YSF, P25, NXDN, etc.) over the internet from phone/computer",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Connect to digital reflectors/repeaters/networks and allow selecting mode, host, and talkgroup/room within the app",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Implement software-based encode/decode of digital voice audio (no external AMBE vocoder hardware required)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Provide push-to-talk using device microphone and data connection",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Display station callsign and ID information for received transmissions (radio-like UI behavior)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Include licensing/usage compliance messaging: valid amateur license required to transmit; DMR requires registered DMR ID linked to callsign",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Add authentication/user accounts so users can save preferred modes, hosts, and talkgroups/rooms across sessions",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Add backend support for saving and retrieving a user’s preferred (last-used) connection selection, including network identifier and talkgroup/room identifier, tied to the authenticated caller.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Add support for connecting via DVSwitch-like or IAX-based connections (e.g., IAX gateway interoperability) in addition to existing network/host selection",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Extend the IAX / DVSwitch-style connection configuration UI to include ports, node numbers (e.g., AllStar), and IAX username/password fields",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Update IAX/DVSwitch configuration UI to remove generic optional username/password fields and replace them with clearly labeled IAX Username and IAX Password fields",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Update the IAX/DVSwitch configuration UI to remove the word “optional” from field labels/help text (e.g., for IAX Username/Password)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Remove the IAX/DVSwitch “Destination / Channel” field(s) from the connection configuration UI (and associated stored connection data, if applicable)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Remove the DMR ID field from the Directory (DMR) flow and replace it with a QRZ callsign lookup capability",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Remove the Directory tab from the app’s navigation UI",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Add a Disconnect tab within the IAX / DVSwitch settings (to support disconnecting/ending a gateway configuration/session)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Implement real-time transmitting and receiving (actual network voice TX/RX) rather than configuration-only/local transmit simulation",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Implement backend signaling support in the single Motoko actor to coordinate real-time sessions: create/join/leave a voice room keyed by the currently selected connection (e.g., IAX/DVSwitch connection or directory-style network+talgkroup), exchange WebRTC SDP offers/answers and ICE candidates between participants, and expose queries for clients to poll pending signaling messages.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "PTTStar",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
