@@ -1,92 +1,66 @@
 {
   "kind": "build_request",
-  "title": "Add quick connection presets for BrandMeister (DMR) and AllStar (IAX/DVSwitch)",
-  "priority": "normal",
+  "title": "Fix post-login navigate null crash",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Fix the builtin DMR network directory entries returned by backend getBuiltinNetworks() so each returned PersistentNetwork includes the correct networkLabel (e.g., \"BrandMeister Worldwide\") instead of an empty string, ensuring BrandMeister servers are identifiable in the UI.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Implement a easy way to connect to the brandmeister network as well as All Star Network through IAX and DMR"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Calling getBuiltinNetworks returns DMR entries whose networkLabel is non-empty and matches the hardcoded list (e.g., \"BrandMeister Worldwide\", \"BM Europe Wide\", etc.).",
-        "Frontend network search/filtering by networkLabel works for BrandMeister entries (no longer all appear as blank labels)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a \"Quick Setup\" section to the Connection Settings (ConnectPage) that provides a simple, guided way to start configuring the two requested networks: (1) BrandMeister via Digital Voice (DMR) and (2) AllStar via IAX / DVSwitch. Each option must switch the UI to the correct connection type tab and prefill sensible defaults in the corresponding form (without requiring the user to manually hunt through settings first).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "Implement a easy way to connect to the brandmeister network as well as All Star Network through IAX and DMR"
-        ]
-      },
-      "acceptanceCriteria": [
-        "ConnectPage shows a clearly labeled Quick Setup area with two actions: BrandMeister (DMR) and AllStar (IAX/DVSwitch).",
-        "Clicking BrandMeister (DMR) switches to the Digital Voice connect UI and preselects DMR + BrandMeister in the form.",
-        "Clicking AllStar (IAX/DVSwitch) switches to the IAX/DVSwitch connect UI and preselects AllStar-appropriate defaults in the form (e.g., port)."
-      ]
-    },
-    {
       "id": "REQ-3",
-      "text": "Improve the DigitalVoiceConnectForm BrandMeister flow so a user can configure a working BrandMeister DMR connection with minimal steps: default the talkgroup field to a common value (e.g., \"91\") when BrandMeister is selected (unless the user already has a saved value), and make BrandMeister server selection easy by using the backend-provided server list with human-readable labels.",
+      "text": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "Implement a easy way to connect to the brandmeister network as well as All Star Network through IAX and DMR"
+          "It says \"Cannot read properties of null (reading 'navigate')",
+          "Fix the navigate null crash"
         ]
       },
       "acceptanceCriteria": [
-        "When the user selects DMR + BrandMeister (either manually or via Quick Setup), the Talkgroup field is prefilled with \"91\" if it is currently empty and there is no saved talkgroup.",
-        "The BrandMeister Server dropdown displays readable labels for the backend server addresses (not raw hostnames only).",
-        "Saving the configuration persists the selected BrandMeister server address and talkgroup via the existing saveConnection flow and the Saved tab reflects them correctly."
+        "Logging in with Internet Identity does not crash the app with a navigate/null error.",
+        "`FirstSignInGuide` (or its replacement) is rendered within the RouterProvider tree (i.e., within a routed component such as the root layout / route components), not as a sibling of `<RouterProvider />`.",
+        "Any post-login redirect logic runs only after router context is available and auth/profile loading prerequisites are satisfied."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Improve the IaxDvswitchConnectForm AllStar flow so a user can configure an AllStar IAX connection with minimal friction: provide an explicit AllStar-focused preset/state that defaults the IAX port to 4569 (unless the user already has a saved value), clearly indicates which fields are required for AllStar (gateway/server, node number), and uses AllStar-specific labels/help text consistently.",
+      "text": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "Implement a easy way to connect to the brandmeister network as well as All Star Network through IAX and DMR"
+          "Most likely: after fixing the Internet Identity crash, the post‑login screen is navigating too early or from a component not wrapped in the router."
         ]
       },
       "acceptanceCriteria": [
-        "When the user chooses AllStar via Quick Setup (or an equivalent AllStar preset control inside the IAX form), the port field defaults to \"4569\" if empty and there is no saved port.",
-        "Validation messaging for IAX/DVSwitch includes clear, English AllStar-specific guidance for missing required fields (at minimum: gateway/server and node number).",
-        "Saving the configuration persists AllStar-related fields (nodeNumber/allstarId/allstarPassword) via the existing saveConnection flow and the Saved tab reflects them correctly."
+        "Post-login redirect triggers at most once per session for an eligible user (authenticated, profile exists, no saved connection).",
+        "If the user is not authenticated or profile is not ready, no navigation attempt is made and no error is thrown.",
+        "Manual navigation across pages (e.g., /connect, /ptt, /settings) works normally after login, with no regression in route rendering."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (Shadcn components); compose them instead.",
-    "Do not edit frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx (immutable paths).",
-    "Backend must remain a single Motoko actor in backend/main.mo; only add migration.mo changes if persistent state schema changes (avoid if not necessary)."
+    "Do not modify files under frontend/src/components/ui (read-only).",
+    "Do not modify immutable hook files (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, and related immutable paths listed in SYSTEM_CONTEXT)."
   ],
   "nonGoals": [
-    "Implementing or hosting actual BrandMeister/AllStar network bridge infrastructure (DVSwitch servers, BrandMeister API integration, or any external gateway provisioning) is out of scope.",
-    "Storing BrandMeister or AllStar credentials in the backend canister is out of scope; continue using the existing client-side saved connection mechanism.",
-    "Adding third-party authentication or external databases is out of scope."
+    "Do not redesign the login flow UI beyond what is required to prevent the crash.",
+    "Do not change backend canister logic or data schemas; this fix should be achievable purely in the frontend routing/layout structure."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

@@ -118,13 +118,18 @@ import AccessControl "authorization/access-control";
 
   // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?ImmutableUserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
+    // Allow any authenticated user (not anonymous) to view their own profile
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot view profiles");
     };
     userProfiles.get(caller).map(toSharedImmutableProfile);
   };
 
   public query ({ caller }) func getUserProfile(profileOwner : Principal) : async ?ImmutableUserProfile {
+    // Allow users to view their own profile, admins can view any profile
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot view profiles");
+    };
     if (profileOwner != caller and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile unless admin");
     };
@@ -132,8 +137,9 @@ import AccessControl "authorization/access-control";
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : ImmutableUserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
+    // Allow any authenticated user (not anonymous) to save their own profile
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot save profiles");
     };
     let persistentProfile : PersistentUserProfile = {
       callsign = profile.callsign;
@@ -146,127 +152,157 @@ import AccessControl "authorization/access-control";
     userProfiles.add(caller, persistentProfile);
   };
 
-  // Network Directory
-  public query ({ caller }) func getBuiltinNetworks() : async [PersistentNetwork] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view networks");
-    };
+  // Network Directory - accessible to all users including guests
+  public query func getBuiltinNetworks() : async [PersistentNetwork] {
     let dmrNetworks : [
       {
         identifier : Text;
         networkLabel : Text;
         address : Text;
+        talkgroups : [Radio.Talkgroup];
       }
     ] = [
       {
         identifier = "brandmeister_worldwide";
         networkLabel = "BrandMeister Worldwide";
         address = "bm.worldwide.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "bm_europe_wide";
         networkLabel = "BM Europe Wide";
         address = "bm.europe.network:62031";
+        talkgroups = [];
+      },
+      {
+        identifier = "brandmeister_us";
+        networkLabel = "BrandMeister United States";
+        address = "107.191.99.14:62031";
+        talkgroups = [
+          { name = "United States"; id = "3100" },
+          { name = "North America"; id = "93" },
+          { name = "DMR Central"; id = "3130" },
+        ];
       },
       {
         identifier = "brandmeister_north_america";
         networkLabel = "BrandMeister North America";
         address = "bm.northamerica.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_asia_pacific";
         networkLabel = "BrandMeister Asia-Pacific";
         address = "bm.asiapacific.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_south_america";
         networkLabel = "BrandMeister South America";
         address = "bm.southamerica.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_africa";
         networkLabel = "BrandMeister Africa";
         address = "bm.africa.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_australia";
         networkLabel = "BrandMeister Australia";
         address = "bm.australia.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_global";
         networkLabel = "BrandMeister Global";
         address = "bm.global.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_uk";
         networkLabel = "BrandMeister United Kingdom";
         address = "bm.uk.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_germany";
         networkLabel = "BrandMeister Germany";
         address = "bm.germany.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_france";
         networkLabel = "BrandMeister France";
         address = "bm.france.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "bm_canada";
         networkLabel = "BM Canada";
         address = "bm.canada.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_stateside";
         networkLabel = "BrandMeister Stateside";
         address = "bm.stateside.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_west_coast";
         networkLabel = "BrandMeister West Coast";
         address = "bm.westcoast.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_east_coast";
         networkLabel = "BrandMeister East Coast";
         address = "bm.eastcoast.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_federal";
         networkLabel = "BrandMeister Federal";
         address = "bm.federal.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_central";
         networkLabel = "BrandMeister Central";
         address = "bm.central.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "bm_uk";
         networkLabel = "BM UK";
         address = "bm.uk.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_scotland";
         networkLabel = "BrandMeister Scotland";
         address = "bm.scotland.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_wales";
         networkLabel = "BrandMeister Wales";
         address = "bm.wales.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_cymru";
         networkLabel = "BrandMeister Cymru";
         address = "bm.cymru.network:62031";
+        talkgroups = [];
       },
       {
         identifier = "brandmeister_irish_sea";
         networkLabel = "BrandMeister Irish Sea";
         address = "bm.irishsea.network:62031";
+        talkgroups = [];
       },
     ];
 
@@ -274,13 +310,14 @@ import AccessControl "authorization/access-control";
       identifier : Text;
       networkLabel : Text;
       address : Text;
+      talkgroups : [Radio.Talkgroup];
     }, PersistentNetwork>(
       func(dmr) {
         {
           networkType = #dmr;
           networkLabel = dmr.networkLabel;
           address = dmr.address;
-          talkgroups = [];
+          talkgroups = dmr.talkgroups;
         };
       }
     );
@@ -288,11 +325,8 @@ import AccessControl "authorization/access-control";
     builtinNetworksArray;
   };
 
-  // Now Hearing (With DMR Extended Info)
-  public query ({ caller }) func getNowHearing() : async [PersistentTransmission] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view activity");
-    };
+  // Now Hearing (With DMR Extended Info) - accessible to all users including guests
+  public query func getNowHearing() : async [PersistentTransmission] {
     nowHearingList.toArray();
   };
 
@@ -304,8 +338,9 @@ import AccessControl "authorization/access-control";
     dmrOperatorName : ?Text,
     dmrOperatorLocation : ?Text,
   ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update activity");
+    // Allow any authenticated user (not anonymous) to update activity
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot update activity");
     };
 
     let transmission : PersistentTransmission = {
@@ -323,8 +358,9 @@ import AccessControl "authorization/access-control";
 
   // Favorite Networks
   public shared ({ caller }) func toggleFavoriteNetwork(networkId : Text) : async Bool {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can manage favorites");
+    // Allow any authenticated user (not anonymous) to manage their favorites
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot manage favorites");
     };
     let persistentProfile = switch (userProfiles.get(caller)) {
       case (null) {
@@ -353,8 +389,9 @@ import AccessControl "authorization/access-control";
   };
 
   public query ({ caller }) func getFavoriteNetworks() : async [Text] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view favorites");
+    // Allow any authenticated user (not anonymous) to view their favorites
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot view favorites");
     };
     let persistentProfile = switch (userProfiles.get(caller)) {
       case (null) {
@@ -375,8 +412,9 @@ import AccessControl "authorization/access-control";
 
   // Signaling Functions (room-based, timestamped)
   public shared ({ caller }) func sendSignal(content : Text, roomKey : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can send signals");
+    // Allow any authenticated user (not anonymous) to send signals
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot send signals");
     };
 
     let message : SignalMessage = {
@@ -390,8 +428,9 @@ import AccessControl "authorization/access-control";
   };
 
   public query ({ caller }) func getSignalsAfterTimestampForRoom(callerTimestamp : Time.Time, roomKey : Text) : async [SignalMessage] {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can retrieve signals");
+    // Allow any authenticated user (not anonymous) to retrieve signals
+    if (caller.isAnonymous()) {
+      Runtime.trap("Unauthorized: Anonymous users cannot retrieve signals");
     };
 
     let filteredMessages : List.List<SignalMessage> = List.empty<SignalMessage>();

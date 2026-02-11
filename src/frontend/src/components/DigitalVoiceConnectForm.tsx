@@ -10,7 +10,7 @@ import { Radio, Save, Info, AlertCircle, Wifi } from 'lucide-react';
 import { useGetCallerUserProfile } from '../hooks/useCurrentUserProfile';
 import { useGetBuiltinNetworks } from '../hooks/useNetworks';
 import { useNavigate } from '@tanstack/react-router';
-import { saveConnection, loadConnection, isDigitalVoiceConnection } from '../hooks/usePreferredConnection';
+import { saveConnection, loadConnection, isDigitalVoiceConnection, getBrandmeisterMissingFields, getTgifMissingFields } from '../hooks/usePreferredConnection';
 import type { PersistentNetwork } from '../backend';
 
 interface DigitalVoiceConnectFormProps {
@@ -46,6 +46,9 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
   const [gatewayRoom, setGatewayRoom] = useState('');
   const [gatewayUsername, setGatewayUsername] = useState('');
 
+  // TGIF hotspot security password
+  const [tgifHotspotSecurityPassword, setTgifHotspotSecurityPassword] = useState('');
+
   // Load saved configuration on mount
   useEffect(() => {
     const connection = loadConnection();
@@ -62,6 +65,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
       setGatewayToken(connection.gatewayToken || '');
       setGatewayRoom(connection.gatewayRoom || '');
       setGatewayUsername(connection.gatewayUsername || '');
+      setTgifHotspotSecurityPassword(connection.tgifHotspotSecurityPassword || '');
     }
   }, []);
 
@@ -75,19 +79,19 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
     }
   }, [userProfile]);
 
-  // Apply BrandMeister preset
+  // Apply BrandMeister preset - only when no existing connection or fields are empty
   useEffect(() => {
     if (preset === 'brandmeister-dmr') {
       const connection = loadConnection();
       const hasExistingConnection = connection && isDigitalVoiceConnection(connection);
       
-      // Only apply preset if fields are empty or no saved connection exists
-      if (!hasExistingConnection || !selectedReflector) {
+      // Only apply preset if no saved connection exists
+      if (!hasExistingConnection) {
         setActiveMode('dmr');
         setSelectedReflector('BrandMeister');
         
         // Prefill talkgroup to 91 only if empty
-        if (!talkgroup && (!connection || !isDigitalVoiceConnection(connection) || !connection.talkgroup)) {
+        if (!talkgroup) {
           setTalkgroup('91');
         }
       }
@@ -104,50 +108,73 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
     p25: ['P25 Reflector 1', 'P25 Reflector 2', 'P25 Reflector 3', 'P25 Network A', 'P25 Network B'],
     dstar: ['REF001', 'REF030', 'XRF757', 'DCS001', 'XLX757', 'XLX123'],
     ysf: ['YSF Reflector 1', 'YSF Reflector 2', 'YSF Reflector 3', 'America-Link', 'YSF Network A'],
-    m17: ['M17 Reflector 1', 'M17 Reflector 2', 'M17 Reflector 3', 'M17-USA', 'M17-EUR'],
   };
 
-  // Get BrandMeister servers from backend - filter by networkLabel containing "BrandMeister" or address containing "bm."
-  const brandmeisterServers: PersistentNetwork[] = builtinNetworks.filter(
-    (network) => 
-      network.networkType === 'dmr' && 
-      (network.networkLabel.includes('BrandMeister') || 
-       network.networkLabel.includes('BM') || 
-       network.address.includes('bm.'))
-  );
+  const brandmeisterServers = builtinNetworks
+    .filter((net: PersistentNetwork) => net.networkLabel.toLowerCase().includes('brandmeister'))
+    .map((net: PersistentNetwork) => ({
+      label: net.networkLabel,
+      address: net.address,
+    }));
 
-  const validateForm = (): boolean => {
-    if (!selectedReflector) {
-      setValidationError('Please select a network or reflector');
-      return false;
-    }
-
-    if (isDmrMode && !talkgroup.trim()) {
-      setValidationError('Talkgroup is required for DMR networks');
-      return false;
-    }
-
-    if (isDmrMode && isBrandmeisterSelected && !selectedBmServer) {
-      setValidationError('Please select a BrandMeister server');
-      return false;
-    }
-
-    if (!gatewayUrl.trim()) {
-      setValidationError('Gateway URL is required for real transmission');
-      return false;
-    }
-
+  const handleModeChange = (mode: string) => {
+    setActiveMode(mode);
+    setSelectedReflector('');
     setValidationError('');
-    return true;
   };
 
-  const handleSave = () => {
-    if (!validateForm()) return;
+  const handleReflectorChange = (reflector: string) => {
+    setSelectedReflector(reflector);
+    setValidationError('');
+    
+    // Clear BrandMeister-specific fields when switching away from BrandMeister
+    if (reflector !== 'BrandMeister') {
+      setSelectedBmServer('');
+    }
+    
+    // Clear TGIF-specific fields when switching away from TGIF
+    if (reflector !== 'TGIF') {
+      setTgifHotspotSecurityPassword('');
+    }
+  };
 
-    // Find the selected BrandMeister server details
-    const bmServer = brandmeisterServers.find((s) => s.address === selectedBmServer);
+  const validateAndSave = (goToPtt: boolean = false) => {
+    setValidationError('');
 
-    const config = {
+    if (!selectedReflector) {
+      setValidationError('Please select a network/reflector');
+      return;
+    }
+
+    // BrandMeister-specific validation
+    if (activeMode === 'dmr' && selectedReflector === 'BrandMeister') {
+      if (!selectedBmServer) {
+        setValidationError('Please select a BrandMeister server');
+        return;
+      }
+      if (!talkgroup || !talkgroup.trim()) {
+        setValidationError('Talkgroup is required for BrandMeister');
+        return;
+      }
+      if (!gatewayUrl || !gatewayUrl.trim()) {
+        setValidationError('Gateway URL is required for BrandMeister');
+        return;
+      }
+    }
+
+    // TGIF-specific validation (only when gateway is configured)
+    if (activeMode === 'dmr' && selectedReflector === 'TGIF') {
+      if (gatewayUrl && gatewayUrl.trim()) {
+        if (!tgifHotspotSecurityPassword || !tgifHotspotSecurityPassword.trim()) {
+          setValidationError('TGIF Hotspot Security Password is required when using a gateway');
+          return;
+        }
+      }
+    }
+
+    const selectedServer = brandmeisterServers.find(s => s.address === selectedBmServer);
+
+    const connection = {
       type: 'digital-voice' as const,
       mode: activeMode,
       reflector: selectedReflector,
@@ -156,303 +183,314 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
       bmPassword: bmPassword || undefined,
       dmrId: dmrId || undefined,
       ssid: ssid || undefined,
-      bmServerLabel: bmServer?.networkLabel || undefined,
+      bmServerLabel: selectedServer?.label,
       bmServerAddress: selectedBmServer || undefined,
       gatewayUrl: gatewayUrl || undefined,
       gatewayToken: gatewayToken || undefined,
       gatewayRoom: gatewayRoom || undefined,
       gatewayUsername: gatewayUsername || undefined,
+      tgifHotspotSecurityPassword: tgifHotspotSecurityPassword || undefined,
     };
-    
-    saveConnection(config);
+
+    saveConnection(connection);
     
     if (onSaved) {
       onSaved();
     }
+
+    if (goToPtt) {
+      navigate({ to: '/ptt' });
+    }
   };
 
-  const handleSaveAndGoToPtt = () => {
-    if (!validateForm()) return;
-    handleSave();
-    navigate({ to: '/ptt' });
-  };
-
-  const isDmrMode = activeMode === 'dmr';
-  const isBrandmeisterSelected = selectedReflector === 'BrandMeister';
-  const showTalkgroupInput = isDmrMode && selectedReflector;
-  const showBmServerSelect = isDmrMode && isBrandmeisterSelected;
-
-  const modeDescriptions: Record<string, string> = {
-    dmr: 'Digital Mobile Radio - requires DMR ID and talkgroup selection',
-    nxdn: 'NXDN digital voice protocol - select a reflector to connect',
-    p25: 'Project 25 digital voice standard - choose a reflector or network',
-    dstar: 'D-STAR digital voice mode - connect to REF, XRF, DCS, or XLX reflectors',
-    ysf: 'System Fusion (C4FM) - Yaesu digital voice protocol',
-    m17: 'M17 open-source digital voice protocol - community-driven standard',
-  };
+  const isBrandmeisterDmr = activeMode === 'dmr' && selectedReflector === 'BrandMeister';
+  const isTgifDmr = activeMode === 'dmr' && selectedReflector === 'TGIF';
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Radio className="h-5 w-5" />
-            Digital Voice Configuration
-          </CardTitle>
-          <CardDescription>
-            Configure your digital voice connection settings including mode, network, and gateway for real transmission
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {validationError && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{validationError}</AlertDescription>
-            </Alert>
-          )}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Radio className="h-5 w-5" />
+          Digital Voice Configuration
+        </CardTitle>
+        <CardDescription>
+          Configure your Digital Voice connection (DMR, D-STAR, YSF, P25, NXDN)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {validationError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{validationError}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* Mode Selection */}
-          <div className="space-y-3">
-            <Label>Digital Voice Mode</Label>
-            <Tabs value={activeMode} onValueChange={setActiveMode}>
-              <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-                <TabsTrigger value="dmr">DMR</TabsTrigger>
-                <TabsTrigger value="nxdn">NXDN</TabsTrigger>
-                <TabsTrigger value="p25">P25</TabsTrigger>
-                <TabsTrigger value="dstar">D-STAR</TabsTrigger>
-                <TabsTrigger value="ysf">YSF</TabsTrigger>
-                <TabsTrigger value="m17">M17</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <p className="text-sm text-muted-foreground">{modeDescriptions[activeMode]}</p>
-          </div>
+        {/* Mode Selection */}
+        <Tabs value={activeMode} onValueChange={handleModeChange}>
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="dmr">DMR</TabsTrigger>
+            <TabsTrigger value="dstar">D-STAR</TabsTrigger>
+            <TabsTrigger value="ysf">YSF</TabsTrigger>
+            <TabsTrigger value="p25">P25</TabsTrigger>
+            <TabsTrigger value="nxdn">NXDN</TabsTrigger>
+          </TabsList>
 
-          {/* Network/Reflector Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="reflector">Network / Reflector</Label>
-            <Select value={selectedReflector} onValueChange={setSelectedReflector}>
-              <SelectTrigger id="reflector">
-                <SelectValue placeholder="Select a network or reflector" />
-              </SelectTrigger>
-              <SelectContent>
-                {reflectorsByMode[activeMode]?.map((reflector) => (
-                  <SelectItem key={reflector} value={reflector}>
-                    {reflector}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Choose the network or reflector you want to connect to
-            </p>
-          </div>
-
-          {/* BrandMeister Server Selection (DMR only) */}
-          {showBmServerSelect && (
-            <div className="space-y-2">
-              <Label htmlFor="bm-server">BrandMeister Server</Label>
-              <Select value={selectedBmServer} onValueChange={setSelectedBmServer}>
-                <SelectTrigger id="bm-server">
-                  <SelectValue placeholder="Select a BrandMeister server" />
-                </SelectTrigger>
-                <SelectContent>
-                  {brandmeisterServers.map((server) => (
-                    <SelectItem key={server.address} value={server.address}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{server.networkLabel}</span>
-                        <span className="text-xs text-muted-foreground">{server.address}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Select your preferred BrandMeister regional server for optimal connectivity
-              </p>
-            </div>
-          )}
-
-          {/* Talkgroup Input (DMR only) */}
-          {showTalkgroupInput && (
-            <div className="space-y-2">
-              <Label htmlFor="talkgroup">Talkgroup</Label>
-              <Input
-                id="talkgroup"
-                placeholder="e.g., 91 (Worldwide)"
-                value={talkgroup}
-                onChange={(e) => setTalkgroup(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Enter the talkgroup number you want to connect to (e.g., 91 for Worldwide, 3100 for USA Nationwide)
-              </p>
-            </div>
-          )}
-
-          {/* BrandMeister Credentials (DMR + BrandMeister only) */}
-          {isDmrMode && isBrandmeisterSelected && (
-            <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
-              <div className="flex items-center gap-2">
-                <Info className="h-4 w-4 text-muted-foreground" />
-                <h4 className="text-sm font-semibold">BrandMeister Credentials (Optional)</h4>
+          {Object.keys(reflectorsByMode).map((mode) => (
+            <TabsContent key={mode} value={mode} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor={`reflector-${mode}`}>Network / Reflector</Label>
+                <Select value={selectedReflector} onValueChange={handleReflectorChange}>
+                  <SelectTrigger id={`reflector-${mode}`}>
+                    <SelectValue placeholder="Select a network or reflector" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" sideOffset={5}>
+                    {reflectorsByMode[mode].map((reflector) => (
+                      <SelectItem key={reflector} value={reflector}>
+                        {reflector}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Choose the network or reflector you want to connect to
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                BrandMeister credentials are optional. If your setup requires authentication, enter your credentials below.
-              </p>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="bm-username">BrandMeister Username</Label>
-                  <Input
-                    id="bm-username"
-                    placeholder="BrandMeister Username"
-                    value={bmUsername}
-                    onChange={(e) => setBmUsername(e.target.value)}
-                    className="font-mono text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bm-password">BrandMeister Password</Label>
-                  <Input
-                    id="bm-password"
-                    type="password"
-                    placeholder="BrandMeister Password"
-                    value={bmPassword}
-                    onChange={(e) => setBmPassword(e.target.value)}
-                    className="font-mono text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* DMR ID and SSID (DMR only) */}
-          {isDmrMode && (
-            <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
-              <h4 className="text-sm font-semibold">DMR Identification</h4>
-              <div className="space-y-3">
+              {/* BrandMeister Server Selection (DMR only) */}
+              {isBrandmeisterDmr && (
                 <div className="space-y-2">
-                  <Label htmlFor="dmr-id">DMR ID</Label>
-                  <Input
-                    id="dmr-id"
-                    placeholder="Your DMR ID"
-                    value={dmrId}
-                    onChange={(e) => setDmrId(e.target.value)}
-                    className="font-mono text-sm"
-                  />
+                  <Label htmlFor="bm-server">
+                    BrandMeister Server <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={selectedBmServer} onValueChange={setSelectedBmServer}>
+                    <SelectTrigger id="bm-server">
+                      <SelectValue placeholder="Select a BrandMeister server" />
+                    </SelectTrigger>
+                    <SelectContent position="popper" sideOffset={5} className="max-h-[300px]">
+                      {brandmeisterServers.map((server) => (
+                        <SelectItem key={server.address} value={server.address}>
+                          {server.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-xs text-muted-foreground">
-                    Your registered DMR ID from your profile
+                    Required: Select your regional BrandMeister server
                   </p>
                 </div>
+              )}
+
+              {/* Talkgroup (for DMR networks) */}
+              {mode === 'dmr' && selectedReflector && (
                 <div className="space-y-2">
-                  <Label htmlFor="ssid">SSID (Optional)</Label>
+                  <Label htmlFor="talkgroup">
+                    Talkgroup {isBrandmeisterDmr && <span className="text-destructive">*</span>}
+                  </Label>
                   <Input
-                    id="ssid"
-                    placeholder="SSID (e.g., 01-99)"
-                    value={ssid}
-                    onChange={(e) => setSsid(e.target.value)}
-                    className="font-mono text-sm"
+                    id="talkgroup"
+                    value={talkgroup}
+                    onChange={(e) => setTalkgroup(e.target.value)}
+                    placeholder="e.g., 91 (Worldwide)"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Optional SSID suffix for multiple devices (01-99)
+                    {isBrandmeisterDmr 
+                      ? 'Required: Enter the talkgroup number you want to join'
+                      : 'Enter the talkgroup number you want to join (e.g., 91 for Worldwide)'}
                   </p>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
 
-          {/* Digital Voice Gateway Configuration */}
-          <div className="space-y-4 rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+        {/* BrandMeister Credentials */}
+        {isBrandmeisterDmr && (
+          <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
             <div className="flex items-center gap-2">
-              <Wifi className="h-5 w-5 text-primary" />
-              <h4 className="text-sm font-semibold">Digital Voice Gateway (Required)</h4>
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">BrandMeister Credentials (Optional)</h4>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="bm-username">BrandMeister Username</Label>
+                <Input
+                  id="bm-username"
+                  value={bmUsername}
+                  onChange={(e) => setBmUsername(e.target.value)}
+                  placeholder="Your BrandMeister username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bm-password">BrandMeister Password</Label>
+                <Input
+                  id="bm-password"
+                  type="password"
+                  value={bmPassword}
+                  onChange={(e) => setBmPassword(e.target.value)}
+                  placeholder="Your BrandMeister password"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Optional: Provide your BrandMeister account credentials if required by your gateway
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* TGIF Hotspot Security Password */}
+        {isTgifDmr && (
+          <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">TGIF Authentication</h4>
             </div>
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                A Digital Voice Gateway is required for real transmission. This gateway handles the WebRTC signaling and audio routing for your digital voice connection.
+                TGIF requires a hotspot security password for authentication when using a gateway. This password is provided by your TGIF network administrator.
               </AlertDescription>
             </Alert>
-            <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="tgif-password">
+                TGIF Hotspot Security Password {gatewayUrl && gatewayUrl.trim() && <span className="text-destructive">*</span>}
+              </Label>
+              <Input
+                id="tgif-password"
+                type="password"
+                value={tgifHotspotSecurityPassword}
+                onChange={(e) => setTgifHotspotSecurityPassword(e.target.value)}
+                placeholder="Your TGIF hotspot security password"
+              />
+              <p className="text-xs text-muted-foreground">
+                {gatewayUrl && gatewayUrl.trim() 
+                  ? 'Required: Your TGIF hotspot security password for gateway authentication'
+                  : 'Your TGIF hotspot security password (required when using a gateway)'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* DMR ID and SSID */}
+        {activeMode === 'dmr' && (
+          <div className="space-y-4 rounded-lg border border-border bg-card/50 p-4">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">DMR Identification</h4>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="gateway-url">Gateway URL *</Label>
+                <Label htmlFor="dmr-id">DMR ID</Label>
                 <Input
-                  id="gateway-url"
-                  placeholder="wss://gateway.example.com"
-                  value={gatewayUrl}
-                  onChange={(e) => setGatewayUrl(e.target.value)}
-                  className="font-mono text-sm"
+                  id="dmr-id"
+                  value={dmrId}
+                  onChange={(e) => setDmrId(e.target.value)}
+                  placeholder="Your DMR ID"
                 />
                 <p className="text-xs text-muted-foreground">
-                  WebSocket URL of your Digital Voice Gateway (required for transmission)
+                  From your profile or enter manually
                 </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="gateway-token">Gateway Token (Optional)</Label>
+                <Label htmlFor="ssid">SSID</Label>
                 <Input
-                  id="gateway-token"
-                  type="password"
-                  placeholder="Authentication token"
-                  value={gatewayToken}
-                  onChange={(e) => setGatewayToken(e.target.value)}
-                  className="font-mono text-sm"
+                  id="ssid"
+                  value={ssid}
+                  onChange={(e) => setSsid(e.target.value)}
+                  placeholder="Your SSID (e.g., 1-15)"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Optional authentication token if required by your gateway
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gateway-room">Room (Optional)</Label>
-                <Input
-                  id="gateway-room"
-                  placeholder="Room name or ID"
-                  value={gatewayRoom}
-                  onChange={(e) => setGatewayRoom(e.target.value)}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional room identifier for multi-room gateways
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gateway-username">Gateway Username</Label>
-                <Input
-                  id="gateway-username"
-                  placeholder="Your callsign"
-                  value={gatewayUsername}
-                  onChange={(e) => setGatewayUsername(e.target.value)}
-                  className="font-mono text-sm uppercase"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Your callsign or username for the gateway (defaults to your profile callsign)
+                  Suffix for your DMR ID (1-15)
                 </p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3">
-            <Button
-              onClick={handleSaveAndGoToPtt}
-              disabled={!selectedReflector || !gatewayUrl.trim()}
-              className="w-full"
-              size="lg"
-            >
-              <Wifi className="mr-2 h-4 w-4" />
-              Save and Go to PTT
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!selectedReflector || !gatewayUrl.trim()}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              Save
-            </Button>
+        {/* Digital Voice Gateway Configuration */}
+        <div className="space-y-4 rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+          <div className="flex items-center gap-2">
+            <Wifi className="h-5 w-5 text-primary" />
+            <h4 className="text-sm font-semibold">Digital Voice Gateway Configuration</h4>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {isBrandmeisterDmr 
+                ? 'Gateway URL is required for BrandMeister connections. Configure your gateway to enable real voice transmission over WebRTC.'
+                : isTgifDmr
+                ? 'Configure your Digital Voice Gateway to enable real voice transmission over WebRTC. TGIF requires a hotspot security password when using a gateway.'
+                : 'Configure your Digital Voice Gateway to enable real voice transmission over WebRTC. Without a gateway, only simulation mode is available.'}
+            </AlertDescription>
+          </Alert>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="gateway-url">
+                Gateway URL {isBrandmeisterDmr && <span className="text-destructive">*</span>}
+              </Label>
+              <Input
+                id="gateway-url"
+                value={gatewayUrl}
+                onChange={(e) => setGatewayUrl(e.target.value)}
+                placeholder="wss://gateway.example.com or https://gateway.example.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                {isBrandmeisterDmr 
+                  ? 'Required: WebSocket or HTTPS URL of your Digital Voice Gateway'
+                  : 'WebSocket or HTTPS URL of your Digital Voice Gateway'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gateway-token">Gateway Token (Optional)</Label>
+              <Input
+                id="gateway-token"
+                type="password"
+                value={gatewayToken}
+                onChange={(e) => setGatewayToken(e.target.value)}
+                placeholder="Authentication token if required"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Authentication token for your gateway
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gateway-room">Gateway Room (Optional)</Label>
+              <Input
+                id="gateway-room"
+                value={gatewayRoom}
+                onChange={(e) => setGatewayRoom(e.target.value)}
+                placeholder="Room identifier if required"
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Room identifier for your gateway
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gateway-username">Gateway Username</Label>
+              <Input
+                id="gateway-username"
+                value={gatewayUsername}
+                onChange={(e) => setGatewayUsername(e.target.value)}
+                placeholder="Your callsign or username"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your callsign or username for gateway identification
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={() => validateAndSave(false)} className="flex-1">
+            <Save className="mr-2 h-4 w-4" />
+            Save Configuration
+          </Button>
+          <Button onClick={() => validateAndSave(true)} variant="default" className="flex-1">
+            <Radio className="mr-2 h-4 w-4" />
+            Save and Go to PTT
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

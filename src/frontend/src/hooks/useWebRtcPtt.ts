@@ -188,17 +188,49 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
 
       if (useGateway && connection && isDigitalVoiceConnection(connection)) {
         // Use Digital Voice Gateway for real WebRTC connection
-        const gatewayClient = new DigitalVoiceGatewayClient({
+        const gatewayConfig: any = {
           url: connection.gatewayUrl!,
           token: connection.gatewayToken,
           room: connection.gatewayRoom || roomKey,
           username: connection.gatewayUsername || userProfile?.callsign,
-        });
+        };
 
+        // Include BrandMeister metadata if this is a BrandMeister connection
+        if (connection.mode === 'dmr' && connection.reflector === 'BrandMeister') {
+          gatewayConfig.bmServerAddress = connection.bmServerAddress;
+          gatewayConfig.bmServerLabel = connection.bmServerLabel;
+          gatewayConfig.talkgroup = connection.talkgroup;
+          gatewayConfig.dmrId = connection.dmrId || userProfile?.dmrId?.toString();
+          gatewayConfig.ssid = connection.ssid || userProfile?.ssid?.toString();
+          gatewayConfig.bmUsername = connection.bmUsername;
+          gatewayConfig.bmPassword = connection.bmPassword;
+        }
+
+        // Include TGIF metadata if this is a TGIF connection
+        if (connection.mode === 'dmr' && connection.reflector === 'TGIF') {
+          gatewayConfig.tgifHotspotSecurityPassword = connection.tgifHotspotSecurityPassword;
+          gatewayConfig.talkgroup = connection.talkgroup;
+          gatewayConfig.dmrId = connection.dmrId || userProfile?.dmrId?.toString();
+          gatewayConfig.ssid = connection.ssid || userProfile?.ssid?.toString();
+        }
+
+        const gatewayClient = new DigitalVoiceGatewayClient(gatewayConfig);
         gatewayClientRef.current = gatewayClient;
 
+        // Set up error handler before connecting
+        gatewayClient.on('error', (message) => {
+          setConnectionStatus('error');
+          setError(message.error || 'Gateway connection failed. Please check your credentials and try again.');
+        });
+
         // Connect to gateway
-        await gatewayClient.connect();
+        try {
+          await gatewayClient.connect();
+        } catch (err) {
+          setConnectionStatus('error');
+          setError('Failed to connect to gateway. Please verify your gateway URL and credentials.');
+          return;
+        }
 
         // Create peer connection
         peerConnectionRef.current = createPeerConnection(true);
@@ -225,20 +257,34 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
           }
         });
 
-        // Connection status will be set by onconnectionstatechange handler
+        // Create and send offer
+        const offer = await peerConnectionRef.current.createOffer();
+        await peerConnectionRef.current.setLocalDescription(offer);
+        gatewayClient.sendOffer(offer);
+
+        setConnectionStatus('connected');
       } else {
-        // Use backend signaling (legacy/fallback)
+        // Use backend signaling for legacy connections
         peerConnectionRef.current = createPeerConnection(false);
         startPolling();
-        
-        // For non-gateway connections, set connected immediately (legacy behavior)
+
+        const offer = await peerConnectionRef.current.createOffer();
+        await peerConnectionRef.current.setLocalDescription(offer);
+
+        const signal = JSON.stringify({
+          type: 'offer',
+          offer,
+        });
+        await actor.sendSignal(signal, roomKey);
+
         setConnectionStatus('connected');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to join room');
+      console.error('Failed to join room:', err);
       setConnectionStatus('error');
+      setError('Failed to join room. Please try again.');
     }
-  }, [actor, createPeerConnection, startPolling, roomKey, userProfile]);
+  }, [actor, roomKey, userProfile, createPeerConnection, startPolling]);
 
   const leaveRoom = useCallback(() => {
     cleanup();
@@ -247,70 +293,60 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
   }, [cleanup]);
 
   const startTransmit = useCallback(async () => {
-    if (!peerConnectionRef.current || !actor) return;
+    if (!peerConnectionRef.current) {
+      setError('Not connected to room');
+      return;
+    }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
 
-      // Add tracks to peer connection
       stream.getTracks().forEach(track => {
         peerConnectionRef.current?.addTrack(track, stream);
       });
 
-      const connection = loadConnection();
-      const useGateway = connection && isDigitalVoiceConnection(connection) && isDigitalVoiceGatewayConfigured(connection);
-
-      // Create and send offer
-      const offer = await peerConnectionRef.current.createOffer();
-      await peerConnectionRef.current.setLocalDescription(offer);
-
-      if (useGateway && gatewayClientRef.current) {
-        // Send offer to gateway
-        gatewayClientRef.current.sendOffer(offer);
-      } else {
-        // Send offer to backend signaling
-        const signal = JSON.stringify({
-          type: 'offer',
-          offer,
-        });
-        await actor.sendSignal(signal, roomKey);
-      }
-
       setIsTransmitting(true);
 
-      // Record activity with proper metadata from current connection
-      const callsign = userProfile?.callsign || 'Unknown';
-      
-      let networkLabel = 'Unknown Network';
-      let talkgroupValue = '';
-      
-      if (connection) {
-        if (isDigitalVoiceConnection(connection)) {
-          // For Digital Voice: use mode + reflector as network label
-          networkLabel = `${connection.mode.toUpperCase()} / ${connection.reflector}`;
-          talkgroupValue = connection.talkgroup || '';
-        } else if (isDirectoryConnection(connection)) {
-          networkLabel = connection.network.networkLabel;
-          talkgroupValue = connection.talkgroup;
-        } else {
-          networkLabel = deriveRoomLabel(connection);
+      // Record activity
+      if (actor && userProfile) {
+        const connection = loadConnection();
+        let network = 'Unknown';
+        let talkgroup = 'Unknown';
+        let dmrId: bigint | null = null;
+        let dmrOperatorName: string | null = null;
+        let dmrOperatorLocation: string | null = null;
+
+        if (connection && isDigitalVoiceConnection(connection)) {
+          network = connection.reflector;
+          talkgroup = connection.talkgroup || 'Unknown';
+          
+          if (connection.mode === 'dmr') {
+            dmrId = connection.dmrId ? BigInt(connection.dmrId) : (userProfile.dmrId || null);
+          }
+        } else if (connection && isDirectoryConnection(connection)) {
+          network = connection.network.networkLabel;
+          talkgroup = connection.talkgroup;
+        }
+
+        try {
+          await actor.updateNowHearing(
+            userProfile.callsign,
+            network,
+            talkgroup,
+            dmrId,
+            dmrOperatorName,
+            dmrOperatorLocation
+          );
+        } catch (err) {
+          console.error('Failed to record activity:', err);
         }
       }
-
-      await actor.updateNowHearing(
-        callsign,
-        networkLabel,
-        talkgroupValue,
-        null,
-        null,
-        null
-      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start transmission');
       console.error('Failed to start transmit:', err);
+      setError('Failed to access microphone. Please check permissions.');
     }
-  }, [actor, roomKey, userProfile]);
+  }, [actor, userProfile]);
 
   const stopTransmit = useCallback(() => {
     if (localStreamRef.current) {

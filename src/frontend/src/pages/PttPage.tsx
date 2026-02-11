@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,15 @@ import NowHearingList from '../components/NowHearingList';
 import RealTimeStatusBadge from '../components/RealTimeStatusBadge';
 import { useWebRtcPtt } from '../hooks/useWebRtcPtt';
 import { useGetNowHearing } from '../hooks/useNowHearing';
-import { loadConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured, isDirectoryConnection } from '../hooks/usePreferredConnection';
+import { 
+  loadConnection, 
+  isDigitalVoiceConnection, 
+  isDigitalVoiceGatewayConfigured, 
+  isDirectoryConnection,
+  isBrandmeisterConnectionReady,
+  getBrandmeisterMissingFields,
+  isBrandmeisterDmrConnection
+} from '../hooks/usePreferredConnection';
 import { deriveRoomKey, deriveRoomLabel } from '../utils/roomKey';
 
 export default function PttPage() {
@@ -20,6 +28,8 @@ export default function PttPage() {
   const [roomKey, setRoomKey] = useState<string>('');
   const [roomLabel, setRoomLabel] = useState<string>('');
   const [showGatewayWarning, setShowGatewayWarning] = useState(false);
+  const [missingFieldsError, setMissingFieldsError] = useState<string>('');
+  const autoConnectAttemptedRef = useRef(false);
 
   const { data: nowHearing = [], isLoading: isLoadingActivity } = useGetNowHearing();
   const {
@@ -43,6 +53,18 @@ export default function PttPage() {
       setRoomKey(key);
       setRoomLabel(label);
 
+      // Check if BrandMeister DMR connection has missing required fields
+      if (isBrandmeisterDmrConnection(conn) && isDigitalVoiceConnection(conn)) {
+        const missingFields = getBrandmeisterMissingFields(conn);
+        if (missingFields.length > 0) {
+          setMissingFieldsError(
+            `BrandMeister configuration incomplete. Missing: ${missingFields.join(', ')}. Please complete your setup in Connection Settings.`
+          );
+          setShowGatewayWarning(false);
+          return;
+        }
+      }
+
       // Check if Digital Voice gateway is configured
       if (isDigitalVoiceConnection(conn)) {
         const gatewayConfigured = isDigitalVoiceGatewayConfigured(conn);
@@ -52,6 +74,20 @@ export default function PttPage() {
       }
     }
   }, []);
+
+  // Auto-connect for BrandMeister DMR connections
+  useEffect(() => {
+    if (
+      connection &&
+      roomKey &&
+      !autoConnectAttemptedRef.current &&
+      connectionStatus === 'disconnected' &&
+      isBrandmeisterConnectionReady(connection)
+    ) {
+      autoConnectAttemptedRef.current = true;
+      joinRoom();
+    }
+  }, [connection, roomKey, connectionStatus, joinRoom]);
 
   const handleTransmitStart = async () => {
     if (connectionStatus === 'connected') {
@@ -64,8 +100,8 @@ export default function PttPage() {
   };
 
   const handleJoinRoom = async () => {
-    if (showGatewayWarning) {
-      // Don't allow joining if gateway is not configured
+    if (showGatewayWarning || missingFieldsError) {
+      // Don't allow joining if gateway is not configured or fields are missing
       return;
     }
     await joinRoom();
@@ -128,8 +164,26 @@ export default function PttPage() {
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-4">
+      {/* Missing Fields Error for BrandMeister */}
+      {missingFieldsError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{missingFieldsError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: '/connect' })}
+              className="ml-4 shrink-0"
+            >
+              Complete Setup
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Gateway Warning for Digital Voice */}
-      {showGatewayWarning && (
+      {showGatewayWarning && !missingFieldsError && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
@@ -207,11 +261,13 @@ export default function PttPage() {
             <PttControl
               onTransmitStart={handleTransmitStart}
               onTransmitStop={handleTransmitStop}
-              disabled={!isConnected || showGatewayWarning}
+              disabled={!isConnected || showGatewayWarning || !!missingFieldsError}
               isTransmitting={isTransmitting}
             />
             <p className="text-center text-sm text-muted-foreground">
-              {showGatewayWarning
+              {missingFieldsError
+                ? 'Complete setup to enable transmission'
+                : showGatewayWarning
                 ? 'Configure gateway to enable transmission'
                 : isConnected
                 ? 'Press and hold to transmit'
@@ -225,7 +281,7 @@ export default function PttPage() {
               <Button
                 onClick={handleJoinRoom}
                 className="flex-1"
-                disabled={isConnecting || showGatewayWarning}
+                disabled={isConnecting || showGatewayWarning || !!missingFieldsError}
               >
                 {isConnecting ? 'Connecting...' : 'Join Room'}
               </Button>

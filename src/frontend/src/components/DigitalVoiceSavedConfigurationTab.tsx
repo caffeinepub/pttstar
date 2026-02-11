@@ -5,7 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Radio, Edit, AlertCircle, CheckCircle2, Wifi } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { loadConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured } from '../hooks/usePreferredConnection';
+import { 
+  loadConnection, 
+  isDigitalVoiceConnection, 
+  isDigitalVoiceGatewayConfigured,
+  getBrandmeisterMissingFields,
+  getTgifMissingFields,
+  isBrandmeisterDmrConnection,
+  isTgifDmrConnection
+} from '../hooks/usePreferredConnection';
 
 interface DigitalVoiceSavedConfigurationTabProps {
   onEdit?: () => void;
@@ -43,6 +51,17 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
   }
 
   const isGatewayConfigured = isDigitalVoiceGatewayConfigured(connection);
+  const isBrandmeisterDmr = isBrandmeisterDmrConnection(connection);
+  const isTgifDmr = isTgifDmrConnection(connection);
+  const brandmeisterMissingFields = isBrandmeisterDmr ? getBrandmeisterMissingFields(connection) : [];
+  const tgifMissingFields = isTgifDmr ? getTgifMissingFields(connection) : [];
+  const missingFields = [...brandmeisterMissingFields, ...tgifMissingFields];
+  const hasMissingFields = missingFields.length > 0;
+
+  const maskPassword = (password: string | undefined): string => {
+    if (!password) return 'Not set';
+    return '••••••••';
+  };
 
   const maskToken = (token: string | undefined): string => {
     if (!token) return 'Not set';
@@ -60,15 +79,29 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
         <CardDescription>Your current Digital Voice connection settings</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Missing Fields Alert */}
+        {hasMissingFields && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {isBrandmeisterDmr && 'BrandMeister configuration incomplete. '}
+              {isTgifDmr && 'TGIF configuration incomplete. '}
+              Missing: {missingFields.join(', ')}. Please edit your configuration to complete setup.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Gateway Status Alert */}
-        {isGatewayConfigured ? (
+        {!hasMissingFields && isGatewayConfigured && (
           <Alert className="border-green-500/50 bg-green-500/10">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <AlertDescription className="text-green-700 dark:text-green-300">
               Gateway configured - ready for real transmission
             </AlertDescription>
           </Alert>
-        ) : (
+        )}
+        
+        {!hasMissingFields && !isGatewayConfigured && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -121,9 +154,20 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
               {connection.bmPassword && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Password</span>
-                  <span className="text-sm font-mono">••••••••</span>
+                  <span className="text-sm font-mono">{maskPassword(connection.bmPassword)}</span>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TGIF Hotspot Security Password */}
+        {connection.tgifHotspotSecurityPassword && (
+          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
+            <h4 className="text-sm font-medium">TGIF Authentication</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Hotspot Security Password</span>
+              <span className="text-sm font-mono">{maskPassword(connection.tgifHotspotSecurityPassword)}</span>
             </div>
           </div>
         )}
@@ -190,10 +234,10 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
           <Button
             onClick={() => navigate({ to: '/ptt' })}
             className="flex-1"
-            disabled={!isGatewayConfigured}
+            disabled={hasMissingFields}
           >
             <Radio className="mr-2 h-4 w-4" />
-            {isGatewayConfigured ? 'Go to PTT' : 'Configure Gateway First'}
+            {hasMissingFields ? 'Complete Setup First' : isGatewayConfigured ? 'Go to PTT' : 'Go to PTT (Simulation)'}
           </Button>
         </div>
       </CardContent>

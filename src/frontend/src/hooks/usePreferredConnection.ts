@@ -23,7 +23,7 @@ export interface IaxDvswitchConnection {
   allstarPassword?: string;
 }
 
-// Digital Voice connection with BrandMeister server selection and gateway configuration
+// Digital Voice connection with BrandMeister server selection, gateway configuration, and TGIF hotspot security password
 export interface DigitalVoiceConnection {
   type: 'digital-voice';
   mode: string;
@@ -41,6 +41,8 @@ export interface DigitalVoiceConnection {
   gatewayToken?: string;
   gatewayRoom?: string;
   gatewayUsername?: string;
+  // TGIF hotspot security password
+  tgifHotspotSecurityPassword?: string;
 }
 
 export type StoredConnection = DirectoryConnection | IaxDvswitchConnection | DigitalVoiceConnection;
@@ -63,6 +65,71 @@ export function isDirectoryConnection(conn: StoredConnection): conn is Directory
 // Helper to check if Digital Voice gateway is configured
 export function isDigitalVoiceGatewayConfigured(conn: DigitalVoiceConnection): boolean {
   return !!(conn.gatewayUrl && conn.gatewayUrl.trim());
+}
+
+// Helper to check if connection is BrandMeister DMR
+export function isBrandmeisterDmrConnection(conn: StoredConnection): boolean {
+  return isDigitalVoiceConnection(conn) && 
+         conn.mode === 'dmr' && 
+         conn.reflector === 'BrandMeister';
+}
+
+// Helper to check if connection is TGIF DMR
+export function isTgifDmrConnection(conn: StoredConnection): boolean {
+  return isDigitalVoiceConnection(conn) && 
+         conn.mode === 'dmr' && 
+         conn.reflector === 'TGIF';
+}
+
+// Helper to get missing required fields for BrandMeister DMR connections
+export function getBrandmeisterMissingFields(conn: DigitalVoiceConnection): string[] {
+  const missing: string[] = [];
+  
+  if (conn.mode !== 'dmr' || conn.reflector !== 'BrandMeister') {
+    return missing; // Not a BrandMeister connection
+  }
+  
+  if (!conn.bmServerAddress || !conn.bmServerAddress.trim()) {
+    missing.push('BrandMeister Server');
+  }
+  
+  if (!conn.talkgroup || !conn.talkgroup.trim()) {
+    missing.push('Talkgroup');
+  }
+  
+  if (!conn.gatewayUrl || !conn.gatewayUrl.trim()) {
+    missing.push('Gateway URL');
+  }
+  
+  return missing;
+}
+
+// Helper to get missing required fields for TGIF DMR connections with gateway
+export function getTgifMissingFields(conn: DigitalVoiceConnection): string[] {
+  const missing: string[] = [];
+  
+  if (conn.mode !== 'dmr' || conn.reflector !== 'TGIF') {
+    return missing; // Not a TGIF connection
+  }
+  
+  // Only validate TGIF password if gateway is configured
+  if (conn.gatewayUrl && conn.gatewayUrl.trim()) {
+    if (!conn.tgifHotspotSecurityPassword || !conn.tgifHotspotSecurityPassword.trim()) {
+      missing.push('TGIF Hotspot Security Password');
+    }
+  }
+  
+  return missing;
+}
+
+// Helper to check if BrandMeister connection is ready for auto-connect
+export function isBrandmeisterConnectionReady(conn: StoredConnection | null): boolean {
+  if (!conn || !isBrandmeisterDmrConnection(conn)) {
+    return false;
+  }
+  
+  const missing = getBrandmeisterMissingFields(conn as DigitalVoiceConnection);
+  return missing.length === 0;
 }
 
 // Save connection to sessionStorage
@@ -99,7 +166,6 @@ export function loadConnection(): StoredConnection | null {
     }
     
     // Handle Digital Voice connections with backward compatibility
-    // Ignore legacy hotspotSecurity field if present
     if (parsed.type === 'digital-voice') {
       const connection: DigitalVoiceConnection = {
         type: 'digital-voice',
@@ -108,7 +174,6 @@ export function loadConnection(): StoredConnection | null {
         talkgroup: parsed.talkgroup, // May be undefined for older saved connections
         bmUsername: parsed.bmUsername,
         bmPassword: parsed.bmPassword,
-        // hotspotSecurity intentionally omitted (legacy field ignored)
         dmrId: parsed.dmrId,
         ssid: parsed.ssid,
         // BrandMeister server selection (new fields, backward compatible)
@@ -119,6 +184,8 @@ export function loadConnection(): StoredConnection | null {
         gatewayToken: parsed.gatewayToken,
         gatewayRoom: parsed.gatewayRoom,
         gatewayUsername: parsed.gatewayUsername,
+        // TGIF hotspot security password (backward compatible with legacy hotspotSecurity field)
+        tgifHotspotSecurityPassword: parsed.tgifHotspotSecurityPassword || parsed.hotspotSecurity,
       };
       return connection;
     }

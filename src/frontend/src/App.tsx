@@ -1,9 +1,9 @@
-import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
+import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet, useNavigate, useLocation } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useCurrentUserProfile';
 import { getRememberLoginPreference } from './hooks/useRememberLoginPreference';
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import AppLayout from './components/AppLayout';
 import LandingPage from './pages/LandingPage';
 import ConnectPage from './pages/ConnectPage';
@@ -14,10 +14,50 @@ import SettingsPage from './pages/SettingsPage';
 import AboutCompliancePage from './pages/AboutCompliancePage';
 import AuthGate from './components/AuthGate';
 import ProfileSetupDialog from './components/ProfileSetupDialog';
+import AppErrorBoundary from './components/AppErrorBoundary';
+import { loadConnection } from './hooks/usePreferredConnection';
+
+function PostLoginRedirector() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { identity, isInitializing } = useInternetIdentity();
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+
+  useEffect(() => {
+    // Only run after auth is ready and profile is fetched
+    if (isInitializing || profileLoading || !isFetched) return;
+
+    const isAuthenticated = !!identity;
+    const hasProfile = userProfile !== null;
+    const hasSavedConnection = loadConnection() !== null;
+
+    // Don't redirect if already on /connect (prevent loops)
+    if (location.pathname === '/connect') return;
+
+    // Check if we've already redirected this session for this principal
+    const principal = identity?.getPrincipal().toString();
+    if (principal) {
+      const redirectKey = `pttstar_redirected_${principal}`;
+      const hasRedirected = sessionStorage.getItem(redirectKey);
+      
+      if (hasRedirected) return;
+
+      // Guide first-time signed-in users with no saved connection to Connect page with BrandMeister preset
+      if (isAuthenticated && hasProfile && !hasSavedConnection) {
+        console.log('PostLoginRedirector: Navigating to /connect with BrandMeister preset');
+        sessionStorage.setItem(redirectKey, 'true');
+        navigate({ to: '/connect', search: { preset: 'brandmeister-dmr' } });
+      }
+    }
+  }, [identity, isInitializing, userProfile, profileLoading, isFetched, navigate, location.pathname]);
+
+  return null;
+}
 
 function RootLayout() {
   return (
     <AppLayout>
+      <PostLoginRedirector />
       <Outlet />
     </AppLayout>
   );
@@ -111,22 +151,31 @@ export default function App() {
   const { identity, isInitializing, clear } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const queryClient = useQueryClient();
+  const rememberLoginCheckedRef = useRef(false);
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
 
-  // Check remember login preference on startup
+  // Check remember login preference on startup (only once)
   useEffect(() => {
-    if (!isInitializing && identity) {
+    if (!isInitializing && identity && !rememberLoginCheckedRef.current) {
+      rememberLoginCheckedRef.current = true;
       const rememberLogin = getRememberLoginPreference();
       
       // If remember login is OFF and user is authenticated, clear the session
       if (!rememberLogin) {
+        console.log('App: Remember login is OFF, clearing session');
         clear();
         queryClient.clear();
       }
     }
   }, [isInitializing, identity, clear, queryClient]);
+
+  const handleClearSession = async () => {
+    console.log('App: Clearing session from error boundary');
+    await clear();
+    queryClient.clear();
+  };
 
   if (isInitializing) {
     return (
@@ -140,9 +189,9 @@ export default function App() {
   }
 
   return (
-    <>
+    <AppErrorBoundary onClearSession={handleClearSession}>
       <RouterProvider router={router} />
       {showProfileSetup && <ProfileSetupDialog />}
-    </>
+    </AppErrorBoundary>
   );
 }

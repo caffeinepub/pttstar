@@ -6,8 +6,8 @@ import IaxDvswitchConnectForm from '../components/IaxDvswitchConnectForm';
 import IaxDvswitchSavedConfigurationTab from '../components/IaxDvswitchSavedConfigurationTab';
 import DigitalVoiceConnectForm from '../components/DigitalVoiceConnectForm';
 import DigitalVoiceSavedConfigurationTab from '../components/DigitalVoiceSavedConfigurationTab';
-import { useNavigate } from '@tanstack/react-router';
-import { Server, WifiOff, Info, Bookmark, Zap } from 'lucide-react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Server, WifiOff, Info, Bookmark, Zap, ExternalLink } from 'lucide-react';
 import { loadConnection, clearConnection, isIaxDvswitchConnection, isDigitalVoiceConnection } from '../hooks/usePreferredConnection';
 import { useState, useEffect } from 'react';
 import ColorPageHeader from '../components/ColorPageHeader';
@@ -15,6 +15,7 @@ import ColorAccentPanel from '../components/ColorAccentPanel';
 
 export default function ConnectPage() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as { preset?: string };
   const [hasConnection, setHasConnection] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('connect');
   const [connectionType, setConnectionType] = useState<'iax' | 'digital-voice'>('iax');
@@ -32,9 +33,18 @@ export default function ConnectPage() {
       setConnectionType('iax');
     }
     
-    // Default to Saved tab if connection exists, otherwise Connect tab
-    setActiveTab(hasSavedConnection ? 'saved' : 'connect');
-  }, []);
+    // Check for onboarding query flag
+    if (search.preset === 'brandmeister-dmr' && !hasSavedConnection) {
+      setActiveTab('connect');
+      setConnectionType('digital-voice');
+      setPreset('brandmeister-dmr');
+      // Clear the query param after applying
+      navigate({ to: '/connect', replace: true });
+    } else {
+      // Default to Saved tab if connection exists, otherwise Connect tab
+      setActiveTab(hasSavedConnection ? 'saved' : 'connect');
+    }
+  }, [search.preset, navigate]);
 
   const handleDisconnect = () => {
     clearConnection();
@@ -51,10 +61,6 @@ export default function ConnectPage() {
 
   const handleEditFromSaved = () => {
     setActiveTab('connect');
-  };
-
-  const handleGoToPttFromSaved = () => {
-    navigate({ to: '/ptt' });
   };
 
   const handleConnectionTypeChange = (type: 'iax' | 'digital-voice') => {
@@ -88,6 +94,23 @@ export default function ConnectPage() {
           <Info className="h-4 w-4" />
           <AlertDescription>
             <strong>Choose your connection type:</strong> Use <strong>IAX / DVSwitch</strong> for AllStar and similar networks, or <strong>Digital Voice</strong> for DMR, D-Star, YSF, P25, NXDN, and M17 modes. Your saved configuration persists on this device until you disconnect or clear it. This does not affect your Internet Identity login.
+          </AlertDescription>
+        </Alert>
+
+        {/* BrandMeister Onboarding Callout */}
+        <Alert className="border-primary/30 bg-primary/10">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong>Using DMR?</strong> A BrandMeister account is recommended for DMR use in PTTStar.{' '}
+            <a
+              href="https://brandmeister.network/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-foreground underline hover:text-accent-foreground"
+            >
+              Sign up at brandmeister.network
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </AlertDescription>
         </Alert>
 
@@ -162,7 +185,6 @@ export default function ConnectPage() {
                 <TabsContent value="iax" className="mt-6">
                   <IaxDvswitchSavedConfigurationTab
                     onEdit={handleEditFromSaved}
-                    onGoToPtt={handleGoToPttFromSaved}
                   />
                 </TabsContent>
 

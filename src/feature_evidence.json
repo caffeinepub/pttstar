@@ -2,33 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-quick-setup-section-to-the-connection-settings-connectpage-that-provides-a-simple-guided-way-to-start-configuring-the-two-requested-networks-1-brandmeister-via-digital-voice-dmr-and-2-allstar-via-iax-dvswitch-each-option-must-switch-the-ui-to-the-correct-connection-type-tab-and-prefill-sensible-defaults-in-the-corresponding-form-without-requiring-the-user-to-manually-hunt-through-settings-first",
-      "featureTitle": "Add a \"Quick Setup\" section to the Connection Settings (ConnectPage) that provides a simple, guided way to start configuring the two requested networks: (1) BrandMeister via Digital Voice (DMR) and (2) AllStar via IAX / DVSwitch. Each option must switch the UI to the correct connection type tab and prefill sensible defaults in the corresponding form (without requiring the user to manually hunt through settings first).",
+      "featureId": "feature-fix-the-crash-cannot-read-properties-of-null-reading-navigate-by-ensuring-any-code-that-calls-tanstack-router-navigation-hooks-e-g-usenavigate-is-rendered-within-the-router-context-and-cannot-execute-before-the-router-is-mounted",
+      "featureTitle": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
       "files": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx",
-        "frontend/src/components/IaxDvswitchConnectForm.tsx",
-        "frontend/src/pages/ConnectPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-improve-the-digitalvoiceconnectform-brandmeister-flow-so-a-user-can-configure-a-working-brandmeister-dmr-connection-with-minimal-steps-default-the-talkgroup-field-to-a-common-value-e-g-91-when-brandmeister-is-selected-unless-the-user-already-has-a-saved-value-and-make-brandmeister-server-selection-easy-by-using-the-backend-provided-server-list-with-human-readable-labels",
-      "featureTitle": "Improve the DigitalVoiceConnectForm BrandMeister flow so a user can configure a working BrandMeister DMR connection with minimal steps: default the talkgroup field to a common value (e.g., \"91\") when BrandMeister is selected (unless the user already has a saved value), and make BrandMeister server selection easy by using the backend-provided server list with human-readable labels.",
-      "files": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx",
-        "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -45,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-the-iaxdvswitchconnectform-allstar-flow-so-a-user-can-configure-an-allstar-iax-connection-with-minimal-friction-provide-an-explicit-allstar-focused-preset-state-that-defaults-the-iax-port-to-4569-unless-the-user-already-has-a-saved-value-clearly-indicates-which-fields-are-required-for-allstar-gateway-server-node-number-and-uses-allstar-specific-labels-help-text-consistently",
-      "featureTitle": "Improve the IaxDvswitchConnectForm AllStar flow so a user can configure an AllStar IAX connection with minimal friction: provide an explicit AllStar-focused preset/state that defaults the IAX port to 4569 (unless the user already has a saved value), clearly indicates which fields are required for AllStar (gateway/server, node number), and uses AllStar-specific labels/help text consistently.",
+      "featureId": "feature-add-a-defensive-guard-around-the-post-login-redirect-logic-so-navigation-is-skipped-when-prerequisites-are-not-met-e-g-auth-still-initializing-profile-not-fetched-or-a-redirect-already-occurred-preventing-repeated-redirects-and-avoiding-calling-navigation-during-transient-states",
+      "featureTitle": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
       "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        "frontend/src/App.tsx"
       ],
       "components": [
         "authorization@4.0.0",

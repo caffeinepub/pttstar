@@ -1,73 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Quick connection presets for BrandMeister (DMR) and AllStar (IAX/DVSwitch)",
+  "title": "Fix TanStack Router navigate null crash after login",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add a Quick Setup section on ConnectPage with one-click presets for BrandMeister (DMR) and AllStar (IAX/DVSwitch) that switch tabs and prefill defaults.",
-      "acceptanceCriteria": [
-        "ConnectPage shows a clearly labeled Quick Setup area with two actions: BrandMeister (DMR) and AllStar (IAX/DVSwitch).",
-        "Clicking BrandMeister (DMR) switches to the Digital Voice connect UI and preselects DMR + BrandMeister in the form.",
-        "Clicking AllStar (IAX/DVSwitch) switches to the IAX/DVSwitch connect UI and preselects AllStar-appropriate defaults in the form (e.g., port)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/ConnectPage.tsx",
-          "operation": "modify",
-          "description": "Add a \"Quick Setup\" panel above the Connect tab content with two actions. Wire each action to (1) set activeTab to \"connect\", (2) switch connectionType to the appropriate tab (\"digital-voice\" or \"iax\"), and (3) set a transient preset value passed down to the corresponding connect form so it can prefill mode/reflector/required defaults. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "operation": "modify",
-          "description": "Accept a lightweight preset signal/props from ConnectPage (e.g., \"brandmeister-dmr\") and, when present, switch the form UI state to DMR mode and select \"BrandMeister\" as the network/reflector without overwriting existing saved values loaded from sessionStorage unless the target fields are empty. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "operation": "modify",
-          "description": "Accept a lightweight preset signal/props from ConnectPage (e.g., \"allstar\") and, when present, enable an AllStar-focused preset state so the form can apply AllStar defaults (including port) and required-field guidance without overwriting existing saved values loaded from sessionStorage unless the target fields are empty. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
       "id": "REQ-3",
-      "summary": "Streamline BrandMeister setup in DigitalVoiceConnectForm: default talkgroup to 91 when appropriate and show human-readable BrandMeister server labels from the backend list.",
+      "summary": "Ensure post-login navigation logic only runs inside TanStack Router context (RouterProvider tree) to prevent navigate/null crash.",
       "acceptanceCriteria": [
-        "When the user selects DMR + BrandMeister (either manually or via Quick Setup), the Talkgroup field is prefilled with \"91\" if it is currently empty and there is no saved talkgroup.",
-        "The BrandMeister Server dropdown displays readable labels for the backend server addresses (not raw hostnames only).",
-        "Saving the configuration persists the selected BrandMeister server address and talkgroup via the existing saveConnection flow and the Saved tab reflects them correctly."
+        "Logging in with Internet Identity does not crash the app with a navigate/null error.",
+        "`FirstSignInGuide` (or its replacement) is rendered within the RouterProvider tree (i.e., within a routed component such as the root layout / route components), not as a sibling of `<RouterProvider />`.",
+        "Any post-login redirect logic runs only after router context is available and auth/profile loading prerequisites are satisfied."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Implement BrandMeister-specific ergonomics: (1) when activeMode is \"dmr\" and reflector is \"BrandMeister\", prefill talkgroup to \"91\" only if the current talkgroup is empty and there was no saved talkgroup loaded; (2) make the BrandMeister server list use backend-provided human-readable labels by rendering network.networkLabel prominently (and optionally the address as secondary text), and narrow the displayed list to BrandMeister networks (e.g., label contains \"BrandMeister\" and/or address contains \"bm.\") so the dropdown is clearly BrandMeister-specific; (3) ensure existing saveConnection payload continues persisting talkgroup and bmServerAddress so the Saved tab reflects them. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx",
-          "operation": "modify",
-          "description": "Ensure the Saved Digital Voice view continues to display the BrandMeister server selection clearly, preferring the saved bmServerLabel when available and falling back to the saved bmServerAddress if needed so the selection is always identifiable after saving. Verify the component's usage instructions before implementing."
+          "description": "Move `FirstSignInGuide` (or replace it with a routed `PostLoginRedirector` component) so it is rendered from within the root route component tree (e.g., inside `RootLayout` alongside `<Outlet />`) rather than as a sibling of `<RouterProvider />`. This ensures `useNavigate` is always called under router context and cannot execute before the router is mounted."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Streamline AllStar setup in IaxDvswitchConnectForm: provide an AllStar preset, default port to 4569 when appropriate, and add AllStar-specific required-field validation/help text.",
+      "summary": "Add defensive guards to post-login redirect so it runs at most once and only when auth/profile prerequisites are ready.",
       "acceptanceCriteria": [
-        "When the user chooses AllStar via Quick Setup (or an equivalent AllStar preset control inside the IAX form), the port field defaults to \"4569\" if empty and there is no saved port.",
-        "Validation messaging for IAX/DVSwitch includes clear, English AllStar-specific guidance for missing required fields (at minimum: gateway/server and node number).",
-        "Saving the configuration persists AllStar-related fields (nodeNumber/allstarId/allstarPassword) via the existing saveConnection flow and the Saved tab reflects them correctly."
+        "Post-login redirect triggers at most once per session for an eligible user (authenticated, profile exists, no saved connection).",
+        "If the user is not authenticated or profile is not ready, no navigation attempt is made and no error is thrown.",
+        "Manual navigation across pages (e.g., /connect, /ptt, /settings) works normally after login, with no regression in route rendering."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Add an explicit AllStar-focused preset/state (triggered by Quick Setup and optionally by an in-form control) that: (1) defaults port to \"4569\" only when the port field is empty and no saved port was loaded, (2) marks gateway/server and node number as required when the AllStar preset is active (labels/help text should consistently say AllStar, e.g., \"AllStar Gateway/Server\" and \"AllStar Node Number\"), and (3) updates validateForm to produce AllStar-specific, clear English validation messages for missing gateway/server and missing node number. Keep saveConnection usage unchanged so nodeNumber/allstarId/allstarPassword persist locally. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-          "operation": "modify",
-          "description": "Confirm the Saved IAX/DVSwitch view surfaces AllStar-related fields (node number, AllStar ID, AllStar password masked) consistently so the user can verify what was saved after using the preset flow. Verify the component's usage instructions before implementing."
+          "description": "Harden the redirect effect: gate navigation on (1) router availability (now guaranteed by rendering within `RootLayout`), (2) `isInitializing === false`, (3) profile query readiness (`!profileLoading && isFetched`), and (4) eligibility checks (`identity` present, `userProfile !== null`, and `loadConnection() === null`). Add an additional 'redirect already occurred' guard that persists for the browser session (e.g., `sessionStorage` keyed by principal) to prevent repeated redirects across route transitions/rerenders, and avoid redirecting when already on `/connect` to prevent loops."
         }
       ]
     }

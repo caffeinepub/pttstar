@@ -1,125 +1,144 @@
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bookmark, Edit, Radio, Info } from 'lucide-react';
+import { Server, Edit, AlertCircle, Hash } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { loadConnection, isIaxDvswitchConnection } from '../hooks/usePreferredConnection';
-import type { IaxDvswitchConnection } from '../hooks/usePreferredConnection';
 
 interface IaxDvswitchSavedConfigurationTabProps {
-  onEdit: () => void;
-  onGoToPtt: () => void;
+  onEdit?: () => void;
 }
 
-export default function IaxDvswitchSavedConfigurationTab({
-  onEdit,
-  onGoToPtt,
-}: IaxDvswitchSavedConfigurationTabProps) {
-  const connection = loadConnection();
-  const savedConfig: IaxDvswitchConnection | null =
-    connection && isIaxDvswitchConnection(connection) ? connection : null;
+export default function IaxDvswitchSavedConfigurationTab({ onEdit }: IaxDvswitchSavedConfigurationTabProps) {
+  const navigate = useNavigate();
+  const [connection, setConnection] = useState<ReturnType<typeof loadConnection>>(null);
 
-  if (!savedConfig) {
+  useEffect(() => {
+    const conn = loadConnection();
+    setConnection(conn);
+  }, []);
+
+  if (!connection || !isIaxDvswitchConnection(connection)) {
     return (
-      <Card className="border-0 bg-transparent">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bookmark className="h-5 w-5" />
-            No Saved Configuration
+            <Server className="h-5 w-5" />
+            IAX / DVSwitch Configuration
           </CardTitle>
-          <CardDescription>You haven't saved an IAX / DVSwitch configuration yet.</CardDescription>
+          <CardDescription>No saved IAX / DVSwitch configuration found</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           <Alert>
-            <Info className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Create and save your first IAX / DVSwitch connection using the Connect tab. You'll need at minimum a gateway address to get started.
+              You haven't configured an IAX or DVSwitch connection yet. Use the form above to set up your connection.
             </AlertDescription>
           </Alert>
-          <Button onClick={onEdit} variant="default" size="lg" className="w-full">
-            <Edit className="mr-2 h-4 w-4" />
-            Go to Connect
-          </Button>
         </CardContent>
       </Card>
     );
   }
 
+  const maskPassword = (password: string | undefined): string => {
+    if (!password) return 'Not set';
+    return '••••••••';
+  };
+
   return (
-    <Card className="border-0 bg-transparent">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bookmark className="h-5 w-5" />
-          Saved Configuration
+          <Server className="h-5 w-5" />
+          Saved IAX / DVSwitch Configuration
         </CardTitle>
-        <CardDescription>Your stored IAX / DVSwitch connection settings. Click Edit to modify or Go to PTT to connect.</CardDescription>
+        <CardDescription>Your current IAX or DVSwitch connection settings</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-3 rounded-lg border border-border bg-card/30 p-4">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Gateway</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.gateway}</p>
-            </div>
+        {/* Gateway Configuration */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-muted-foreground">Gateway / Server</span>
+            <span className="font-mono text-sm">{connection.gateway}</span>
           </div>
-
-          {savedConfig.iaxUsername && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">IAX Username</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.iaxUsername}</p>
+          {connection.iaxUsername && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">IAX Username</span>
+              <span className="font-mono text-sm">{connection.iaxUsername}</span>
             </div>
           )}
-
-          {savedConfig.iaxPassword && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">IAX Password</p>
-              <p className="font-mono text-sm text-foreground">••••••••</p>
+          {connection.iaxPassword && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">IAX Password</span>
+              <span className="font-mono text-sm">{maskPassword(connection.iaxPassword)}</span>
             </div>
           )}
-
-          {savedConfig.userCallsign && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">User Callsign</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.userCallsign}</p>
-            </div>
-          )}
-
-          {savedConfig.port && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Port</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.port}</p>
-            </div>
-          )}
-
-          {savedConfig.nodeNumber && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">AllStar Node Number</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.nodeNumber}</p>
-            </div>
-          )}
-
-          {savedConfig.allstarId && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">AllStar ID / Username</p>
-              <p className="font-mono text-sm text-foreground">{savedConfig.allstarId}</p>
-            </div>
-          )}
-
-          {savedConfig.allstarPassword && (
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">AllStar Password</p>
-              <p className="font-mono text-sm text-foreground">••••••••</p>
+          {connection.userCallsign && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">User Callsign</span>
+              <span className="font-mono text-sm uppercase">{connection.userCallsign}</span>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <Button onClick={onGoToPtt} size="lg" className="w-full">
-            <Radio className="mr-2 h-4 w-4" />
-            Go to PTT
-          </Button>
-          <Button onClick={onEdit} variant="outline" size="lg" className="w-full">
+        {/* Port & Node */}
+        {(connection.port || connection.nodeNumber) && (
+          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
+            <div className="flex items-center gap-2">
+              <Hash className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">Port & Node</h4>
+            </div>
+            <div className="space-y-2">
+              {connection.port && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Port</span>
+                  <span className="font-mono text-sm">{connection.port}</span>
+                </div>
+              )}
+              {connection.nodeNumber && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Node Number</span>
+                  <span className="font-mono text-sm">{connection.nodeNumber}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* AllStar Credentials */}
+        {(connection.allstarId || connection.allstarPassword) && (
+          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
+            <div className="flex items-center gap-2">
+              <Server className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">AllStar Credentials</h4>
+            </div>
+            <div className="space-y-2">
+              {connection.allstarId && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">AllStar ID / Username</span>
+                  <span className="font-mono text-sm">{connection.allstarId}</span>
+                </div>
+              )}
+              {connection.allstarPassword && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">AllStar Password</span>
+                  <span className="font-mono text-sm">{maskPassword(connection.allstarPassword)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button onClick={onEdit} variant="outline" className="flex-1">
             <Edit className="mr-2 h-4 w-4" />
             Edit Configuration
+          </Button>
+          <Button onClick={() => navigate({ to: '/ptt' })} className="flex-1">
+            <Server className="mr-2 h-4 w-4" />
+            Go to PTT
           </Button>
         </div>
       </CardContent>

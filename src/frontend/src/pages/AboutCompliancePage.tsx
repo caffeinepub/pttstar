@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Shield, Radio, Globe, AlertTriangle } from 'lucide-react';
+import { Shield, Radio, Globe, AlertTriangle, User } from 'lucide-react';
 import ColorPageHeader from '../components/ColorPageHeader';
 import ColorAccentPanel from '../components/ColorAccentPanel';
 
@@ -21,6 +21,25 @@ export default function AboutCompliancePage() {
       </div>
 
       <div className="space-y-6">
+        <ColorAccentPanel variant="primary">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Creator & Developer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              <p className="text-base font-semibold text-foreground">
+                KO4RXE — Creator & Developer
+              </p>
+              <p>
+                PTTStar is created and developed by KO4RXE, a licensed amateur radio operator dedicated to bringing digital voice modes to the web.
+              </p>
+            </CardContent>
+          </Card>
+        </ColorAccentPanel>
+
         <ColorAccentPanel variant="primary">
           <Card className="border-0 bg-transparent">
             <CardHeader>

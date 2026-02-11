@@ -9,10 +9,22 @@ export function useGetCallerUserProfile() {
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      try {
+        const profile = await actor.getCallerUserProfile();
+        console.log('useGetCallerUserProfile: Profile fetched successfully', {
+          hasProfile: profile !== null,
+        });
+        return profile;
+      } catch (error) {
+        console.error('useGetCallerUserProfile: Failed to fetch profile', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     },
     enabled: !!actor && !actorFetching,
-    retry: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 
   return {
@@ -29,10 +41,23 @@ export function useSaveCallerUserProfile() {
   return useMutation({
     mutationFn: async (profile: ImmutableUserProfile) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
+      try {
+        console.log('useSaveCallerUserProfile: Saving profile', {
+          callsign: profile.callsign,
+          hasName: !!profile.name,
+        });
+        await actor.saveCallerUserProfile(profile);
+        console.log('useSaveCallerUserProfile: Profile saved successfully');
+      } catch (error) {
+        console.error('useSaveCallerUserProfile: Failed to save profile', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
     },
+    retry: 2,
   });
 }

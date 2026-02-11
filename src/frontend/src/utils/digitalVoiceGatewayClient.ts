@@ -10,6 +10,16 @@ export interface GatewayConfig {
   token?: string;
   room?: string;
   username?: string;
+  // BrandMeister metadata
+  bmServerAddress?: string;
+  bmServerLabel?: string;
+  talkgroup?: string;
+  dmrId?: string;
+  ssid?: string;
+  bmUsername?: string;
+  bmPassword?: string;
+  // TGIF metadata
+  tgifHotspotSecurityPassword?: string;
 }
 
 export interface SignalingMessage {
@@ -55,15 +65,38 @@ export class DigitalVoiceGatewayClient {
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
-          // Send authentication/join message if token/room provided
-          if (this.config.token || this.config.room) {
-            this.send({
-              type: 'join',
-              token: this.config.token,
-              room: this.config.room,
-              username: this.config.username,
-            });
+          // Send authentication/join message with network-specific metadata
+          const joinMessage: any = {
+            type: 'join',
+            token: this.config.token,
+            room: this.config.room,
+            username: this.config.username,
+          };
+
+          // Include BrandMeister metadata if present
+          if (this.config.bmServerAddress) {
+            joinMessage.brandmeister = {
+              serverAddress: this.config.bmServerAddress,
+              serverLabel: this.config.bmServerLabel,
+              talkgroup: this.config.talkgroup,
+              dmrId: this.config.dmrId,
+              ssid: this.config.ssid,
+              username: this.config.bmUsername,
+              password: this.config.bmPassword,
+            };
           }
+
+          // Include TGIF metadata if present
+          if (this.config.tgifHotspotSecurityPassword) {
+            joinMessage.tgif = {
+              hotspotSecurityPassword: this.config.tgifHotspotSecurityPassword,
+              talkgroup: this.config.talkgroup,
+              dmrId: this.config.dmrId,
+              ssid: this.config.ssid,
+            };
+          }
+
+          this.send(joinMessage);
           resolve();
         };
 

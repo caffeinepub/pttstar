@@ -1,74 +1,45 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T17:29:29.947Z",
+  "generatedAt": "2026-02-11T21:29:28.368Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Fix the builtin DMR network directory entries returned by backend getBuiltinNetworks() so each returned PersistentNetwork includes the correct networkLabel (e.g., \"BrandMeister Worldwide\") instead of an empty string, ensuring BrandMeister servers are identifiable in the UI.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Add a \"Quick Setup\" section to the Connection Settings (ConnectPage) that provides a simple, guided way to start configuring the two requested networks: (1) BrandMeister via Digital Voice (DMR) and (2) AllStar via IAX / DVSwitch. Each option must switch the UI to the correct connection type tab and prefill sensible defaults in the corresponding form (without requiring the user to manually hunt through settings first).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/ConnectPage.tsx",
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/ConnectPage.tsx",
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
-        ]
-      },
-      {
         "id": "REQ-3",
-        "summary": "Improve the DigitalVoiceConnectForm BrandMeister flow so a user can configure a working BrandMeister DMR connection with minimal steps: default the talkgroup field to a common value (e.g., \"91\") when BrandMeister is selected (unless the user already has a saved value), and make BrandMeister server selection easy by using the backend-provided server list with human-readable labels.",
+        "summary": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
+          "frontend/src/App.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Improve the IaxDvswitchConnectForm AllStar flow so a user can configure an AllStar IAX connection with minimal friction: provide an explicit AllStar-focused preset/state that defaults the IAX port to 4569 (unless the user already has a saved value), clearly indicates which fields are required for AllStar (gateway/server, node number), and uses AllStar-specific labels/help text consistently.",
+        "summary": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/src/App.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/DigitalVoiceConnectForm.tsx",
-    "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx",
-    "frontend/src/components/IaxDvswitchConnectForm.tsx",
-    "frontend/src/pages/ConnectPage.tsx",
+    "frontend/src/App.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

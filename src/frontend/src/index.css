@@ -106,3 +106,10 @@
     background-color: hsl(var(--card) / 0.3);
   }
 }
+
+/* Ensure Select dropdowns render above all other content */
+@layer components {
+  [data-radix-popper-content-wrapper] {
+    z-index: 100 !important;
+  }
+}

@@ -123,8 +123,9 @@ export default function DirectoryBrowser({
     toggleFavorite.mutate(networkLabel);
   };
 
-  const isBrandMeisterUS = selectedNetwork?.networkLabel === 'BrandMeister US';
-  const canEnterCustomTG = selectedNetwork && (isBrandMeisterUS || selectedNetwork.talkgroups.length === 0);
+  // Check if network is BrandMeister (any variant)
+  const isBrandMeister = selectedNetwork?.networkLabel.toLowerCase().includes('brandmeister') || false;
+  const canEnterCustomTG = selectedNetwork && (isBrandMeister || selectedNetwork.talkgroups.length === 0);
 
   // Get human-readable label for selected mode
   const selectedModeLabel = selectedMode === 'all' 
@@ -262,8 +263,8 @@ export default function DirectoryBrowser({
               <div className="space-y-2 rounded-lg border border-border bg-card/30 p-4">
                 <Label htmlFor="custom-tg">Enter Custom Talkgroup</Label>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {isBrandMeisterUS 
-                    ? 'BrandMeister US allows custom talkgroup entry. Enter any valid talkgroup number.'
+                  {isBrandMeister 
+                    ? 'BrandMeister allows custom talkgroup entry. Enter any valid talkgroup number.'
                     : 'This network has no predefined talkgroups. Enter a talkgroup number if you know one.'}
                 </p>
                 <div className="flex gap-2">

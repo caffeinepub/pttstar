@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from '@tanstack/react-router';
-import { Radio, Server, BookOpen, Settings, Activity, Info, CheckCircle2 } from 'lucide-react';
+import { Radio, Server, BookOpen, Settings, Activity, Info, CheckCircle2, ExternalLink } from 'lucide-react';
 import ColorPageHeader from '../components/ColorPageHeader';
 
 export default function LandingPage() {
@@ -49,6 +49,25 @@ export default function LandingPage() {
                   <p className="font-medium text-foreground">Internet Identity Account</p>
                   <p className="text-sm text-muted-foreground">
                     Sign in with Internet Identity to access the app. Your profile and preferences are stored securely on the Internet Computer blockchain.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-status-success mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">BrandMeister Account (Recommended for DMR)</p>
+                  <p className="text-sm text-muted-foreground">
+                    If you plan to use DMR networks, a BrandMeister account is commonly needed. BrandMeister is a popular DMR network used by PTTStar.{' '}
+                    <a
+                      href="https://brandmeister.network/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-foreground underline hover:text-accent-foreground"
+                    >
+                      Create your account at brandmeister.network
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
                   </p>
                 </div>
               </div>
@@ -214,7 +233,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm">
-                Browse networks, manage favorites, and save personal directory entries for quick access.
+                Browse available networks and talkgroups. Save favorites for quick access.
               </CardDescription>
               <Button
                 onClick={() => navigate({ to: '/directory' })}
@@ -238,7 +257,7 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-sm">
-                View recent transmissions and monitor network activity in real-time across all users.
+                View recent transmissions and activity across all networks in real-time.
               </CardDescription>
               <Button
                 onClick={() => navigate({ to: '/activity' })}

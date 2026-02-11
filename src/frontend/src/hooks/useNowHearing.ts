@@ -9,11 +9,21 @@ export function useGetNowHearing() {
     queryKey: ['nowHearing'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getNowHearing();
+      try {
+        const transmissions = await actor.getNowHearing();
+        return transmissions;
+      } catch (error) {
+        console.error('useGetNowHearing: Failed to fetch activity', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return [];
+      }
     },
     enabled: !!actor && !actorFetching,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Disable window focus refetch to prevent compounding with polling
     refetchInterval: 3000, // Poll every 3 seconds for real-time updates
+    retry: 2,
+    retryDelay: 1000,
   });
 }
 
@@ -33,17 +43,30 @@ export function useUpdateNowHearing() {
   return useMutation({
     mutationFn: async (params: UpdateNowHearingParams) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateNowHearing(
-        params.fromCallsign,
-        params.network,
-        params.talkgroup,
-        params.dmrId ?? null,
-        params.dmrOperatorName ?? null,
-        params.dmrOperatorLocation ?? null
-      );
+      try {
+        console.log('useUpdateNowHearing: Recording activity', {
+          callsign: params.fromCallsign,
+          network: params.network,
+          talkgroup: params.talkgroup,
+        });
+        await actor.updateNowHearing(
+          params.fromCallsign,
+          params.network,
+          params.talkgroup,
+          params.dmrId ?? null,
+          params.dmrOperatorName ?? null,
+          params.dmrOperatorLocation ?? null
+        );
+      } catch (error) {
+        console.error('useUpdateNowHearing: Failed to record activity', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nowHearing'] });
     },
+    retry: 1,
   });
 }
