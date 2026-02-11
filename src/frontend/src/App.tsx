@@ -15,6 +15,7 @@ import AboutCompliancePage from './pages/AboutCompliancePage';
 import AuthGate from './components/AuthGate';
 import ProfileSetupDialog from './components/ProfileSetupDialog';
 import AppErrorBoundary from './components/AppErrorBoundary';
+import PostLoginInterstitial from './components/PostLoginInterstitial';
 import { loadConnection } from './hooks/usePreferredConnection';
 
 function PostLoginRedirector() {
@@ -29,6 +30,14 @@ function PostLoginRedirector() {
 
     const isAuthenticated = !!identity;
     const hasProfile = userProfile !== null;
+
+    // Short-circuit if in first-time onboarding state (authenticated + profile fetched + profile === null)
+    // The ProfileSetupDialog will handle this state; no redirect should occur
+    if (isAuthenticated && !hasProfile) {
+      console.log('PostLoginRedirector: First-time onboarding state detected, skipping redirect');
+      return;
+    }
+
     const hasSavedConnection = loadConnection() !== null;
 
     // Don't redirect if already on /connect (prevent loops)
@@ -42,11 +51,11 @@ function PostLoginRedirector() {
       
       if (hasRedirected) return;
 
-      // Guide first-time signed-in users with no saved connection to Connect page with BrandMeister preset
+      // Guide first-time signed-in users with profile but no saved connection to Connect page with BrandMeister preset
       if (isAuthenticated && hasProfile && !hasSavedConnection) {
-        console.log('PostLoginRedirector: Navigating to /connect with BrandMeister preset');
+        console.log('PostLoginRedirector: Navigating to /connect with BrandMeister preset (replace)');
         sessionStorage.setItem(redirectKey, 'true');
-        navigate({ to: '/connect', search: { preset: 'brandmeister-dmr' } });
+        navigate({ to: '/connect', search: { preset: 'brandmeister-dmr' }, replace: true });
       }
     }
   }, [identity, isInitializing, userProfile, profileLoading, isFetched, navigate, location.pathname]);
@@ -55,9 +64,18 @@ function PostLoginRedirector() {
 }
 
 function RootLayout() {
+  const { identity, isInitializing } = useInternetIdentity();
+  const { isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+
+  const isAuthenticated = !!identity;
+  
+  // Show interstitial when authenticated but profile state is not yet confirmed
+  const showInterstitial = isAuthenticated && !isInitializing && (profileLoading || !isFetched);
+
   return (
     <AppLayout>
       <PostLoginRedirector />
+      {showInterstitial && <PostLoginInterstitial />}
       <Outlet />
     </AppLayout>
   );

@@ -2,8 +2,49 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-crash-cannot-read-properties-of-null-reading-navigate-by-ensuring-any-code-that-calls-tanstack-router-navigation-hooks-e-g-usenavigate-is-rendered-within-the-router-context-and-cannot-execute-before-the-router-is-mounted",
-      "featureTitle": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
+      "featureId": "feature-refine-the-post-login-redirect-behavior-so-it-feels-seamless-and-never-competes-with-first-time-profile-onboarding-specifically-do-not-perform-the-post-login-redirect-to-connect-while-the-profilesetupdialog-is-expected-to-be-shown-i-e-authenticated-and-caller-profile-is-null-and-only-consider-redirecting-after-the-profile-state-is-confirmed-present",
+      "featureTitle": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
+      "files": [
+        "frontend/src/App.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-the-post-login-transition-ux-by-showing-a-clear-non-error-loading-interstitial-state-when-the-user-has-completed-internet-identity-authentication-but-the-app-is-still-fetching-required-post-login-data-e-g-caller-profile-and-or-preparing-the-redirect-decision-so-the-user-does-not-briefly-see-unrelated-page-content-during-this-window",
+      "featureTitle": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/PostLoginInterstitial.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-when-postloginredirector-performs-the-one-time-redirect-to-connect-with-preset-brandmeister-dmr-ensure-the-navigation-does-not-create-an-extra-history-entry-so-that-using-the-browser-back-button-does-not-bounce-the-user-through-a-transient-post-login-route-state",
+      "featureTitle": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
       "files": [
         "frontend/src/App.tsx"
       ],
@@ -18,26 +59,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-defensive-guard-around-the-post-login-redirect-logic-so-navigation-is-skipped-when-prerequisites-are-not-met-e-g-auth-still-initializing-profile-not-fetched-or-a-redirect-already-occurred-preventing-repeated-redirects-and-avoiding-calling-navigation-during-transient-states",
-      "featureTitle": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
-      "files": [
-        "frontend/src/App.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
       ],
       "confidence": "high"
     }

@@ -1,53 +1,69 @@
 {
   "kind": "build_request",
-  "title": "Fix post-login navigate null crash",
-  "priority": "high",
+  "title": "Refine post-login transition flow",
+  "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-3",
-      "text": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
+      "id": "REQ-1",
+      "text": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "It says \"Cannot read properties of null (reading 'navigate')",
-          "Fix the navigate null crash"
+          "Yes refine"
         ]
       },
       "acceptanceCriteria": [
-        "Logging in with Internet Identity does not crash the app with a navigate/null error.",
-        "`FirstSignInGuide` (or its replacement) is rendered within the RouterProvider tree (i.e., within a routed component such as the root layout / route components), not as a sibling of `<RouterProvider />`.",
-        "Any post-login redirect logic runs only after router context is available and auth/profile loading prerequisites are satisfied."
+        "When a user logs in for the first time and has no profile yet, the ProfileSetupDialog appears and no automatic navigation to /connect occurs until after the profile has been successfully saved.",
+        "When a user logs in and already has a profile, the redirect logic continues to be evaluated using the existing prerequisites (auth initialized + profile fetched)."
       ]
     },
     {
-      "id": "REQ-4",
-      "text": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
+      "id": "REQ-2",
+      "text": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "Most likely: after fixing the Internet Identity crash, the post‑login screen is navigating too early or from a component not wrapped in the router."
+          "Yes refine"
         ]
       },
       "acceptanceCriteria": [
-        "Post-login redirect triggers at most once per session for an eligible user (authenticated, profile exists, no saved connection).",
-        "If the user is not authenticated or profile is not ready, no navigation attempt is made and no error is thrown.",
-        "Manual navigation across pages (e.g., /connect, /ptt, /settings) works normally after login, with no regression in route rendering."
+        "After a successful login, if the caller profile query is still loading, the UI presents a dedicated in-app loading state (not an error) indicating the app is finishing sign-in.",
+        "The loading/interstitial state is removed automatically once the profile fetch completes and either navigation happens or the user remains on the current route."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "Yes refine"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If PostLoginRedirector redirects to /connect, the redirect uses history replacement behavior (no extra entry).",
+        "Pressing Back after being redirected to /connect does not return the user to an intermediate post-login transition state."
       ]
     }
   ],
   "constraints": [
-    "Do not modify files under frontend/src/components/ui (read-only).",
-    "Do not modify immutable hook files (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, and related immutable paths listed in SYSTEM_CONTEXT)."
+    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
+    "Do not modify immutable paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
+    "Backend must remain single-actor (no additional canisters/services)."
   ],
   "nonGoals": [
-    "Do not redesign the login flow UI beyond what is required to prevent the crash.",
-    "Do not change backend canister logic or data schemas; this fix should be achievable purely in the frontend routing/layout structure."
+    "Changing the authentication provider (Internet Identity) or adding third-party authentication.",
+    "Adding new product features unrelated to post-login transition (e.g., new pages, new connection types, real-time features).",
+    "Changing backend data schemas or introducing state migrations unless strictly required for the UX refinement."
   ],
   "imageRequirements": {
     "required": [],

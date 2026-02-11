@@ -3,30 +3,43 @@
   "projectStateVersion": 3,
   "summary": "New project",
   "architectural_notes": [],
-  "known_issues": [
-    "Post-login crash: \"Cannot read properties of null (reading 'navigate')\" likely due to navigation/routing context not mounted when redirect fires."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-fix-the-crash-cannot-read-properties-of-null-reading-navigate-by-ensuring-any-code-that-calls-tanstack-router-navigation-hooks-e-g-usenavigate-is-rendered-within-the-router-context-and-cannot-execute-before-the-router-is-mounted",
-      "title": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
+      "id": "feature-refine-the-post-login-redirect-behavior-so-it-feels-seamless-and-never-competes-with-first-time-profile-onboarding-specifically-do-not-perform-the-post-login-redirect-to-connect-while-the-profilesetupdialog-is-expected-to-be-shown-i-e-authenticated-and-caller-profile-is-null-and-only-consider-redirecting-after-the-profile-state-is-confirmed-present",
+      "title": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
       "reqIds": [
-        "REQ-3"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-defensive-guard-around-the-post-login-redirect-logic-so-navigation-is-skipped-when-prerequisites-are-not-met-e-g-auth-still-initializing-profile-not-fetched-or-a-redirect-already-occurred-preventing-repeated-redirects-and-avoiding-calling-navigation-during-transient-states",
-      "title": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
+      "id": "feature-improve-the-post-login-transition-ux-by-showing-a-clear-non-error-loading-interstitial-state-when-the-user-has-completed-internet-identity-authentication-but-the-app-is-still-fetching-required-post-login-data-e-g-caller-profile-and-or-preparing-the-redirect-decision-so-the-user-does-not-briefly-see-unrelated-page-content-during-this-window",
+      "title": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
       "reqIds": [
-        "REQ-4"
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-when-postloginredirector-performs-the-one-time-redirect-to-connect-with-preset-brandmeister-dmr-ensure-the-navigation-does-not-create-an-extra-history-entry-so-that-using-the-browser-back-button-does-not-bounce-the-user-through-a-transient-post-login-route-state",
+      "title": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+      "reqIds": [
+        "REQ-3"
       ],
       "version": 1
     }
   ],
-  "new_feature_requests": [],
-  "projectName": "Fix post-login navigate null crash",
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Refine the post-login transition flow (improve behavior after successful login)",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Refine post-login transition flow",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

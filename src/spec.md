@@ -1,10 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Prevent the post-login crash caused by calling TanStack Router navigation before router context is available.
+**Goal:** Make the post-login transition feel seamless by preventing redirects from competing with first-time profile onboarding, adding a clear post-login loading state, and ensuring redirects don’t pollute browser history.
 
 **Planned changes:**
-- Move `FirstSignInGuide` (or its replacement) so it renders within the `<RouterProvider />` tree (i.e., inside routed layout/route components), ensuring navigation hooks like `useNavigate` always have router context.
-- Add defensive guards to post-login redirect logic so navigation only runs after auth/profile prerequisites are ready and triggers at most once per session, avoiding repeated redirects and transient-state navigation calls.
+- Update post-login redirect logic to avoid navigating to `/connect` while first-time onboarding is active (authenticated + caller profile is null), and only evaluate redirect after the profile is confirmed present.
+- Add a dedicated, non-error interstitial/loading state shown after successful Internet Identity login while required post-login data (e.g., caller profile) is still loading and redirect decisions are being prepared.
+- Change the one-time redirect to `/connect` (with `preset=brandmeister-dmr`) to use history replacement so the Back button doesn’t return users to a transient post-login state.
 
-**User-visible outcome:** Logging in with Internet Identity no longer crashes with a navigate/null error, and post-login redirects occur reliably (only when eligible) while normal manual navigation across routes continues to work.
+**User-visible outcome:** After logging in, users see a smooth “finishing sign-in” state while data loads; first-time users complete profile setup without being redirected away; returning users redirect as before, and Back navigation no longer bounces through an intermediate transition.

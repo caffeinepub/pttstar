@@ -1,29 +1,43 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T21:29:28.368Z",
+  "generatedAt": "2026-02-11T21:43:25.997Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 2,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-3",
-        "summary": "Fix the crash \"Cannot read properties of null (reading 'navigate')\" by ensuring any code that calls TanStack Router navigation hooks (e.g., `useNavigate`) is rendered within the Router context and cannot execute before the router is mounted.",
+        "id": "REQ-1",
+        "summary": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/hooks/useCurrentUserProfile.ts"
         ],
         "matchedFiles": [
           "frontend/src/App.tsx"
         ]
       },
       {
-        "id": "REQ-4",
-        "summary": "Add a defensive guard around the post-login redirect logic so navigation is skipped when prerequisites are not met (e.g., auth still initializing, profile not fetched, or a redirect already occurred), preventing repeated redirects and avoiding calling navigation during transient states.",
+        "id": "REQ-2",
+        "summary": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/PostLoginInterstitial.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/PostLoginInterstitial.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/App.tsx"
@@ -40,6 +54,7 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/App.tsx",
+    "frontend/src/components/PostLoginInterstitial.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

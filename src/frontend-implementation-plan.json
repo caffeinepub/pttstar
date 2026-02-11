@@ -1,37 +1,60 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix TanStack Router navigate null crash after login",
+  "title": "Refine post-login transition flow",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Ensure post-login navigation logic only runs inside TanStack Router context (RouterProvider tree) to prevent navigate/null crash.",
+      "id": "REQ-1",
+      "summary": "Prevent post-login redirect to /connect from running while first-time profile onboarding (ProfileSetupDialog) is expected, and only redirect after profile presence is confirmed.",
       "acceptanceCriteria": [
-        "Logging in with Internet Identity does not crash the app with a navigate/null error.",
-        "`FirstSignInGuide` (or its replacement) is rendered within the RouterProvider tree (i.e., within a routed component such as the root layout / route components), not as a sibling of `<RouterProvider />`.",
-        "Any post-login redirect logic runs only after router context is available and auth/profile loading prerequisites are satisfied."
+        "When a user logs in for the first time and has no profile yet, the ProfileSetupDialog appears and no automatic navigation to /connect occurs until after the profile has been successfully saved.",
+        "When a user logs in and already has a profile, the redirect logic continues to be evaluated using the existing prerequisites (auth initialized + profile fetched)."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Move `FirstSignInGuide` (or replace it with a routed `PostLoginRedirector` component) so it is rendered from within the root route component tree (e.g., inside `RootLayout` alongside `<Outlet />`) rather than as a sibling of `<RouterProvider />`. This ensures `useNavigate` is always called under router context and cannot execute before the router is mounted."
+          "description": "Refine PostLoginRedirector gating so redirect evaluation only proceeds after auth is ready AND the caller profile query is fetched AND userProfile is confirmed non-null; explicitly short-circuit redirect when the app is in the first-time onboarding state (authenticated + profile fetched + profile === null). Use the selected \"authorization\" component guidance for profile setup gating (Preventing Profile Setup Modal Flash). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
+          "operation": "modify",
+          "description": "Ensure useGetCallerUserProfile exposes loading/fetched semantics that reliably represent 'profile state confirmed' (including actor dependency), so App/PostLoginRedirector can safely distinguish between 'still loading' vs 'confirmed null' vs 'confirmed present'. Align with the selected \"authorization\" component guidance for returning custom isLoading/isFetched. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Add defensive guards to post-login redirect so it runs at most once and only when auth/profile prerequisites are ready.",
+      "id": "REQ-2",
+      "summary": "Show a dedicated non-error post-login interstitial while authenticated state exists but required post-login data (caller profile) and redirect decision are still loading, preventing unrelated content flashes.",
       "acceptanceCriteria": [
-        "Post-login redirect triggers at most once per session for an eligible user (authenticated, profile exists, no saved connection).",
-        "If the user is not authenticated or profile is not ready, no navigation attempt is made and no error is thrown.",
-        "Manual navigation across pages (e.g., /connect, /ptt, /settings) works normally after login, with no regression in route rendering."
+        "After a successful login, if the caller profile query is still loading, the UI presents a dedicated in-app loading state (not an error) indicating the app is finishing sign-in.",
+        "The loading/interstitial state is removed automatically once the profile fetch completes and either navigation happens or the user remains on the current route."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/PostLoginInterstitial.tsx",
+          "operation": "create",
+          "description": "Create a small, dedicated in-app interstitial component that renders a clear 'Finishing sign-in…' loading state (non-error) when identity is present but the caller profile state is not yet confirmed (profile query loading or not yet fetched). Use shadcn-ui components by importing them (do not edit anything under frontend/src/components/ui). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the new PostLoginInterstitial into the RootLayout (inside AppLayout) so it conditionally overlays/replaces route content during the post-login window (authenticated, auth initialized, profile still loading/not fetched) and automatically disappears once profile fetch completes and the redirect decision/onboarding state resolves. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Make the one-time PostLoginRedirector navigation to /connect use history replacement so Back does not return to a transient post-login state.",
+      "acceptanceCriteria": [
+        "If PostLoginRedirector redirects to /connect, the redirect uses history replacement behavior (no extra entry).",
+        "Pressing Back after being redirected to /connect does not return the user to an intermediate post-login transition state."
       ],
       "file_operations": [
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Harden the redirect effect: gate navigation on (1) router availability (now guaranteed by rendering within `RootLayout`), (2) `isInitializing === false`, (3) profile query readiness (`!profileLoading && isFetched`), and (4) eligibility checks (`identity` present, `userProfile !== null`, and `loadConnection() === null`). Add an additional 'redirect already occurred' guard that persists for the browser session (e.g., `sessionStorage` keyed by principal) to prevent repeated redirects across route transitions/rerenders, and avoid redirecting when already on `/connect` to prevent loops."
+          "description": "Update PostLoginRedirector's navigation to /connect (preset=brandmeister-dmr) to use history replacement (e.g., navigate with replace behavior) while preserving the existing one-time-per-session guard. Verify the component's usage instructions before implementing."
         }
       ]
     }
