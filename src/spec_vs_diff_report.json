@@ -1,22 +1,37 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T10:14:19.102Z",
-  "summary": "The diff implements a global dark background on html/body/#root using Tailwind’s bg-background token and reinforces full-viewport dark coverage via AppLayout’s min-h-screen/bg-background wrapper and main bg-background. However, it also appears to change the underlying theme CSS variable palette (e.g., --background, --card, etc.), which was not explicitly requested (the request asked to apply existing tokens/classes rather than redefine them).",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-11T10:27:42.993Z",
+  "summary": "REQ-47 and REQ-48 appear implemented via updates to `frontend/src/index.css` (raw OKLCH component tokens and explicit dark fallbacks on `html`, `body`, and `#root`). REQ-49 is not evidenced by the provided diff summary; there is no shown change addressing potential competing global stylesheets (e.g., `frontend/index.css`). The diff also adds several new utility classes unrelated to the requested global/background fix.",
+  "missing_requirements": [
     {
-      "description": "Redefines the app’s theme color CSS variables (e.g., --background/--foreground/--card/etc.) rather than only applying existing Tailwind tokens/classes to html/body for dark background coverage.",
-      "reason": "REQ-45/46 ask to apply the existing dark theme background token globally and adjust layout/stacking; they do not request changing the theme token values/palette themselves.",
+      "id": "REQ-49",
+      "requirement": "Eliminate any conflicting global CSS that could be reintroducing a light theme by ensuring there is no additional global stylesheet defining light `:root` tokens that overrides `frontend/src/index.css` at runtime (e.g., reconcile or remove overrides from `frontend/index.css` if it is being included in the build).",
+      "reason": "The diff summary only shows changes to `frontend/src/index.css` (and metadata files). It provides no evidence of inspecting/removing/reconciling another global stylesheet (such as `frontend/index.css`) or otherwise ensuring only one active set of `--background`/`--foreground` tokens applies at runtime.",
       "evidence": [
         "frontend/src/index.css"
       ]
     }
   ],
-  "confidence": 0.73,
+  "hallucinated_features": [
+    {
+      "description": "Added custom 'radio-style' status light utility classes and shadows (`.status-light-active`, `.status-light-warning`, `.status-light-error`) that are not required for the global background fix.",
+      "reason": "BuildRequest scope is limited to global/background styling correctness and fallbacks; these new utilities are additional styling features beyond that scope.",
+      "evidence": [
+        "frontend/src/index.css"
+      ]
+    },
+    {
+      "description": "Added additional accent utility classes (`.accent-glow`, `.accent-border`, `.accent-bg`) unrelated to ensuring `bg-background` resolves to black or providing a global fallback background.",
+      "reason": "These utilities are not requested by REQ-47/48/49 and represent extra styling features.",
+      "evidence": [
+        "frontend/src/index.css"
+      ]
+    }
+  ],
+  "confidence": 0.74,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/AppLayout.tsx",
     "frontend/src/index.css",
     "project_state.json"
   ]

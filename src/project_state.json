@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 27,
+  "projectStateVersion": 29,
   "summary": "PTTStar: a cross-platform (phone + computer) internet-connected ham radio app that provides software-based access to multiple digital voice modes (DMR, D-Star, YSF, P25, NXDN, etc.), allowing users to select mode/host/talkgroup and use push-to-talk with callsign/ID display, without dedicated radios/hotspots or external AMBE hardware, and with license/DMR-ID compliance.",
   "architectural_notes": [
     "Consider adding an IAX/DVSwitch-compatible connection path (or gateway abstraction) alongside existing mode/host/talkgroup connection model.",
@@ -15,7 +15,8 @@
     "UI styling clarification: user wants pages to have a dark background, but not necessarily to make the entire app uniformly dark (retain existing app theming/accents while ensuring page backgrounds are dark)."
   ],
   "known_issues": [
-    "Dark page body background styling change did not take effect; app still renders with a white background instead of the intended dark/black page background."
+    "Dark page body background styling change did not take effect; app still renders with a white background instead of the intended dark/black page background.",
+    "Users report seeing “Error 4000” when opening the app link (environment/browser-level error; needs triage/verification)."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -354,6 +355,22 @@
         "REQ-46"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-the-global-theme-color-tokens-so-tailwind-utilities-like-bg-background-resolve-to-a-valid-dark-black-color-instead-of-falling-back-to-white-by-ensuring-css-variables-used-by-oklch-var-background-are-stored-as-raw-oklch-components-e-g-0-15-0-01-240-rather-than-nested-oklch-strings",
+      "title": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-safe-global-fallback-so-the-document-never-renders-white-even-if-css-variables-fail-to-resolve-by-applying-an-explicit-dark-background-color-to-the-html-body-and-root-base-styles-in-frontend-src-index-css-in-addition-to-existing-tailwind-bg-background-usage",
+      "title": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -482,6 +499,14 @@
       "summary": "Ensure the app initialization/loading screen background follows the same rule (dark page body background) without globally forcing the entire application theme to be dark.",
       "reqIds": [
         "REQ-44"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Eliminate any conflicting global CSS that could be reintroducing a light theme by ensuring there is no additional global stylesheet defining light `:root` tokens that overrides `frontend/src/index.css` at runtime (e.g., reconcile or remove overrides from `frontend/index.css` if it is being included in the build).",
+      "reqIds": [
+        "REQ-49"
       ],
       "status": "pending"
     }

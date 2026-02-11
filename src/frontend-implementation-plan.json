@@ -1,37 +1,51 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Apply global dark background and eliminate white bleed-through across routes",
+  "title": "Ensure global dark background renders correctly via OKLCH token fixes and CSS fallbacks",
   "requirements": [
     {
-      "id": "REQ-45",
-      "summary": "Apply the dark theme background token globally to html/body so any uncovered viewport area is dark instead of white.",
+      "id": "REQ-47",
+      "summary": "Fix global theme CSS variables so Tailwind `oklch(var(--...))` utilities evaluate to valid dark colors (no nested `oklch(oklch(...))`).",
       "acceptanceCriteria": [
-        "On initial load (including before authentication), the visible page background is dark/black rather than white.",
-        "There is no white background visible around the app (e.g., page margins, overscroll area, or any region not covered by the routed page content).",
-        "The change is implemented via global styling (e.g., in frontend/src/index.css) using existing Tailwind tokens/classes (e.g., bg-background) so it remains consistent across all routes."
+        "`--background`, `--foreground`, and other theme tokens in `frontend/src/index.css` are formatted so that Tailwind’s `oklch(var(--...))` color definitions evaluate correctly (no nested `oklch(oklch(...))`).",
+        "The computed CSS value of an element using `bg-background` is a dark/black color in the browser devtools (not transparent/invalid).",
+        "All main screens (Landing, Connect, PTT, Activity, Settings, About) render with a dark/black app background without requiring the user to toggle a theme switch."
       ],
       "file_operations": [
         {
           "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Update the global base styles to apply the Tailwind theme token background to the document: set html and body to use bg-background (and text-foreground), ensure html/body have 100% height (or min-height) to cover the full viewport, and ensure the app mount container does not inherit a white background in any state (including before authentication)."
+          "description": "Update `:root` theme tokens (e.g., `--background`, `--foreground`, `--card`, etc.) to store raw OKLCH components like `0.15 0.01 240` instead of `oklch(...)` strings so Tailwind color utilities defined as `oklch(var(--token))` resolve correctly."
         }
       ]
     },
     {
-      "id": "REQ-46",
-      "summary": "Adjust layout/background coverage so the dark background consistently fills the viewport and prevents white strips around fixed mobile navigation and short-content pages.",
+      "id": "REQ-48",
+      "summary": "Add an explicit dark global background fallback on `html`, `body`, and `#root` so the app never renders white even if CSS variables fail.",
       "acceptanceCriteria": [
-        "Landing, Connect, PTT, Activity, Settings, and About pages all show a consistent dark background even when the page content is shorter than the viewport height.",
-        "No white strip appears behind/around the fixed mobile bottom navigation or at the bottom of the page when scrolling.",
-        "The app’s existing card/panel styling remains readable and unchanged except where strictly necessary to prevent white background bleed-through."
+        "With CSS variables temporarily removed/overridden in devtools, the page background still remains dark due to the explicit fallback background color.",
+        "The dark/black background covers the full viewport height on short pages and on mobile with the bottom navigation present (no white bands at the top/bottom)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/AppLayout.tsx",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Ensure the top-level layout wrapper provides continuous dark background coverage (e.g., apply bg-background to the outermost container, not just <main>), and adjust spacing/styling around the fixed mobile bottom navigation and footer so the dark background remains visible behind/around the nav (including safe-area inset handling where applicable) when content is short or during scroll/overscroll."
+          "description": "In base styles for `html`, `body`, and `#root`, add a non-variable fallback `background-color` set to a dark/black color (e.g., a direct `oklch(...)` literal or hex) in addition to existing Tailwind `@apply bg-background`, and ensure height/min-height rules prevent any uncovered viewport areas."
+        }
+      ]
+    },
+    {
+      "id": "REQ-49",
+      "summary": "Remove/reconcile conflicting global CSS that can override dark theme tokens and reintroduce a light background at runtime.",
+      "acceptanceCriteria": [
+        "Only one active set of global theme tokens is applied at runtime for `--background`/`--foreground` (verified in devtools computed styles), and those tokens produce a dark/black background.",
+        "A hard refresh still results in a black/dark background; the issue does not reappear due to cached or competing CSS."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/index.css",
+          "operation": "delete",
+          "description": "Remove the extra global stylesheet that defines a competing light `:root` token set (and a `.dark` override) to ensure only `frontend/src/index.css` provides the runtime theme tokens and no light overrides can be introduced by accidental inclusion."
         }
       ]
     }

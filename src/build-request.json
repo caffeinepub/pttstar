@@ -1,65 +1,72 @@
 {
   "kind": "build_request",
-  "title": "Fix app background so pages render with a dark/black background instead of white",
-  "priority": "normal",
+  "title": "Fix global background so the app renders black instead of white",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-45",
-      "text": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
+      "id": "REQ-47",
+      "text": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "No nothing has changed It's still white is not black or dark background It's a white background change the white background to a dark background"
+          "The app is still white please make black"
         ]
       },
       "acceptanceCriteria": [
-        "On initial load (including before authentication), the visible page background is dark/black rather than white.",
-        "There is no white background visible around the app (e.g., page margins, overscroll area, or any region not covered by the routed page content).",
-        "The change is implemented via global styling (e.g., in frontend/src/index.css) using existing Tailwind tokens/classes (e.g., bg-background) so it remains consistent across all routes."
+        "`--background`, `--foreground`, and other theme tokens in `frontend/src/index.css` are formatted so that Tailwind’s `oklch(var(--...))` color definitions evaluate correctly (no nested `oklch(oklch(...))`).",
+        "The computed CSS value of an element using `bg-background` is a dark/black color in the browser devtools (not transparent/invalid).",
+        "All main screens (Landing, Connect, PTT, Activity, Settings, About) render with a dark/black app background without requiring the user to toggle a theme switch."
       ]
     },
     {
-      "id": "REQ-46",
-      "text": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
+      "id": "REQ-48",
+      "text": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "It's still white is not black or dark background"
+          "The app is still white please make black"
         ]
       },
       "acceptanceCriteria": [
-        "Landing, Connect, PTT, Activity, Settings, and About pages all show a consistent dark background even when the page content is shorter than the viewport height.",
-        "No white strip appears behind/around the fixed mobile bottom navigation or at the bottom of the page when scrolling.",
-        "The app’s existing card/panel styling remains readable and unchanged except where strictly necessary to prevent white background bleed-through."
+        "With CSS variables temporarily removed/overridden in devtools, the page background still remains dark due to the explicit fallback background color.",
+        "The dark/black background covers the full viewport height on short pages and on mobile with the bottom navigation present (no white bands at the top/bottom)."
+      ]
+    },
+    {
+      "id": "REQ-49",
+      "text": "Eliminate any conflicting global CSS that could be reintroducing a light theme by ensuring there is no additional global stylesheet defining light `:root` tokens that overrides `frontend/src/index.css` at runtime (e.g., reconcile or remove overrides from `frontend/index.css` if it is being included in the build).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "The app is still white please make black"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Only one active set of global theme tokens is applied at runtime for `--background`/`--foreground` (verified in devtools computed styles), and those tokens produce a dark/black background.",
+        "A hard refresh still results in a black/dark background; the issue does not reappear due to cached or competing CSS."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
-    "Keep the backend unchanged; this is a styling/layout fix only."
+    "Do not edit immutable frontend paths: `frontend/src/main.tsx`, `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, and anything under `frontend/src/components/ui`.",
+    "Keep all existing functionality unchanged; this change should only affect global/background styling."
   ],
   "nonGoals": [
-    "Do not redesign the UI or change page content/features.",
-    "Do not introduce new authentication, routing, or backend data model changes."
+    "Do not redesign page layouts or add new features.",
+    "Do not change backend canister logic or data models.",
+    "Do not add a theme toggle unless explicitly requested."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

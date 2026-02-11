@@ -2,8 +2,8 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-ensure-the-global-application-background-renders-as-dark-not-white-by-applying-the-dark-theme-background-token-to-the-document-html-body-so-that-areas-outside-routed-content-and-any-uncovered-viewport-regions-are-not-white",
-      "featureTitle": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
+      "featureId": "feature-fix-the-global-theme-color-tokens-so-tailwind-utilities-like-bg-background-resolve-to-a-valid-dark-black-color-instead-of-falling-back-to-white-by-ensuring-css-variables-used-by-oklch-var-background-are-stored-as-raw-oklch-components-e-g-0-15-0-01-240-rather-than-nested-oklch-strings",
+      "featureTitle": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
       "files": [
         "frontend/src/index.css"
       ],
@@ -17,15 +17,15 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-45"
+        "REQ-47"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-verify-and-adjust-the-layout-background-stacking-so-the-dark-background-consistently-covers-the-full-viewport-height-across-all-screens-including-when-content-is-short-and-when-the-mobile-bottom-navigation-is-present",
-      "featureTitle": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
+      "featureId": "feature-add-a-safe-global-fallback-so-the-document-never-renders-white-even-if-css-variables-fail-to-resolve-by-applying-an-explicit-dark-background-color-to-the-html-body-and-root-base-styles-in-frontend-src-index-css-in-addition-to-existing-tailwind-bg-background-usage",
+      "featureTitle": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
       "files": [
-        "frontend/src/components/AppLayout.tsx"
+        "frontend/src/index.css"
       ],
       "components": [
         "authorization@4.0.0",
@@ -37,7 +37,7 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-46"
+        "REQ-48"
       ],
       "confidence": "high"
     }

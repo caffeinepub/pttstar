@@ -1,18 +1,18 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T10:14:19.106Z",
+  "generatedAt": "2026-02-11T10:27:42.999Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
+    "total": 3,
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-45",
-        "summary": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
+        "id": "REQ-47",
+        "summary": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
         "status": "implemented",
         "plannedFiles": [
           "frontend/src/index.css"
@@ -22,15 +22,24 @@
         ]
       },
       {
-        "id": "REQ-46",
-        "summary": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
+        "id": "REQ-48",
+        "summary": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/AppLayout.tsx"
+          "frontend/src/index.css"
         ],
         "matchedFiles": [
-          "frontend/src/components/AppLayout.tsx"
+          "frontend/src/index.css"
         ]
+      },
+      {
+        "id": "REQ-49",
+        "summary": "Eliminate any conflicting global CSS that could be reintroducing a light theme by ensuring there is no additional global stylesheet defining light `:root` tokens that overrides `frontend/src/index.css` at runtime (e.g., reconcile or remove overrides from `frontend/index.css` if it is being included in the build).",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/index.css"
+        ],
+        "matchedFiles": []
       }
     ]
   },
@@ -39,7 +48,6 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/AppLayout.tsx",
     "frontend/src/index.css",
     "project_state.json",
     "scratch/component-selection.json",
