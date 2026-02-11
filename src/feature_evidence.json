@@ -2,14 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-a-real-time-transmit-receive-capability-for-pttstar-where-one-authenticated-user-can-push-to-talk-and-other-authenticated-users-can-hear-the-audio-with-low-latency-using-peer-to-peer-browser-audio-streaming-webrtc-and-internet-computer-canister-calls-as-the-signaling-layer-no-websockets",
-      "featureTitle": "Add a real-time transmit/receive capability for PTTStar where one authenticated user can push-to-talk and other authenticated users can hear the audio with low latency, using peer-to-peer browser audio streaming (WebRTC) and Internet Computer canister calls as the signaling layer (no WebSockets).",
+      "featureId": "feature-ensure-the-global-application-background-renders-as-dark-not-white-by-applying-the-dark-theme-background-token-to-the-document-html-body-so-that-areas-outside-routed-content-and-any-uncovered-viewport-regions-are-not-white",
+      "featureTitle": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
       "files": [
-        "frontend/src/components/PttControl.tsx",
-        "frontend/src/hooks/useMicPttRecorder.ts",
-        "frontend/src/hooks/useWebRtcPtt.ts",
-        "frontend/src/pages/PttPage.tsx",
-        "frontend/src/utils/roomKey.ts"
+        "frontend/src/index.css"
       ],
       "components": [
         "authorization@4.0.0",
@@ -21,17 +17,15 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-31"
+        "REQ-45"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-update-the-ptt-page-ui-to-support-live-receive-and-live-transmit-states-show-connection-room-status-disconnected-connecting-connected-show-when-the-user-is-actively-transmitting-show-when-the-user-is-receiving-audio-playing-and-remove-or-clearly-demote-the-current-last-recording-playback-as-a-non-real-time-fallback-testing-feature",
-      "featureTitle": "Update the PTT page UI to support live receive and live transmit states: show connection/room status (Disconnected/Connecting/Connected), show when the user is actively transmitting, show when the user is receiving (audio playing), and remove or clearly demote the current “Last Recording” playback as a non-real-time fallback/testing feature.",
+      "featureId": "feature-verify-and-adjust-the-layout-background-stacking-so-the-dark-background-consistently-covers-the-full-viewport-height-across-all-screens-including-when-content-is-short-and-when-the-mobile-bottom-navigation-is-present",
+      "featureTitle": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
       "files": [
-        "frontend/src/components/RealTimeStatusBadge.tsx",
-        "frontend/src/components/TransmitDisclaimer.tsx",
-        "frontend/src/pages/PttPage.tsx"
+        "frontend/src/components/AppLayout.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,29 +37,7 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-33"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-minimal-real-time-activity-bridge-so-the-activity-now-hearing-screen-can-reflect-real-time-in-app-voice-activity-when-a-user-begins-transmitting-receivers-should-see-a-corresponding-activity-item-callsign-timestamp-selected-connection-label-update-without-manual-refresh-via-polling",
-      "featureTitle": "Add a minimal real-time activity bridge so the Activity / Now Hearing screen can reflect real-time in-app voice activity: when a user begins transmitting, receivers should see a corresponding activity item (callsign + timestamp + selected connection label) update without manual refresh (via polling).",
-      "files": [
-        "frontend/src/components/NowHearingList.tsx",
-        "frontend/src/hooks/useNowHearing.ts",
-        "frontend/src/pages/ActivityPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-34"
+        "REQ-46"
       ],
       "confidence": "high"
     }

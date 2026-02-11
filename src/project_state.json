@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 19,
+  "projectStateVersion": 27,
   "summary": "PTTStar: a cross-platform (phone + computer) internet-connected ham radio app that provides software-based access to multiple digital voice modes (DMR, D-Star, YSF, P25, NXDN, etc.), allowing users to select mode/host/talkgroup and use push-to-talk with callsign/ID display, without dedicated radios/hotspots or external AMBE hardware, and with license/DMR-ID compliance.",
   "architectural_notes": [
     "Consider adding an IAX/DVSwitch-compatible connection path (or gateway abstraction) alongside existing mode/host/talkgroup connection model.",
@@ -10,10 +10,14 @@
     "QRZ callsign lookup integration: decide API/access method (QRZ XML subscription vs alternative), credential handling, caching/rate-limits, and how returned callsign profile data maps into the app’s directory/user profile fields.",
     "Decide navigation impact/alternate access path if the Directory tab is removed (e.g., where saved hosts/talkgroups are managed).",
     "Define the behavior and scope of an IAX/DVSwitch “Disconnect” tab (UI-only vs also clearing sessionStorage preferred connection / backend preferred connection).",
-    "Real-time TX/RX will require defining a live networking/audio pipeline (protocols per mode or via gateways), PTT state machine, latency/jitter buffering, and safe mic/speaker handling across mobile+desktop."
+    "Real-time TX/RX will require defining a live networking/audio pipeline (protocols per mode or via gateways), PTT state machine, latency/jitter buffering, and safe mic/speaker handling across mobile+desktop.",
+    "User preference change: revert UI styling to the prior dark radio-style theme; deprioritize/remove the more colorful page styling direction.",
+    "UI styling clarification: user wants pages to have a dark background, but not necessarily to make the entire app uniformly dark (retain existing app theming/accents while ensuring page backgrounds are dark)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Dark page body background styling change did not take effect; app still renders with a white background instead of the intended dark/black page background."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-the-core-pttstar-app-ux-with-responsive-navigation-mobile-desktop-and-the-following-screens-1-landing-overview-2-connect-select-mode-host-talkgroup-room-3-ptt-push-to-talk-controls-4-activity-recent-heard-stations-list-5-directory-manage-saved-hosts-talkgroups-6-settings-callsign-dmr-id-preferences-7-about-compliance",
@@ -270,6 +274,86 @@
         "REQ-34"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-enhance-the-visual-styling-across-the-main-pages-landing-connect-ptt-activity-settings-about-to-feel-more-colorful-while-keeping-text-readable-and-consistent-with-the-existing-dark-radio-style-ui",
+      "title": "Enhance the visual styling across the main pages (Landing, Connect, PTT, Activity, Settings, About) to feel more colorful while keeping text readable and consistent with the existing dark radio-style UI.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-distinct-color-forward-page-header-treatment-for-each-main-page-that-includes-the-page-title-subtitle-area-e-g-subtle-gradient-band-accent-border-or-tinted-backdrop-using-existing-theme-status-colors-and-tailwind-utilities",
+      "title": "Add a distinct, color-forward page header treatment for each main page that includes the page title/subtitle area (e.g., subtle gradient band, accent border, or tinted backdrop) using existing theme/status colors and Tailwind utilities.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-introduce-reusable-utility-classes-or-shared-styling-patterns-via-tailwind-classes-and-or-css-utilities-for-colorful-accents-e-g-accent-borders-glows-gradient-backgrounds-so-the-colorful-pages-look-is-consistent-and-easy-to-apply-without-duplicating-large-blocks-of-styling-in-every-page",
+      "title": "Introduce reusable utility classes or shared styling patterns (via Tailwind classes and/or CSS utilities) for colorful accents (e.g., accent borders, glows, gradient backgrounds) so the “colorful pages” look is consistent and easy to apply without duplicating large blocks of styling in every page.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-color-accents-to-key-information-blocks-without-changing-functionality-e-g-status-badges-alerts-connection-info-panels-major-cards-so-important-states-are-easier-to-scan-visually-while-keeping-the-same-behavior-and-data",
+      "title": "Add color accents to key information blocks without changing functionality (e.g., status badges/alerts, connection info panels, major cards) so important states are easier to scan visually while keeping the same behavior and data.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-revert-the-main-pages-landing-connect-ptt-activity-settings-about-from-the-recent-colorful-gradient-treatment-back-to-the-darker-radio-style-ui-removing-prominent-multi-color-gradient-headers-and-heavy-color-accent-panel-wrappers-while-keeping-all-existing-functionality-unchanged",
+      "title": "Revert the main pages (Landing, Connect, PTT, Activity, Settings, About) from the recent colorful/gradient treatment back to the darker radio-style UI, removing prominent multi-color gradient headers and heavy color-accent panel wrappers while keeping all existing functionality unchanged.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-or-remove-usages-of-colorpageheader-and-coloraccentpanel-so-they-no-longer-introduce-bright-color-variants-e-g-blue-500-purple-500-amber-500-and-instead-render-as-neutral-dark-panels-consistent-with-the-app-s-default-dark-theme",
+      "title": "Update or remove usages of ColorPageHeader and ColorAccentPanel so they no longer introduce bright color variants (e.g., blue-500, purple-500, amber-500) and instead render as neutral dark panels consistent with the app’s default dark theme.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-any-remaining-accent-utilities-in-frontend-src-index-css-that-were-introduced-to-support-the-colorful-page-treatment-do-not-materially-brighten-the-overall-appearance-the-app-should-read-as-predominantly-dark-with-subtle-restrained-accents-only",
+      "title": "Ensure any remaining accent utilities in frontend/src/index.css that were introduced to support the colorful page treatment do not materially brighten the overall appearance; the app should read as predominantly dark with subtle, restrained accents only.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-layout-styling-so-that-only-the-page-body-area-the-routed-page-content-region-uses-a-dark-background-while-the-app-chrome-header-mobile-bottom-nav-and-footer-does-not-become-dark-solely-due-to-the-page-background-setting",
+      "title": "Update the layout styling so that only the page body area (the routed page content region) uses a dark background, while the app chrome (header, mobile bottom nav, and footer) does not become dark solely due to the page background setting.",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-global-application-background-renders-as-dark-not-white-by-applying-the-dark-theme-background-token-to-the-document-html-body-so-that-areas-outside-routed-content-and-any-uncovered-viewport-regions-are-not-white",
+      "title": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-verify-and-adjust-the-layout-background-stacking-so-the-dark-background-consistently-covers-the-full-viewport-height-across-all-screens-including-when-content-is-short-and-when-the-mobile-bottom-navigation-is-present",
+      "title": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -382,6 +466,22 @@
       "summary": "Implement backend signaling support in the single Motoko actor to coordinate real-time sessions: create/join/leave a voice room keyed by the currently selected connection (e.g., IAX/DVSwitch connection or directory-style network+talgkroup), exchange WebRTC SDP offers/answers and ICE candidates between participants, and expose queries for clients to poll pending signaling messages.",
       "reqIds": [
         "REQ-32"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Apply the new page-body dark background treatment consistently across all main pages (Landing, Connect, PTT, Activity, Settings, About) so they all sit on the same dark page background, without changing existing card/panel content styling beyond what is necessary for readability.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Ensure the app initialization/loading screen background follows the same rule (dark page body background) without globally forcing the entire application theme to be dark.",
+      "reqIds": [
+        "REQ-44"
       ],
       "status": "pending"
     }

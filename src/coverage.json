@@ -1,96 +1,46 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T09:27:53.891Z",
+  "generatedAt": "2026-02-11T10:14:19.106Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-31",
-        "summary": "Add a real-time transmit/receive capability for PTTStar where one authenticated user can push-to-talk and other authenticated users can hear the audio with low latency, using peer-to-peer browser audio streaming (WebRTC) and Internet Computer canister calls as the signaling layer (no WebSockets).",
+        "id": "REQ-45",
+        "summary": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/utils/roomKey.ts",
-          "frontend/src/hooks/useWebRtcPtt.ts",
-          "frontend/src/components/PttControl.tsx",
-          "frontend/src/pages/PttPage.tsx",
-          "frontend/src/hooks/useMicPttRecorder.ts"
+          "frontend/src/index.css"
         ],
         "matchedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/utils/roomKey.ts",
-          "frontend/src/hooks/useWebRtcPtt.ts",
-          "frontend/src/components/PttControl.tsx",
-          "frontend/src/pages/PttPage.tsx",
-          "frontend/src/hooks/useMicPttRecorder.ts"
+          "frontend/src/index.css"
         ]
       },
       {
-        "id": "REQ-32",
-        "summary": "Implement backend signaling support in the single Motoko actor to coordinate real-time sessions: create/join/leave a voice room keyed by the currently selected connection (e.g., IAX/DVSwitch connection or directory-style network+talgkroup), exchange WebRTC SDP offers/answers and ICE candidates between participants, and expose queries for clients to poll pending signaling messages.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-33",
-        "summary": "Update the PTT page UI to support live receive and live transmit states: show connection/room status (Disconnected/Connecting/Connected), show when the user is actively transmitting, show when the user is receiving (audio playing), and remove or clearly demote the current “Last Recording” playback as a non-real-time fallback/testing feature.",
+        "id": "REQ-46",
+        "summary": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/RealTimeStatusBadge.tsx",
-          "frontend/src/pages/PttPage.tsx",
-          "frontend/src/components/TransmitDisclaimer.tsx"
+          "frontend/src/components/AppLayout.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/RealTimeStatusBadge.tsx",
-          "frontend/src/pages/PttPage.tsx",
-          "frontend/src/components/TransmitDisclaimer.tsx"
-        ]
-      },
-      {
-        "id": "REQ-34",
-        "summary": "Add a minimal real-time activity bridge so the Activity / Now Hearing screen can reflect real-time in-app voice activity: when a user begins transmitting, receivers should see a corresponding activity item (callsign + timestamp + selected connection label) update without manual refresh (via polling).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useNowHearing.ts",
-          "frontend/src/pages/ActivityPage.tsx",
-          "frontend/src/components/NowHearingList.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useNowHearing.ts",
-          "frontend/src/pages/ActivityPage.tsx",
-          "frontend/src/components/NowHearingList.tsx"
+          "frontend/src/components/AppLayout.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/NowHearingList.tsx",
-    "frontend/src/components/PttControl.tsx",
-    "frontend/src/components/RealTimeStatusBadge.tsx",
-    "frontend/src/components/TransmitDisclaimer.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useMicPttRecorder.ts",
-    "frontend/src/hooks/useNowHearing.ts",
-    "frontend/src/hooks/useWebRtcPtt.ts",
-    "frontend/src/pages/ActivityPage.tsx",
-    "frontend/src/pages/PttPage.tsx",
-    "frontend/src/utils/roomKey.ts",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/index.css",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

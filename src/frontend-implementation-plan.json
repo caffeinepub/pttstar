@@ -1,102 +1,37 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Real-time in-app PTT via WebRTC (frontend)",
+  "title": "Apply global dark background and eliminate white bleed-through across routes",
   "requirements": [
     {
-      "id": "REQ-31",
-      "summary": "Implement WebRTC-based live audio transmit/receive on the PTT page using canister-call polling for signaling (no WebSockets), gated by existing authentication and license acknowledgement.",
+      "id": "REQ-45",
+      "summary": "Apply the dark theme background token globally to html/body so any uncovered viewport area is dark instead of white.",
       "acceptanceCriteria": [
-        "From the PTT page, a user can start transmitting and at least one other user with the app open can hear the audio within ~1 second typical network conditions (best-effort).",
-        "Audio is streamed live (not only recorded-and-played-back after release).",
-        "Signaling uses canister update/query calls and/or polling (no WebSockets).",
-        "If signaling fails, the UI shows an actionable error and returns to a safe non-transmitting state.",
-        "The existing license acknowledgement gate still blocks initiating transmit when not acknowledged."
+        "On initial load (including before authentication), the visible page background is dark/black rather than white.",
+        "There is no white background visible around the app (e.g., page margins, overscroll area, or any region not covered by the routed page content).",
+        "The change is implemented via global styling (e.g., in frontend/src/index.css) using existing Tailwind tokens/classes (e.g., bg-background) so it remains consistent across all routes."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/backend.d.ts",
+          "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Update the frontend backend type definitions to reflect the new room-based signaling and polling capabilities needed for WebRTC session coordination (join/post/fetch/leave) so the frontend can call them in a typed way."
-        },
-        {
-          "path": "frontend/src/utils/roomKey.ts",
-          "operation": "create",
-          "description": "Add helpers to derive a stable room key and human-readable room/connection label from the currently selected StoredConnection (directory network+talgkroup and IAX/DVSwitch settings), to scope signaling and activity to the correct room."
-        },
-        {
-          "path": "frontend/src/hooks/useWebRtcPtt.ts",
-          "operation": "create",
-          "description": "Create a React hook that manages WebRTC peer connections for a voice room: joining/leaving, creating offers/answers, exchanging ICE candidates via backend polling, capturing microphone audio on transmit press-and-hold, and playing remote audio streams on receive. Ensure failures trigger cleanup and return to a safe idle state."
-        },
-        {
-          "path": "frontend/src/components/PttControl.tsx",
-          "operation": "modify",
-          "description": "Extend the PTT control to support real-time streaming actions (press-and-hold start/stop) and expose transmit state callbacks; integrate microphone permission denial handling so transmit does not start and an actionable error can be shown. Keep license acknowledgement as a hard gate. (Use the selected authorization component’s frontend guidance to ensure authenticated-only behavior; verify the component's usage instructions before implementing.)"
-        },
-        {
-          "path": "frontend/src/pages/PttPage.tsx",
-          "operation": "modify",
-          "description": "Wire the WebRTC PTT hook into the PTT page: auto-join the derived room when the page loads (authenticated), show connect/disconnect state, start/stop transmit on PTT press-and-hold, render receive activity while remote audio is playing, and handle signaling/mic errors with a visible message and safe non-transmitting fallback. Keep the existing license acknowledgement gate blocking transmit initiation. (Use the selected authorization component patterns already present via AuthGate; verify the component's usage instructions before implementing.)"
-        },
-        {
-          "path": "frontend/src/hooks/useMicPttRecorder.ts",
-          "operation": "modify",
-          "description": "Demote the existing MediaRecorder-based recording hook to explicitly be a non-real-time fallback/testing utility by improving its error surface (permission denied vs other errors) and ensuring it does not interfere with live WebRTC capture when real-time mode is active."
+          "description": "Update the global base styles to apply the Tailwind theme token background to the document: set html and body to use bg-background (and text-foreground), ensure html/body have 100% height (or min-height) to cover the full viewport, and ensure the app mount container does not inherit a white background in any state (including before authentication)."
         }
       ]
     },
     {
-      "id": "REQ-33",
-      "summary": "Update the PTT page UI to clearly represent real-time connection, transmit, and receive states, and demote “Last Recording” playback to a fallback/testing feature without contradicting the new in-app voice capability.",
+      "id": "REQ-46",
+      "summary": "Adjust layout/background coverage so the dark background consistently fills the viewport and prevents white strips around fixed mobile navigation and short-content pages.",
       "acceptanceCriteria": [
-        "PTT page displays a clear real-time connection status indicator (e.g., Connected to room, Connecting, Disconnected).",
-        "When another user transmits, the receiver hears audio and the UI indicates receiving activity while audio is playing.",
-        "When the local user presses and holds the PTT button, the app streams microphone audio live to peers (and stops on release).",
-        "If microphone permission is denied, the UI displays an error and does not attempt to transmit.",
-        "Existing IAX/DVSwitch “Configuration Only” copy is updated so it does not contradict the new real-time in-app voice capability (it may still clarify that it is not real ham network TX/RX)."
+        "Landing, Connect, PTT, Activity, Settings, and About pages all show a consistent dark background even when the page content is shorter than the viewport height.",
+        "No white strip appears behind/around the fixed mobile bottom navigation or at the bottom of the page when scrolling.",
+        "The app’s existing card/panel styling remains readable and unchanged except where strictly necessary to prevent white background bleed-through."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/RealTimeStatusBadge.tsx",
-          "operation": "create",
-          "description": "Add a small UI component to display real-time room status (Disconnected/Connecting/Connected), transmit indicator, and receive indicator in a consistent, prominent way on the PTT page. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/PttPage.tsx",
+          "path": "frontend/src/components/AppLayout.tsx",
           "operation": "modify",
-          "description": "Update the PTT UI to include the real-time status badge, display transmitting/receiving indicators, show microphone/signaling errors in English with actionable guidance, and move “Last Recording” into a clearly labeled fallback/testing section (or visually demote it). Update the IAX/DVSwitch informational copy so it no longer claims real-time is unimplemented while still clarifying it is in-app voice rather than real RF network TX/RX."
-        },
-        {
-          "path": "frontend/src/components/TransmitDisclaimer.tsx",
-          "operation": "modify",
-          "description": "Ensure the disclaimer copy remains accurate with real-time in-app voice enabled and continues to clearly gate transmit features on license acknowledgement (English-only)."
-        }
-      ]
-    },
-    {
-      "id": "REQ-34",
-      "summary": "Add best-effort polling so the Activity / Now Hearing screen reflects real-time in-app voice activity without manual refresh, while keeping the existing mock-only admin update method available and clearly separated.",
-      "acceptanceCriteria": [
-        "When a user starts transmitting, other users in the same room see an activity entry appear on the Activity page without clicking Refresh (best-effort polling).",
-        "Activity entries include at least: transmitting user callsign (from profile), timestamp, and a human-readable room/connection label.",
-        "The existing mock-only admin method (updateNowHearing) remains available or is clearly separated from the new real-time activity path."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useNowHearing.ts",
-          "operation": "modify",
-          "description": "Enable periodic polling for the activity feed (react-query refetch interval) so updates appear without manual refresh. Keep the existing manual update mutation intact and clearly treat it as mock/admin-driven."
-        },
-        {
-          "path": "frontend/src/pages/ActivityPage.tsx",
-          "operation": "modify",
-          "description": "Update the Activity page copy and controls to reflect that the list updates automatically (polling) and make the manual Refresh clearly a manual action (and/or label it as mock/admin when appropriate). Ensure new real-time items show callsign, timestamp, and room/connection label in the UI."
-        },
-        {
-          "path": "frontend/src/components/NowHearingList.tsx",
-          "operation": "modify",
-          "description": "Adjust the list presentation to support non-simulated real-time activity items (remove or demote the global “Simulated (MVP)” badge, or make it conditional), and ensure each entry can display the human-readable room/connection label alongside the existing fields."
+          "description": "Ensure the top-level layout wrapper provides continuous dark background coverage (e.g., apply bg-background to the outermost container, not just <main>), and adjust spacing/styling around the fixed mobile bottom navigation and footer so the dark background remains visible behind/around the nav (including safe-area inset handling where applicable) when content is short or during scroll/overscroll."
         }
       ]
     }

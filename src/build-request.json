@@ -1,98 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Add real-time PTT transmit/receive between app users (WebRTC) with backend signaling",
+  "title": "Fix app background so pages render with a dark/black background instead of white",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-31",
-      "text": "Add a real-time transmit/receive capability for PTTStar where one authenticated user can push-to-talk and other authenticated users can hear the audio with low latency, using peer-to-peer browser audio streaming (WebRTC) and Internet Computer canister calls as the signaling layer (no WebSockets).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "recent-messages-user-1"
-        ],
-        "quotes": [
-          "I want to implement real time transmitting and receiving?"
-        ]
-      },
-      "acceptanceCriteria": [
-        "From the PTT page, a user can start transmitting and at least one other user with the app open can hear the audio within ~1 second typical network conditions (best-effort).",
-        "Audio is streamed live (not only recorded-and-played-back after release).",
-        "Signaling uses canister update/query calls and/or polling (no WebSockets).",
-        "If signaling fails, the UI shows an actionable error and returns to a safe non-transmitting state.",
-        "The existing license acknowledgement gate still blocks initiating transmit when not acknowledged."
-      ]
-    },
-    {
-      "id": "REQ-32",
-      "text": "Implement backend signaling support in the single Motoko actor to coordinate real-time sessions: create/join/leave a voice room keyed by the currently selected connection (e.g., IAX/DVSwitch connection or directory-style network+talgkroup), exchange WebRTC SDP offers/answers and ICE candidates between participants, and expose queries for clients to poll pending signaling messages.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "recent-messages-user-1"
-        ],
-        "quotes": [
-          "I want to implement real time transmitting and receiving?"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend provides authenticated methods to: (1) join a room, (2) post signaling messages, (3) fetch signaling messages since a cursor/timestamp, (4) leave a room.",
-        "Signaling messages are scoped to a room and do not leak across rooms/users.",
-        "Signaling storage is bounded (e.g., capped per room and/or TTL) to prevent unbounded growth.",
-        "Unauthorized callers cannot read or post signaling messages for other principals/rooms."
-      ]
-    },
-    {
-      "id": "REQ-33",
-      "text": "Update the PTT page UI to support live receive and live transmit states: show connection/room status (Disconnected/Connecting/Connected), show when the user is actively transmitting, show when the user is receiving (audio playing), and remove or clearly demote the current “Last Recording” playback as a non-real-time fallback/testing feature.",
+      "id": "REQ-45",
+      "text": "Ensure the global application background renders as dark (not white) by applying the dark theme background token to the document (html/body) so that areas outside routed content and any uncovered viewport regions are not white.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "I want to implement real time transmitting and receiving?"
+          "No nothing has changed It's still white is not black or dark background It's a white background change the white background to a dark background"
         ]
       },
       "acceptanceCriteria": [
-        "PTT page displays a clear real-time connection status indicator (e.g., Connected to room, Connecting, Disconnected).",
-        "When another user transmits, the receiver hears audio and the UI indicates receiving activity while audio is playing.",
-        "When the local user presses and holds the PTT button, the app streams microphone audio live to peers (and stops on release).",
-        "If microphone permission is denied, the UI displays an error and does not attempt to transmit.",
-        "Existing IAX/DVSwitch “Configuration Only” copy is updated so it does not contradict the new real-time in-app voice capability (it may still clarify that it is not real ham network TX/RX)."
+        "On initial load (including before authentication), the visible page background is dark/black rather than white.",
+        "There is no white background visible around the app (e.g., page margins, overscroll area, or any region not covered by the routed page content).",
+        "The change is implemented via global styling (e.g., in frontend/src/index.css) using existing Tailwind tokens/classes (e.g., bg-background) so it remains consistent across all routes."
       ]
     },
     {
-      "id": "REQ-34",
-      "text": "Add a minimal real-time activity bridge so the Activity / Now Hearing screen can reflect real-time in-app voice activity: when a user begins transmitting, receivers should see a corresponding activity item (callsign + timestamp + selected connection label) update without manual refresh (via polling).",
-      "target": "both",
+      "id": "REQ-46",
+      "text": "Verify and adjust the layout/background stacking so the dark background consistently covers the full viewport height across all screens, including when content is short and when the mobile bottom navigation is present.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-user-1"
+          "msg-4"
         ],
         "quotes": [
-          "I want to implement real time transmitting and receiving?"
+          "It's still white is not black or dark background"
         ]
       },
       "acceptanceCriteria": [
-        "When a user starts transmitting, other users in the same room see an activity entry appear on the Activity page without clicking Refresh (best-effort polling).",
-        "Activity entries include at least: transmitting user callsign (from profile), timestamp, and a human-readable room/connection label.",
-        "The existing mock-only admin method (updateNowHearing) remains available or is clearly separated from the new real-time activity path."
+        "Landing, Connect, PTT, Activity, Settings, and About pages all show a consistent dark background even when the page content is shorter than the viewport height.",
+        "No white strip appears behind/around the fixed mobile bottom navigation or at the bottom of the page when scrolling.",
+        "The app’s existing card/panel styling remains readable and unchanged except where strictly necessary to prevent white background bleed-through."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not use WebSockets/socket.io for real-time messaging; use canister calls with polling for signaling and updates.",
-    "Do not edit files under frontend/src/components/ui or other immutablePaths listed in SYSTEM_CONTEXT; compose existing UI components instead.",
-    "All user-facing text must be in English.",
-    "Do not route live audio media through the canister; media must be peer-to-peer browser streaming (signaling only via backend)."
+    "Do not edit any files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Keep the backend unchanged; this is a styling/layout fix only."
   ],
   "nonGoals": [
-    "Implementing real DMR/D-Star/YSF/P25/NXDN protocol encode/decode, vocoders, or actual bridging to ham radio networks/repeaters/reflectors.",
-    "Implementing real IAX/DVSwitch network voice connectivity to external gateways (beyond using the existing IAX/DVSwitch settings as a room key/label).",
-    "Adding third-party auth providers (only Internet Identity).",
-    "Adding external databases or non-IC backend services."
+    "Do not redesign the UI or change page content/features.",
+    "Do not introduce new authentication, routing, or backend data model changes."
   ],
   "imageRequirements": {
     "required": [],

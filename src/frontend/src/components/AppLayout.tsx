@@ -55,8 +55,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      {/* Main Content with dark page background */}
+      <main className="flex-1 bg-background">{children}</main>
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card md:hidden">

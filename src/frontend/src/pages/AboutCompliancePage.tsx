@@ -1,6 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Shield, Radio, Globe, AlertTriangle } from 'lucide-react';
+import ColorPageHeader from '../components/ColorPageHeader';
+import ColorAccentPanel from '../components/ColorAccentPanel';
 
 export default function AboutCompliancePage() {
   return (
@@ -9,110 +11,121 @@ export default function AboutCompliancePage() {
         <img
           src="/assets/generated/pttstar-logo.dim_512x512.png"
           alt="PTTStar"
-          className="mx-auto mb-4 h-16 w-16"
+          className="mx-auto mb-4 h-16 w-16 ring-2 ring-border rounded-lg"
         />
-        <h1 className="mb-2 text-3xl font-bold text-foreground">About PTTStar</h1>
-        <p className="text-muted-foreground">Digital voice modes for amateur radio operators.</p>
+        <ColorPageHeader
+          title="About PTTStar"
+          subtitle="Digital voice modes for amateur radio operators."
+          variant="about"
+        />
       </div>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-5 w-5" />
-              What is PTTStar?
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              PTTStar is a web-based application that allows licensed amateur radio operators to access digital voice
-              modes including DMR, D-Star, Yaesu System Fusion (YSF), P25, NXDN, and others directly from a phone or
-              computer over the internet.
-            </p>
-            <p>
-              By connecting to digital reflectors and repeaters using your device's data connection, PTTStar eliminates
-              the need for dedicated digital radios or hotspot hardware. The app handles digital audio encoding and
-              decoding in software, removing the requirement for external AMBE vocoder hardware.
-            </p>
-            <p>
-              PTTStar lets you choose modes, hosts, and talkgroups from within the app, then use push-to-talk with your
-              device's microphone. The interface displays call sign and ID information similar to a digital handheld or
-              mobile radio.
-            </p>
-          </CardContent>
-        </Card>
+        <ColorAccentPanel variant="primary">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Radio className="h-5 w-5" />
+                What is PTTStar?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                PTTStar is a web-based application that allows licensed amateur radio operators to access digital voice
+                modes including DMR, D-Star, Yaesu System Fusion (YSF), P25, NXDN, and others directly from a phone or
+                computer over the internet.
+              </p>
+              <p>
+                By connecting to digital reflectors and repeaters using your device's data connection, PTTStar eliminates
+                the need for dedicated digital radios or hotspot hardware. The app handles digital audio encoding and
+                decoding in software, removing the requirement for external AMBE vocoder hardware.
+              </p>
+              <p>
+                PTTStar lets you choose modes, hosts, and talkgroups from within the app, then use push-to-talk with your
+                device's microphone. The interface displays call sign and ID information similar to a digital handheld or
+                mobile radio.
+              </p>
+            </CardContent>
+          </Card>
+        </ColorAccentPanel>
 
-        <Alert variant="destructive" className="border-status-warning bg-status-warning/10">
-          <AlertTriangle className="h-5 w-5 text-status-warning" />
-          <AlertTitle className="text-status-warning">Important: Licensing Requirements</AlertTitle>
-          <AlertDescription className="space-y-2 text-foreground">
-            <p>
-              <strong>You must hold a valid amateur radio license to transmit with PTTStar</strong>, just as with any
-              other ham radio transmitter. PTTStar is not a toy or a general communication app—it is a tool for licensed
-              amateur radio operators.
-            </p>
-            <p>
-              Operating without a license or outside the privileges of your license class is illegal in most
-              jurisdictions and may result in significant fines and penalties.
-            </p>
-          </AlertDescription>
-        </Alert>
+        <ColorAccentPanel variant="warning">
+          <Alert variant="destructive" className="border-0 bg-transparent">
+            <AlertTriangle className="h-5 w-5 text-status-warning" />
+            <AlertTitle className="text-status-warning">Important: Licensing Requirements</AlertTitle>
+            <AlertDescription className="space-y-2 text-foreground">
+              <p>
+                <strong>You must hold a valid amateur radio license to transmit with PTTStar</strong>, just as with any
+                other ham radio transmitter. PTTStar is not a toy or a general communication app—it is a tool for licensed
+                amateur radio operators.
+              </p>
+              <p>
+                Operating without a license or outside the privileges of your license class is illegal in most
+                jurisdictions and may result in significant fines and penalties.
+              </p>
+            </AlertDescription>
+          </Alert>
+        </ColorAccentPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              DMR ID Requirement
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              Many DMR networks require a registered DMR ID linked to your call sign before you can connect and transmit.
-            </p>
-            <p>
-              DMR IDs are typically obtained through services like{' '}
-              <a
-                href="https://radioid.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-foreground underline hover:text-accent-foreground"
-              >
-                radioid.net
-              </a>
-              . Registration is free and requires proof of your amateur radio license.
-            </p>
-            <p>
-              Once you have your DMR ID, you will need it when configuring connections to DMR networks. This ID will be transmitted
-              along with your call sign when you use DMR networks.
-            </p>
-          </CardContent>
-        </Card>
+        <ColorAccentPanel variant="info">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                DMR ID Requirement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                Many DMR networks require a registered DMR ID linked to your call sign before you can connect and transmit.
+              </p>
+              <p>
+                DMR IDs are typically obtained through services like{' '}
+                <a
+                  href="https://radioid.net"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline hover:text-accent-foreground"
+                >
+                  radioid.net
+                </a>
+                . Registration is free and requires proof of your amateur radio license.
+              </p>
+              <p>
+                Once you have your DMR ID, you will need it when configuring connections to DMR networks. This ID will be transmitted
+                along with your call sign when you use DMR networks.
+              </p>
+            </CardContent>
+          </Card>
+        </ColorAccentPanel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              Regulatory Compliance
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              PTTStar is a software client that provides access to amateur radio digital voice networks. As the
-              operator, you are responsible for:
-            </p>
-            <ul className="list-inside list-disc space-y-1">
-              <li>Ensuring you hold a valid amateur radio license in your jurisdiction</li>
-              <li>Operating within the privileges granted by your license class</li>
-              <li>Identifying your station properly according to local regulations</li>
-              <li>Following the rules and guidelines of the networks you connect to</li>
-              <li>Adhering to all applicable amateur radio regulations and laws</li>
-            </ul>
-            <p>
-              Different countries and regions have different amateur radio regulations. It is your responsibility to
-              understand and comply with the rules that apply to you.
-            </p>
-          </CardContent>
-        </Card>
+        <ColorAccentPanel variant="success">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Regulatory Compliance
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm text-muted-foreground">
+              <p>
+                PTTStar is a software client that provides access to amateur radio digital voice networks. As the
+                operator, you are responsible for:
+              </p>
+              <ul className="list-inside list-disc space-y-1">
+                <li>Ensuring you hold a valid amateur radio license in your jurisdiction</li>
+                <li>Operating within the privileges granted by your license class</li>
+                <li>Identifying your station properly according to local regulations</li>
+                <li>Following the rules and guidelines of the networks you connect to</li>
+                <li>Adhering to all applicable amateur radio regulations and laws</li>
+              </ul>
+              <p>
+                Different countries and regions have different amateur radio regulations. It is your responsibility to
+                understand and comply with the rules that apply to you.
+              </p>
+            </CardContent>
+          </Card>
+        </ColorAccentPanel>
 
         <Card>
           <CardHeader>

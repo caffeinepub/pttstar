@@ -7,6 +7,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { Server, WifiOff, Info } from 'lucide-react';
 import { loadConnection, clearConnection, isIaxDvswitchConnection } from '../hooks/usePreferredConnection';
 import { useState, useEffect } from 'react';
+import ColorPageHeader from '../components/ColorPageHeader';
+import ColorAccentPanel from '../components/ColorAccentPanel';
 
 export default function ConnectPage() {
   const navigate = useNavigate();
@@ -24,64 +26,68 @@ export default function ConnectPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-foreground">IAX / DVSwitch Settings</h1>
-        <p className="text-muted-foreground">Configure your IAX or DVSwitch connection settings.</p>
-      </div>
+      <ColorPageHeader
+        title="IAX / DVSwitch Settings"
+        subtitle="Configure your IAX or DVSwitch connection settings."
+        variant="connect"
+        icon={<Server className="h-8 w-8" />}
+      />
 
       <div className="mx-auto max-w-2xl">
-        <Tabs defaultValue="connect" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="connect" className="flex items-center gap-2">
-              <Server className="h-4 w-4" />
-              Connect
-            </TabsTrigger>
-            <TabsTrigger value="disconnect" className="flex items-center gap-2">
-              <WifiOff className="h-4 w-4" />
-              Disconnect
-            </TabsTrigger>
-          </TabsList>
+        <ColorAccentPanel variant="info">
+          <Tabs defaultValue="connect" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="connect" className="flex items-center gap-2">
+                <Server className="h-4 w-4" />
+                Connect
+              </TabsTrigger>
+              <TabsTrigger value="disconnect" className="flex items-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                Disconnect
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="connect">
-            <IaxDvswitchConnectForm />
-          </TabsContent>
+            <TabsContent value="connect">
+              <IaxDvswitchConnectForm />
+            </TabsContent>
 
-          <TabsContent value="disconnect">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <WifiOff className="h-5 w-5" />
-                  Disconnect from Network
-                </CardTitle>
-                <CardDescription>Clear your stored connection and return to an unconnected state.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {hasConnection ? (
-                  <>
+            <TabsContent value="disconnect">
+              <Card className="border-0 bg-transparent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <WifiOff className="h-5 w-5" />
+                    Disconnect from Network
+                  </CardTitle>
+                  <CardDescription>Clear your stored connection and return to an unconnected state.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {hasConnection ? (
+                    <>
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          Disconnecting will clear your stored IAX / DVSwitch connection. You will need to reconfigure
+                          your connection settings to use PTT again.
+                        </AlertDescription>
+                      </Alert>
+                      <Button onClick={handleDisconnect} variant="destructive" size="lg" className="w-full">
+                        <WifiOff className="mr-2 h-4 w-4" />
+                        Disconnect
+                      </Button>
+                    </>
+                  ) : (
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        Disconnecting will clear your stored IAX / DVSwitch connection. You will need to reconfigure
-                        your connection settings to use PTT again.
+                        No active IAX / DVSwitch connection found. Use the Connect tab to configure a new connection.
                       </AlertDescription>
                     </Alert>
-                    <Button onClick={handleDisconnect} variant="destructive" size="lg" className="w-full">
-                      <WifiOff className="mr-2 h-4 w-4" />
-                      Disconnect
-                    </Button>
-                  </>
-                ) : (
-                  <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertDescription>
-                      No active IAX / DVSwitch connection found. Use the Connect tab to configure a new connection.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </ColorAccentPanel>
       </div>
     </div>
   );
