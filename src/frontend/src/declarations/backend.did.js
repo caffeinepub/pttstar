@@ -13,35 +13,42 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
-export const Mode = IDL.Variant({
+export const Talkgroup = IDL.Record({ 'id' : IDL.Text, 'name' : IDL.Text });
+export const NetworkType = IDL.Variant({
   'dmr' : IDL.Null,
   'p25' : IDL.Null,
   'ysf' : IDL.Null,
   'nxdn' : IDL.Null,
+  'analog' : IDL.Null,
   'others' : IDL.Null,
   'dstar' : IDL.Null,
 });
-export const Talkgroup = IDL.Record({ 'id' : IDL.Text, 'name' : IDL.Text });
 export const PersistentNetwork = IDL.Record({
-  'mode' : Mode,
   'networkLabel' : IDL.Text,
   'address' : IDL.Text,
   'talkgroups' : IDL.Vec(Talkgroup),
+  'networkType' : NetworkType,
 });
 export const ImmutableUserProfile = IDL.Record({
   'name' : IDL.Opt(IDL.Text),
   'licenseAcknowledgement' : IDL.Bool,
+  'ssid' : IDL.Opt(IDL.Nat),
   'favoriteNetworks' : IDL.Vec(IDL.Text),
   'callsign' : IDL.Text,
+  'dmrId' : IDL.Opt(IDL.Nat),
 });
 export const PersistentTransmission = IDL.Record({
   'fromCallsign' : IDL.Text,
   'talkgroup' : IDL.Text,
   'network' : IDL.Text,
+  'dmrOperatorName' : IDL.Opt(IDL.Text),
   'timestamp' : IDL.Int,
+  'dmrId' : IDL.Opt(IDL.Nat),
+  'dmrOperatorLocation' : IDL.Opt(IDL.Text),
 });
 export const Time = IDL.Int;
 export const SignalMessage = IDL.Record({
+  'roomKey' : IDL.Text,
   'content' : IDL.Text,
   'sender' : IDL.Principal,
   'timestamp' : Time,
@@ -59,7 +66,11 @@ export const idlService = IDL.Service({
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getFavoriteNetworks' : IDL.Func([], [IDL.Vec(IDL.Text)], ['query']),
   'getNowHearing' : IDL.Func([], [IDL.Vec(PersistentTransmission)], ['query']),
-  'getSignals' : IDL.Func([IDL.Nat], [IDL.Vec(SignalMessage)], ['query']),
+  'getSignalsAfterTimestampForRoom' : IDL.Func(
+      [Time, IDL.Text],
+      [IDL.Vec(SignalMessage)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(ImmutableUserProfile)],
@@ -67,9 +78,20 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([ImmutableUserProfile], [], []),
-  'sendSignal' : IDL.Func([IDL.Text], [], []),
+  'sendSignal' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'toggleFavoriteNetwork' : IDL.Func([IDL.Text], [IDL.Bool], []),
-  'updateNowHearing' : IDL.Func([], [], []),
+  'updateNowHearing' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Nat),
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+      ],
+      [],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -80,35 +102,42 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
-  const Mode = IDL.Variant({
+  const Talkgroup = IDL.Record({ 'id' : IDL.Text, 'name' : IDL.Text });
+  const NetworkType = IDL.Variant({
     'dmr' : IDL.Null,
     'p25' : IDL.Null,
     'ysf' : IDL.Null,
     'nxdn' : IDL.Null,
+    'analog' : IDL.Null,
     'others' : IDL.Null,
     'dstar' : IDL.Null,
   });
-  const Talkgroup = IDL.Record({ 'id' : IDL.Text, 'name' : IDL.Text });
   const PersistentNetwork = IDL.Record({
-    'mode' : Mode,
     'networkLabel' : IDL.Text,
     'address' : IDL.Text,
     'talkgroups' : IDL.Vec(Talkgroup),
+    'networkType' : NetworkType,
   });
   const ImmutableUserProfile = IDL.Record({
     'name' : IDL.Opt(IDL.Text),
     'licenseAcknowledgement' : IDL.Bool,
+    'ssid' : IDL.Opt(IDL.Nat),
     'favoriteNetworks' : IDL.Vec(IDL.Text),
     'callsign' : IDL.Text,
+    'dmrId' : IDL.Opt(IDL.Nat),
   });
   const PersistentTransmission = IDL.Record({
     'fromCallsign' : IDL.Text,
     'talkgroup' : IDL.Text,
     'network' : IDL.Text,
+    'dmrOperatorName' : IDL.Opt(IDL.Text),
     'timestamp' : IDL.Int,
+    'dmrId' : IDL.Opt(IDL.Nat),
+    'dmrOperatorLocation' : IDL.Opt(IDL.Text),
   });
   const Time = IDL.Int;
   const SignalMessage = IDL.Record({
+    'roomKey' : IDL.Text,
     'content' : IDL.Text,
     'sender' : IDL.Principal,
     'timestamp' : Time,
@@ -134,7 +163,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(PersistentTransmission)],
         ['query'],
       ),
-    'getSignals' : IDL.Func([IDL.Nat], [IDL.Vec(SignalMessage)], ['query']),
+    'getSignalsAfterTimestampForRoom' : IDL.Func(
+        [Time, IDL.Text],
+        [IDL.Vec(SignalMessage)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(ImmutableUserProfile)],
@@ -142,9 +175,20 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([ImmutableUserProfile], [], []),
-    'sendSignal' : IDL.Func([IDL.Text], [], []),
+    'sendSignal' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'toggleFavoriteNetwork' : IDL.Func([IDL.Text], [IDL.Bool], []),
-    'updateNowHearing' : IDL.Func([], [], []),
+    'updateNowHearing' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Nat),
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+        ],
+        [],
+        [],
+      ),
   });
 };
 

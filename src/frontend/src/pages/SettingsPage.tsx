@@ -4,222 +4,293 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { useGetCallerUserProfile, useSaveCallerUserProfile } from '../hooks/useCurrentUserProfile';
-import { useQrzLookup } from '../hooks/useQrzLookup';
-import TransmitDisclaimer from '../components/TransmitDisclaimer';
-import { CheckCircle2, AlertCircle, Search, Settings } from 'lucide-react';
+import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useQueryClient } from '@tanstack/react-query';
+import { Settings, User, Save, LogOut, Info, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useRememberLoginPreference } from '../hooks/useRememberLoginPreference';
 import ColorPageHeader from '../components/ColorPageHeader';
 import ColorAccentPanel from '../components/ColorAccentPanel';
 
 export default function SettingsPage() {
+  const queryClient = useQueryClient();
+  const { clear } = useInternetIdentity();
   const { data: userProfile, isLoading } = useGetCallerUserProfile();
   const saveProfile = useSaveCallerUserProfile();
-  const qrzLookup = useQrzLookup();
+  const { rememberLogin, setRememberLogin } = useRememberLoginPreference();
 
   const [callsign, setCallsign] = useState('');
   const [name, setName] = useState('');
-  const [licenseAck, setLicenseAck] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-
-  const [lookupCallsign, setLookupCallsign] = useState('');
-  const [lookupResult, setLookupResult] = useState('');
-  const [lookupError, setLookupError] = useState('');
+  const [dmrId, setDmrId] = useState('');
+  const [ssid, setSsid] = useState('');
+  const [licenseAcknowledgement, setLicenseAcknowledgement] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (userProfile) {
       setCallsign(userProfile.callsign || '');
       setName(userProfile.name || '');
-      setLicenseAck(userProfile.licenseAcknowledgement || false);
-      setLookupCallsign(userProfile.callsign || '');
+      setDmrId(userProfile.dmrId?.toString() || '');
+      setSsid(userProfile.ssid?.toString() || '');
+      setLicenseAcknowledgement(userProfile.licenseAcknowledgement || false);
     }
   }, [userProfile]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess(false);
-
-    if (!callsign.trim()) {
-      setError('Callsign is required');
-      return;
-    }
-
+  const handleSave = async () => {
     try {
       await saveProfile.mutateAsync({
         callsign: callsign.trim().toUpperCase(),
         name: name.trim() || undefined,
-        licenseAcknowledgement: licenseAck,
+        dmrId: dmrId.trim() ? BigInt(dmrId.trim()) : undefined,
+        ssid: ssid.trim() ? BigInt(ssid.trim()) : undefined,
+        licenseAcknowledgement,
         favoriteNetworks: userProfile?.favoriteNetworks || [],
       });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      setError('Failed to save profile. Please try again.');
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
     }
   };
 
-  const handleQrzLookup = async () => {
-    setLookupResult('');
-    setLookupError('');
+  const handleLogout = async () => {
+    await clear();
+    queryClient.clear();
+  };
 
-    if (!lookupCallsign.trim()) {
-      setLookupError('Please enter a callsign to lookup');
-      return;
-    }
-
-    try {
-      const result = await qrzLookup.mutateAsync(lookupCallsign.trim().toUpperCase());
-      setLookupResult(result);
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to lookup callsign. Please try again.';
-      setLookupError(errorMessage);
-    }
+  const handleRememberLoginChange = (checked: boolean) => {
+    setRememberLogin(checked);
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-muted-foreground">Loading...</div>
+      <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+        <ColorPageHeader
+          title="Settings"
+          subtitle="Manage your profile and preferences"
+          variant="settings"
+          icon={<Settings className="h-8 w-8" />}
+        />
+        <div className="mx-auto max-w-2xl">
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Loading settings...
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-8 pb-24 md:pb-8">
+    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
       <ColorPageHeader
         title="Settings"
-        subtitle="Manage your profile and preferences."
+        subtitle="Manage your profile and preferences"
         variant="settings"
         icon={<Settings className="h-8 w-8" />}
       />
 
-      {!licenseAck && (
-        <div className="mb-6">
-          <TransmitDisclaimer />
-        </div>
-      )}
+      <div className="mx-auto max-w-2xl space-y-6">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Your profile information is stored on the Internet Computer blockchain and synced across devices. Connection settings are stored locally on this device only.
+          </AlertDescription>
+        </Alert>
 
-      <ColorAccentPanel variant="primary" className="mb-6">
-        <Card className="border-0 bg-transparent">
+        <ColorAccentPanel variant="info">
+          <Card className="border-0 bg-transparent">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Sign-In Preferences
+              </CardTitle>
+              <CardDescription>Control how PTTStar handles your login session</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="remember-login"
+                  checked={rememberLogin}
+                  onCheckedChange={handleRememberLoginChange}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="remember-login" className="cursor-pointer font-medium">
+                    Remember my login on this device
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, you'll stay logged in across browser sessions. When disabled, you'll be logged out when you close the browser or navigate away. <strong>Disable this on shared devices for security.</strong>
+                  </p>
+                </div>
+              </div>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Security Note:</strong> If you're using a shared or public device, disable "Remember my login" and always log out when finished to protect your account.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </ColorAccentPanel>
+
+        {saveSuccess && (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertTitle>Profile Saved</AlertTitle>
+            <AlertDescription>Your profile information has been updated successfully.</AlertDescription>
+          </Alert>
+        )}
+
+        <Card>
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Update your callsign, name, and license acknowledgement.</CardDescription>
+            <CardDescription>Your amateur radio operator details and identification</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="callsign">
-                  Callsign <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="callsign">Callsign *</Label>
                 <Input
                   id="callsign"
                   value={callsign}
-                  onChange={(e) => setCallsign(e.target.value)}
+                  onChange={(e) => setCallsign(e.target.value.toUpperCase())}
                   placeholder="e.g., W1AW"
-                  className="uppercase"
-                  required
+                  className="font-mono uppercase"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Required: Your FCC-issued amateur radio callsign. Must be valid and properly formatted (e.g., W1AW, KE0ABC).
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Name (optional)</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional: Your name as you'd like it displayed in the app.
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">DMR Configuration</h3>
+              </div>
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  DMR ID and SSID are only required if you plan to use DMR networks. Register for a DMR ID at <strong>radioid.net</strong> or your regional DMR registry. SSID is an optional suffix (0-9) for your DMR ID.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="dmr-id">DMR ID</Label>
+                <Input
+                  id="dmr-id"
+                  value={dmrId}
+                  onChange={(e) => setDmrId(e.target.value.replace(/\D/g, ''))}
+                  placeholder="e.g., 1234567"
+                  type="text"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional: Your registered DMR ID number. Required for DMR network connections. Register at radioid.net if you don't have one.
+                </p>
               </div>
 
-              <div className="rounded-lg border border-status-warning/40 bg-status-warning/5 p-4">
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="license"
-                    checked={licenseAck}
-                    onCheckedChange={(checked) => setLicenseAck(!!checked)}
-                  />
-                  <Label htmlFor="license" className="text-sm leading-tight">
-                    I hold a valid amateur radio license and understand that I must comply with all applicable
-                    regulations when transmitting. I acknowledge that PTTStar is a software client and that I am
-                    responsible for adhering to local amateur radio rules.
+              <div className="space-y-2">
+                <Label htmlFor="ssid">SSID</Label>
+                <Input
+                  id="ssid"
+                  value={ssid}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 9)) {
+                      setSsid(val);
+                    }
+                  }}
+                  placeholder="e.g., 0"
+                  type="text"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional: SSID (Subscriber ID) is a single-digit suffix (0-9) for your DMR ID. Use 0 if unsure or leave blank.
+                </p>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>License Acknowledgement Required</AlertTitle>
+                <AlertDescription>
+                  You must acknowledge that you hold a valid amateur radio license to enable transmit functionality. Transmitting without a license is illegal in most jurisdictions.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="license-ack"
+                  checked={licenseAcknowledgement}
+                  onCheckedChange={(checked) => setLicenseAcknowledgement(checked === true)}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="license-ack" className="cursor-pointer font-medium">
+                    I acknowledge that I hold a valid amateur radio license
                   </Label>
+                  <p className="text-sm text-muted-foreground">
+                    By checking this box, you confirm that you are a licensed amateur radio operator authorized to transmit on the frequencies and modes you intend to use. You are responsible for complying with all applicable regulations.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {success && (
-                <Alert className="border-status-active bg-status-active/10">
-                  <CheckCircle2 className="h-4 w-4 text-status-active" />
-                  <AlertDescription className="text-status-active">Profile saved successfully!</AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={saveProfile.isPending}>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleSave}
+                disabled={!callsign.trim() || saveProfile.isPending}
+                className="flex-1"
+                size="lg"
+              >
+                <Save className="mr-2 h-4 w-4" />
                 {saveProfile.isPending ? 'Saving...' : 'Save Profile'}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </ColorAccentPanel>
-
-      <ColorAccentPanel variant="info">
-        <Card className="border-0 bg-transparent">
-          <CardHeader>
-            <CardTitle>QRZ Callsign Lookup</CardTitle>
-            <CardDescription>Look up callsign information from QRZ.com database.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="lookupCallsign">Callsign</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="lookupCallsign"
-                    value={lookupCallsign}
-                    onChange={(e) => setLookupCallsign(e.target.value)}
-                    placeholder="e.g., W1AW"
-                    className="uppercase"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleQrzLookup}
-                    disabled={qrzLookup.isPending}
-                    className="shrink-0"
-                  >
-                    {qrzLookup.isPending ? (
-                      'Looking up...'
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        Lookup
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {lookupResult && (
-                <Alert className="border-status-active bg-status-active/10">
-                  <CheckCircle2 className="h-4 w-4 text-status-active" />
-                  <AlertDescription className="whitespace-pre-wrap text-status-active">
-                    {lookupResult}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {lookupError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{lookupError}</AlertDescription>
-                </Alert>
-              )}
             </div>
           </CardContent>
         </Card>
-      </ColorAccentPanel>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Actions</CardTitle>
+            <CardDescription>Manage your Internet Identity session</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Logging out will clear your session and all locally stored connection settings. Your profile data remains saved on the blockchain and will be available when you log in again.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={handleLogout} variant="destructive" size="lg" className="w-full">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

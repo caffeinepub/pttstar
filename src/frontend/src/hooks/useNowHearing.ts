@@ -17,14 +17,30 @@ export function useGetNowHearing() {
   });
 }
 
+interface UpdateNowHearingParams {
+  fromCallsign: string;
+  network: string;
+  talkgroup: string;
+  dmrId?: bigint;
+  dmrOperatorName?: string;
+  dmrOperatorLocation?: string;
+}
+
 export function useUpdateNowHearing() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (params: UpdateNowHearingParams) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.updateNowHearing();
+      return actor.updateNowHearing(
+        params.fromCallsign,
+        params.network,
+        params.talkgroup,
+        params.dmrId ?? null,
+        params.dmrOperatorName ?? null,
+        params.dmrOperatorLocation ?? null
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nowHearing'] });

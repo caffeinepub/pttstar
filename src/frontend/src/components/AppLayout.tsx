@@ -1,6 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Radio, Wifi, Activity, Settings, Info } from 'lucide-react';
 import LoginButton from './LoginButton';
+import InstallAppAction from './InstallAppAction';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -51,7 +52,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <LoginButton />
+          <div className="flex items-center gap-2">
+            <InstallAppAction />
+            <LoginButton />
+          </div>
         </div>
       </header>
 

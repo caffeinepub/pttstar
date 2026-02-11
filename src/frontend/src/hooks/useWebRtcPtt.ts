@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useActor } from './useActor';
 import { useGetCallerUserProfile } from './useCurrentUserProfile';
+import { loadConnection, isDirectoryConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured } from './usePreferredConnection';
+import { deriveRoomLabel } from '../utils/roomKey';
+import { DigitalVoiceGatewayClient } from '../utils/digitalVoiceGatewayClient';
 
 interface WebRtcPttState {
   roomKey: string;
@@ -35,6 +38,7 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastPollTimeRef = useRef<bigint>(BigInt(0));
+  const gatewayClientRef = useRef<DigitalVoiceGatewayClient | null>(null);
 
   // Initialize remote audio element
   useEffect(() => {
@@ -71,24 +75,35 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
       remoteAudioRef.current.srcObject = null;
     }
 
+    if (gatewayClientRef.current) {
+      gatewayClientRef.current.disconnect();
+      gatewayClientRef.current = null;
+    }
+
     setIsTransmitting(false);
     setIsReceiving(false);
   }, []);
 
-  const createPeerConnection = useCallback(() => {
+  const createPeerConnection = useCallback((useGateway: boolean = false) => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = async (event) => {
-      if (event.candidate && actor) {
-        try {
-          const message = JSON.stringify({
-            type: 'ice-candidate',
-            candidate: event.candidate.toJSON(),
-            roomKey,
-          });
-          await actor.sendSignal(message);
-        } catch (err) {
-          console.error('Failed to send ICE candidate:', err);
+      if (event.candidate) {
+        if (useGateway && gatewayClientRef.current) {
+          // Send ICE candidate to gateway
+          gatewayClientRef.current.sendIceCandidate(event.candidate.toJSON());
+        } else if (actor) {
+          // Send ICE candidate to backend signaling
+          try {
+            const signal = JSON.stringify({
+              type: 'ice-candidate',
+              candidate: event.candidate,
+              roomKey,
+            });
+            await actor.sendSignal(signal, roomKey);
+          } catch (err) {
+            console.error('Failed to send ICE candidate:', err);
+          }
         }
       }
     };
@@ -97,102 +112,133 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
       if (remoteAudioRef.current && event.streams[0]) {
         remoteAudioRef.current.srcObject = event.streams[0];
         setIsReceiving(true);
-        
-        // Stop receiving indicator when track ends
-        event.track.onended = () => {
-          setIsReceiving(false);
-        };
       }
     };
 
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'connected') {
         setConnectionStatus('connected');
-        setError(null);
       } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
         setConnectionStatus('error');
-        setError('Connection failed. Please try reconnecting.');
+        setError('Connection failed');
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        setConnectionStatus('connected');
       }
     };
 
     return pc;
   }, [actor, roomKey]);
 
-  const pollSignals = useCallback(async () => {
-    if (!actor) return;
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) return;
 
-    try {
-      const signals = await actor.getSignals(lastPollTimeRef.current);
-      
-      for (const signal of signals) {
-        try {
-          const message = JSON.parse(signal.content);
-          
-          // Only process messages for our room
-          if (message.roomKey !== roomKey) continue;
+    pollingIntervalRef.current = setInterval(async () => {
+      if (!actor || !peerConnectionRef.current) return;
 
-          if (message.type === 'offer') {
-            // Received an offer - create answer
-            if (!peerConnectionRef.current) {
-              peerConnectionRef.current = createPeerConnection();
+      try {
+        const signals = await actor.getSignalsAfterTimestampForRoom(lastPollTimeRef.current, roomKey);
+        
+        for (const signal of signals) {
+          try {
+            const data = JSON.parse(signal.content);
+
+            if (data.type === 'offer') {
+              await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+              const answer = await peerConnectionRef.current.createAnswer();
+              await peerConnectionRef.current.setLocalDescription(answer);
+              
+              const answerSignal = JSON.stringify({
+                type: 'answer',
+                answer,
+              });
+              await actor.sendSignal(answerSignal, roomKey);
+            } else if (data.type === 'answer') {
+              await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (data.type === 'ice-candidate') {
+              await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
 
-            const pc = peerConnectionRef.current;
-            await pc.setRemoteDescription(new RTCSessionDescription(message.offer));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-
-            const answerMessage = JSON.stringify({
-              type: 'answer',
-              answer: answer,
-              roomKey,
-            });
-            await actor.sendSignal(answerMessage);
-
-          } else if (message.type === 'answer') {
-            // Received an answer
-            if (peerConnectionRef.current) {
-              await peerConnectionRef.current.setRemoteDescription(
-                new RTCSessionDescription(message.answer)
-              );
-            }
-
-          } else if (message.type === 'ice-candidate') {
-            // Received ICE candidate
-            if (peerConnectionRef.current && message.candidate) {
-              await peerConnectionRef.current.addIceCandidate(
-                new RTCIceCandidate(message.candidate)
-              );
-            }
+            lastPollTimeRef.current = signal.timestamp;
+          } catch (err) {
+            console.error('Failed to process signal:', err);
           }
-
-          lastPollTimeRef.current = signal.timestamp;
-        } catch (err) {
-          console.error('Failed to process signal:', err);
         }
+      } catch (err) {
+        console.error('Failed to poll signals:', err);
       }
-    } catch (err) {
-      console.error('Failed to poll signals:', err);
-    }
-  }, [actor, roomKey, createPeerConnection]);
+    }, 1000);
+  }, [actor, roomKey]);
 
   const joinRoom = useCallback(async () => {
-    if (!actor || connectionStatus !== 'disconnected') return;
+    if (!actor) {
+      setError('Actor not initialized');
+      return;
+    }
 
     try {
       setConnectionStatus('connecting');
       setError(null);
 
-      // Start polling for signals
-      pollingIntervalRef.current = setInterval(pollSignals, 1000);
+      const connection = loadConnection();
+      const useGateway = connection && isDigitalVoiceConnection(connection) && isDigitalVoiceGatewayConfigured(connection);
 
-      setConnectionStatus('connected');
+      if (useGateway && connection && isDigitalVoiceConnection(connection)) {
+        // Use Digital Voice Gateway for real WebRTC connection
+        const gatewayClient = new DigitalVoiceGatewayClient({
+          url: connection.gatewayUrl!,
+          token: connection.gatewayToken,
+          room: connection.gatewayRoom || roomKey,
+          username: connection.gatewayUsername || userProfile?.callsign,
+        });
+
+        gatewayClientRef.current = gatewayClient;
+
+        // Connect to gateway
+        await gatewayClient.connect();
+
+        // Create peer connection
+        peerConnectionRef.current = createPeerConnection(true);
+
+        // Set up gateway message handlers
+        gatewayClient.on('offer', async (message) => {
+          if (peerConnectionRef.current && message.sdp) {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(message.sdp));
+            const answer = await peerConnectionRef.current.createAnswer();
+            await peerConnectionRef.current.setLocalDescription(answer);
+            gatewayClient.sendAnswer(answer);
+          }
+        });
+
+        gatewayClient.on('answer', async (message) => {
+          if (peerConnectionRef.current && message.sdp) {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(message.sdp));
+          }
+        });
+
+        gatewayClient.on('ice-candidate', async (message) => {
+          if (peerConnectionRef.current && message.candidate) {
+            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(message.candidate));
+          }
+        });
+
+        // Connection status will be set by onconnectionstatechange handler
+      } else {
+        // Use backend signaling (legacy/fallback)
+        peerConnectionRef.current = createPeerConnection(false);
+        startPolling();
+        
+        // For non-gateway connections, set connected immediately (legacy behavior)
+        setConnectionStatus('connected');
+      }
     } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to join room');
       setConnectionStatus('error');
-      setError('Failed to join room. Please try again.');
-      console.error('Failed to join room:', err);
     }
-  }, [actor, connectionStatus, pollSignals]);
+  }, [actor, createPeerConnection, startPolling, roomKey, userProfile]);
 
   const leaveRoom = useCallback(() => {
     cleanup();
@@ -201,87 +247,76 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
   }, [cleanup]);
 
   const startTransmit = useCallback(async () => {
-    if (!actor || isTransmitting) return;
+    if (!peerConnectionRef.current || !actor) return;
 
     try {
-      setError(null);
-
-      // Get microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        } 
-      });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       localStreamRef.current = stream;
 
-      // Create peer connection if needed
-      if (!peerConnectionRef.current) {
-        peerConnectionRef.current = createPeerConnection();
-      }
-
-      const pc = peerConnectionRef.current;
-
-      // Add audio track
+      // Add tracks to peer connection
       stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
+        peerConnectionRef.current?.addTrack(track, stream);
       });
+
+      const connection = loadConnection();
+      const useGateway = connection && isDigitalVoiceConnection(connection) && isDigitalVoiceGatewayConfigured(connection);
 
       // Create and send offer
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
 
-      const message = JSON.stringify({
-        type: 'offer',
-        offer: offer,
-        roomKey,
-      });
-      await actor.sendSignal(message);
+      if (useGateway && gatewayClientRef.current) {
+        // Send offer to gateway
+        gatewayClientRef.current.sendOffer(offer);
+      } else {
+        // Send offer to backend signaling
+        const signal = JSON.stringify({
+          type: 'offer',
+          offer,
+        });
+        await actor.sendSignal(signal, roomKey);
+      }
 
       setIsTransmitting(true);
 
-      // Record activity to backend
-      if (userProfile?.callsign) {
-        try {
-          await actor.updateNowHearing();
-        } catch (err) {
-          console.error('Failed to record activity:', err);
+      // Record activity with proper metadata from current connection
+      const callsign = userProfile?.callsign || 'Unknown';
+      
+      let networkLabel = 'Unknown Network';
+      let talkgroupValue = '';
+      
+      if (connection) {
+        if (isDigitalVoiceConnection(connection)) {
+          // For Digital Voice: use mode + reflector as network label
+          networkLabel = `${connection.mode.toUpperCase()} / ${connection.reflector}`;
+          talkgroupValue = connection.talkgroup || '';
+        } else if (isDirectoryConnection(connection)) {
+          networkLabel = connection.network.networkLabel;
+          talkgroupValue = connection.talkgroup;
+        } else {
+          networkLabel = deriveRoomLabel(connection);
         }
       }
 
-    } catch (err: any) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('Microphone permission denied. Please allow microphone access and try again.');
-      } else {
-        setError('Failed to start transmission. Please check your microphone.');
-      }
+      await actor.updateNowHearing(
+        callsign,
+        networkLabel,
+        talkgroupValue,
+        null,
+        null,
+        null
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start transmission');
       console.error('Failed to start transmit:', err);
-      
-      // Cleanup on error
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-        localStreamRef.current = null;
-      }
     }
-  }, [actor, isTransmitting, roomKey, createPeerConnection, userProfile]);
+  }, [actor, roomKey, userProfile]);
 
   const stopTransmit = useCallback(() => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
     }
-
-    // Remove tracks from peer connection but keep it alive for receiving
-    if (peerConnectionRef.current) {
-      const senders = peerConnectionRef.current.getSenders();
-      senders.forEach(sender => {
-        if (sender.track) {
-          peerConnectionRef.current?.removeTrack(sender);
-        }
-      });
-    }
-
     setIsTransmitting(false);
   }, []);
 

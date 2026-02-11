@@ -32,7 +32,7 @@ export default function AboutCompliancePage() {
             <CardContent className="space-y-4 text-sm text-muted-foreground">
               <p>
                 PTTStar is a web-based application that allows licensed amateur radio operators to access digital voice
-                modes including DMR, D-Star, Yaesu System Fusion (YSF), P25, NXDN, and others directly from a phone or
+                modes including DMR, D-Star, Yaesu System Fusion (YSF), P25, NXDN, M17, and others directly from a phone or
                 computer over the internet.
               </p>
               <p>
@@ -72,7 +72,7 @@ export default function AboutCompliancePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
-                DMR ID Requirement
+                DMR ID and SSID
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm text-muted-foreground">
@@ -92,8 +92,8 @@ export default function AboutCompliancePage() {
                 . Registration is free and requires proof of your amateur radio license.
               </p>
               <p>
-                Once you have your DMR ID, you will need it when configuring connections to DMR networks. This ID will be transmitted
-                along with your call sign when you use DMR networks.
+                Once you have your DMR ID, you can enter it in the Settings page along with an optional SSID (used to identify
+                multiple devices under the same DMR ID). These values will be used when configuring connections to DMR networks.
               </p>
             </CardContent>
           </Card>

@@ -90,23 +90,27 @@ export class ExternalBlob {
     }
 }
 export interface PersistentNetwork {
-    mode: Mode;
     networkLabel: string;
     address: string;
     talkgroups: Array<Talkgroup>;
+    networkType: NetworkType;
 }
 export type Time = bigint;
 export interface PersistentTransmission {
     fromCallsign: string;
     talkgroup: string;
     network: string;
+    dmrOperatorName?: string;
     timestamp: bigint;
+    dmrId?: bigint;
+    dmrOperatorLocation?: string;
 }
 export interface Talkgroup {
     id: string;
     name: string;
 }
 export interface SignalMessage {
+    roomKey: string;
     content: string;
     sender: Principal;
     timestamp: Time;
@@ -114,14 +118,17 @@ export interface SignalMessage {
 export interface ImmutableUserProfile {
     name?: string;
     licenseAcknowledgement: boolean;
+    ssid?: bigint;
     favoriteNetworks: Array<string>;
     callsign: string;
+    dmrId?: bigint;
 }
-export enum Mode {
+export enum NetworkType {
     dmr = "dmr",
     p25 = "p25",
     ysf = "ysf",
     nxdn = "nxdn",
+    analog = "analog",
     others = "others",
     dstar = "dstar"
 }
@@ -138,15 +145,15 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getFavoriteNetworks(): Promise<Array<string>>;
     getNowHearing(): Promise<Array<PersistentTransmission>>;
-    getSignals(callerTimestamp: bigint): Promise<Array<SignalMessage>>;
+    getSignalsAfterTimestampForRoom(callerTimestamp: Time, roomKey: string): Promise<Array<SignalMessage>>;
     getUserProfile(profileOwner: Principal): Promise<ImmutableUserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: ImmutableUserProfile): Promise<void>;
-    sendSignal(content: string): Promise<void>;
+    sendSignal(content: string, roomKey: string): Promise<void>;
     toggleFavoriteNetwork(networkId: string): Promise<boolean>;
-    updateNowHearing(): Promise<void>;
+    updateNowHearing(fromCallsign: string, network: string, talkgroup: string, dmrId: bigint | null, dmrOperatorName: string | null, dmrOperatorLocation: string | null): Promise<void>;
 }
-import type { ImmutableUserProfile as _ImmutableUserProfile, Mode as _Mode, PersistentNetwork as _PersistentNetwork, Talkgroup as _Talkgroup, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { ImmutableUserProfile as _ImmutableUserProfile, NetworkType as _NetworkType, PersistentNetwork as _PersistentNetwork, PersistentTransmission as _PersistentTransmission, Talkgroup as _Talkgroup, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -209,14 +216,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n12(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n13(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n12(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n13(this._uploadFile, this._downloadFile, result);
         }
     }
     async getFavoriteNetworks(): Promise<Array<string>> {
@@ -237,27 +244,27 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getNowHearing();
-                return result;
+                return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getNowHearing();
-            return result;
+            return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getSignals(arg0: bigint): Promise<Array<SignalMessage>> {
+    async getSignalsAfterTimestampForRoom(arg0: Time, arg1: string): Promise<Array<SignalMessage>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getSignals(arg0);
+                const result = await this.actor.getSignalsAfterTimestampForRoom(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getSignals(arg0);
+            const result = await this.actor.getSignalsAfterTimestampForRoom(arg0, arg1);
             return result;
         }
     }
@@ -292,28 +299,28 @@ export class Backend implements backendInterface {
     async saveCallerUserProfile(arg0: ImmutableUserProfile): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.saveCallerUserProfile(to_candid_ImmutableUserProfile_n14(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.saveCallerUserProfile(to_candid_ImmutableUserProfile_n18(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.saveCallerUserProfile(to_candid_ImmutableUserProfile_n14(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.saveCallerUserProfile(to_candid_ImmutableUserProfile_n18(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
-    async sendSignal(arg0: string): Promise<void> {
+    async sendSignal(arg0: string, arg1: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.sendSignal(arg0);
+                const result = await this.actor.sendSignal(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.sendSignal(arg0);
+            const result = await this.actor.sendSignal(arg0, arg1);
             return result;
         }
     }
@@ -331,17 +338,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateNowHearing(): Promise<void> {
+    async updateNowHearing(arg0: string, arg1: string, arg2: string, arg3: bigint | null, arg4: string | null, arg5: string | null): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateNowHearing();
+                const result = await this.actor.updateNowHearing(arg0, arg1, arg2, to_candid_opt_n20(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n21(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n21(this._uploadFile, this._downloadFile, arg5));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateNowHearing();
+            const result = await this.actor.updateNowHearing(arg0, arg1, arg2, to_candid_opt_n20(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n21(this._uploadFile, this._downloadFile, arg4), to_candid_opt_n21(this._uploadFile, this._downloadFile, arg5));
             return result;
         }
     }
@@ -349,16 +356,22 @@ export class Backend implements backendInterface {
 function from_candid_ImmutableUserProfile_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ImmutableUserProfile): ImmutableUserProfile {
     return from_candid_record_n10(_uploadFile, _downloadFile, value);
 }
-function from_candid_Mode_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Mode): Mode {
+function from_candid_NetworkType_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _NetworkType): NetworkType {
     return from_candid_variant_n7(_uploadFile, _downloadFile, value);
 }
 function from_candid_PersistentNetwork_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PersistentNetwork): PersistentNetwork {
     return from_candid_record_n5(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n13(_uploadFile, _downloadFile, value);
+function from_candid_PersistentTransmission_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PersistentTransmission): PersistentTransmission {
+    return from_candid_record_n17(_uploadFile, _downloadFile, value);
+}
+function from_candid_UserRole_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n14(_uploadFile, _downloadFile, value);
 }
 function from_candid_opt_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_ImmutableUserProfile]): ImmutableUserProfile | null {
@@ -367,40 +380,73 @@ function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
 function from_candid_record_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name: [] | [string];
     licenseAcknowledgement: boolean;
+    ssid: [] | [bigint];
     favoriteNetworks: Array<string>;
     callsign: string;
+    dmrId: [] | [bigint];
 }): {
     name?: string;
     licenseAcknowledgement: boolean;
+    ssid?: bigint;
     favoriteNetworks: Array<string>;
     callsign: string;
+    dmrId?: bigint;
 } {
     return {
         name: record_opt_to_undefined(from_candid_opt_n11(_uploadFile, _downloadFile, value.name)),
         licenseAcknowledgement: value.licenseAcknowledgement,
+        ssid: record_opt_to_undefined(from_candid_opt_n12(_uploadFile, _downloadFile, value.ssid)),
         favoriteNetworks: value.favoriteNetworks,
-        callsign: value.callsign
+        callsign: value.callsign,
+        dmrId: record_opt_to_undefined(from_candid_opt_n12(_uploadFile, _downloadFile, value.dmrId))
+    };
+}
+function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    fromCallsign: string;
+    talkgroup: string;
+    network: string;
+    dmrOperatorName: [] | [string];
+    timestamp: bigint;
+    dmrId: [] | [bigint];
+    dmrOperatorLocation: [] | [string];
+}): {
+    fromCallsign: string;
+    talkgroup: string;
+    network: string;
+    dmrOperatorName?: string;
+    timestamp: bigint;
+    dmrId?: bigint;
+    dmrOperatorLocation?: string;
+} {
+    return {
+        fromCallsign: value.fromCallsign,
+        talkgroup: value.talkgroup,
+        network: value.network,
+        dmrOperatorName: record_opt_to_undefined(from_candid_opt_n11(_uploadFile, _downloadFile, value.dmrOperatorName)),
+        timestamp: value.timestamp,
+        dmrId: record_opt_to_undefined(from_candid_opt_n12(_uploadFile, _downloadFile, value.dmrId)),
+        dmrOperatorLocation: record_opt_to_undefined(from_candid_opt_n11(_uploadFile, _downloadFile, value.dmrOperatorLocation))
     };
 }
 function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    mode: _Mode;
     networkLabel: string;
     address: string;
     talkgroups: Array<_Talkgroup>;
+    networkType: _NetworkType;
 }): {
-    mode: Mode;
     networkLabel: string;
     address: string;
     talkgroups: Array<Talkgroup>;
+    networkType: NetworkType;
 } {
     return {
-        mode: from_candid_Mode_n6(_uploadFile, _downloadFile, value.mode),
         networkLabel: value.networkLabel,
         address: value.address,
-        talkgroups: value.talkgroups
+        talkgroups: value.talkgroups,
+        networkType: from_candid_NetworkType_n6(_uploadFile, _downloadFile, value.networkType)
     };
 }
-function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -418,37 +464,54 @@ function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } | {
     nxdn: null;
 } | {
+    analog: null;
+} | {
     others: null;
 } | {
     dstar: null;
-}): Mode {
-    return "dmr" in value ? Mode.dmr : "p25" in value ? Mode.p25 : "ysf" in value ? Mode.ysf : "nxdn" in value ? Mode.nxdn : "others" in value ? Mode.others : "dstar" in value ? Mode.dstar : value;
+}): NetworkType {
+    return "dmr" in value ? NetworkType.dmr : "p25" in value ? NetworkType.p25 : "ysf" in value ? NetworkType.ysf : "nxdn" in value ? NetworkType.nxdn : "analog" in value ? NetworkType.analog : "others" in value ? NetworkType.others : "dstar" in value ? NetworkType.dstar : value;
+}
+function from_candid_vec_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_PersistentTransmission>): Array<PersistentTransmission> {
+    return value.map((x)=>from_candid_PersistentTransmission_n16(_uploadFile, _downloadFile, x));
 }
 function from_candid_vec_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_PersistentNetwork>): Array<PersistentNetwork> {
     return value.map((x)=>from_candid_PersistentNetwork_n4(_uploadFile, _downloadFile, x));
 }
-function to_candid_ImmutableUserProfile_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ImmutableUserProfile): _ImmutableUserProfile {
-    return to_candid_record_n15(_uploadFile, _downloadFile, value);
+function to_candid_ImmutableUserProfile_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: ImmutableUserProfile): _ImmutableUserProfile {
+    return to_candid_record_n19(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_record_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function to_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: bigint | null): [] | [bigint] {
+    return value === null ? candid_none() : candid_some(value);
+}
+function to_candid_opt_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
+    return value === null ? candid_none() : candid_some(value);
+}
+function to_candid_record_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     name?: string;
     licenseAcknowledgement: boolean;
+    ssid?: bigint;
     favoriteNetworks: Array<string>;
     callsign: string;
+    dmrId?: bigint;
 }): {
     name: [] | [string];
     licenseAcknowledgement: boolean;
+    ssid: [] | [bigint];
     favoriteNetworks: Array<string>;
     callsign: string;
+    dmrId: [] | [bigint];
 } {
     return {
         name: value.name ? candid_some(value.name) : candid_none(),
         licenseAcknowledgement: value.licenseAcknowledgement,
+        ssid: value.ssid ? candid_some(value.ssid) : candid_none(),
         favoriteNetworks: value.favoriteNetworks,
-        callsign: value.callsign
+        callsign: value.callsign,
+        dmrId: value.dmrId ? candid_some(value.dmrId) : candid_none()
     };
 }
 function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {

@@ -5,11 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, Trash2, Info } from 'lucide-react';
-import { Mode } from '../backend';
+import { NetworkType } from '../backend';
 
 interface PersonalEntry {
   id: string;
-  mode: Mode;
+  networkType: NetworkType;
   networkLabel: string;
   address: string;
   talkgroups: string;
@@ -19,7 +19,7 @@ export default function PersonalDirectoryEntries() {
   const [entries, setEntries] = useState<PersonalEntry[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<PersonalEntry>>({
-    mode: Mode.dmr,
+    networkType: NetworkType.dmr,
     networkLabel: '',
     address: '',
     talkgroups: '',
@@ -48,14 +48,14 @@ export default function PersonalDirectoryEntries() {
 
     const entry: PersonalEntry = {
       id: Date.now().toString(),
-      mode: newEntry.mode || Mode.dmr,
+      networkType: newEntry.networkType || NetworkType.dmr,
       networkLabel: newEntry.networkLabel,
       address: newEntry.address,
       talkgroups: newEntry.talkgroups || '',
     };
 
     saveEntries([...entries, entry]);
-    setNewEntry({ mode: Mode.dmr, networkLabel: '', address: '', talkgroups: '' });
+    setNewEntry({ networkType: NetworkType.dmr, networkLabel: '', address: '', talkgroups: '' });
     setIsAdding(false);
   };
 
@@ -84,7 +84,7 @@ export default function PersonalDirectoryEntries() {
             <div className="flex-1">
               <div className="mb-1 font-medium text-foreground">{entry.networkLabel}</div>
               <div className="text-xs text-muted-foreground">
-                {entry.mode.toUpperCase()} • {entry.address}
+                {entry.networkType.toUpperCase()} • {entry.address}
               </div>
               {entry.talkgroups && (
                 <div className="mt-1 text-xs text-muted-foreground">Talkgroups: {entry.talkgroups}</div>
@@ -104,16 +104,16 @@ export default function PersonalDirectoryEntries() {
               <Label htmlFor="mode">Mode</Label>
               <select
                 id="mode"
-                value={newEntry.mode}
-                onChange={(e) => setNewEntry({ ...newEntry, mode: e.target.value as Mode })}
+                value={newEntry.networkType}
+                onChange={(e) => setNewEntry({ ...newEntry, networkType: e.target.value as NetworkType })}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value={Mode.dmr}>DMR</option>
-                <option value={Mode.dstar}>D-Star</option>
-                <option value={Mode.ysf}>YSF</option>
-                <option value={Mode.p25}>P25</option>
-                <option value={Mode.nxdn}>NXDN</option>
-                <option value={Mode.others}>Other</option>
+                <option value={NetworkType.dmr}>DMR</option>
+                <option value={NetworkType.dstar}>D-Star</option>
+                <option value={NetworkType.ysf}>YSF</option>
+                <option value={NetworkType.p25}>P25</option>
+                <option value={NetworkType.nxdn}>NXDN</option>
+                <option value={NetworkType.others}>Other</option>
               </select>
             </div>
 

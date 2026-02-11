@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-global-theme-color-tokens-so-tailwind-utilities-like-bg-background-resolve-to-a-valid-dark-black-color-instead-of-falling-back-to-white-by-ensuring-css-variables-used-by-oklch-var-background-are-stored-as-raw-oklch-components-e-g-0-15-0-01-240-rather-than-nested-oklch-strings",
-      "featureTitle": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
+      "featureId": "feature-add-a-quick-setup-section-to-the-connection-settings-connectpage-that-provides-a-simple-guided-way-to-start-configuring-the-two-requested-networks-1-brandmeister-via-digital-voice-dmr-and-2-allstar-via-iax-dvswitch-each-option-must-switch-the-ui-to-the-correct-connection-type-tab-and-prefill-sensible-defaults-in-the-corresponding-form-without-requiring-the-user-to-manually-hunt-through-settings-first",
+      "featureTitle": "Add a \"Quick Setup\" section to the Connection Settings (ConnectPage) that provides a simple, guided way to start configuring the two requested networks: (1) BrandMeister via Digital Voice (DMR) and (2) AllStar via IAX / DVSwitch. Each option must switch the UI to the correct connection type tab and prefill sensible defaults in the corresponding form (without requiring the user to manually hunt through settings first).",
       "files": [
-        "frontend/src/index.css"
+        "frontend/src/components/DigitalVoiceConnectForm.tsx",
+        "frontend/src/components/IaxDvswitchConnectForm.tsx",
+        "frontend/src/pages/ConnectPage.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -17,15 +19,16 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-47"
+        "REQ-2"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-safe-global-fallback-so-the-document-never-renders-white-even-if-css-variables-fail-to-resolve-by-applying-an-explicit-dark-background-color-to-the-html-body-and-root-base-styles-in-frontend-src-index-css-in-addition-to-existing-tailwind-bg-background-usage",
-      "featureTitle": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
+      "featureId": "feature-improve-the-digitalvoiceconnectform-brandmeister-flow-so-a-user-can-configure-a-working-brandmeister-dmr-connection-with-minimal-steps-default-the-talkgroup-field-to-a-common-value-e-g-91-when-brandmeister-is-selected-unless-the-user-already-has-a-saved-value-and-make-brandmeister-server-selection-easy-by-using-the-backend-provided-server-list-with-human-readable-labels",
+      "featureTitle": "Improve the DigitalVoiceConnectForm BrandMeister flow so a user can configure a working BrandMeister DMR connection with minimal steps: default the talkgroup field to a common value (e.g., \"91\") when BrandMeister is selected (unless the user already has a saved value), and make BrandMeister server selection easy by using the backend-provided server list with human-readable labels.",
       "files": [
-        "frontend/src/index.css"
+        "frontend/src/components/DigitalVoiceConnectForm.tsx",
+        "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -37,7 +40,27 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-48"
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-the-iaxdvswitchconnectform-allstar-flow-so-a-user-can-configure-an-allstar-iax-connection-with-minimal-friction-provide-an-explicit-allstar-focused-preset-state-that-defaults-the-iax-port-to-4569-unless-the-user-already-has-a-saved-value-clearly-indicates-which-fields-are-required-for-allstar-gateway-server-node-number-and-uses-allstar-specific-labels-help-text-consistently",
+      "featureTitle": "Improve the IaxDvswitchConnectForm AllStar flow so a user can configure an AllStar IAX connection with minimal friction: provide an explicit AllStar-focused preset/state that defaults the IAX port to 4569 (unless the user already has a saved value), clearly indicates which fields are required for AllStar (gateway/server, node number), and uses AllStar-specific labels/help text consistently.",
+      "files": [
+        "frontend/src/components/IaxDvswitchConnectForm.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

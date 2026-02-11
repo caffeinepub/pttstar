@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Radio, Clock } from 'lucide-react';
+import { Radio, Clock, User, MapPin, Hash } from 'lucide-react';
 import type { PersistentTransmission } from '../backend';
 
 interface NowHearingListProps {
@@ -48,6 +48,24 @@ export default function NowHearingList({ transmissions, isLoading }: NowHearingL
                 <div>
                   <span className="font-medium">Talkgroup:</span> {tx.talkgroup}
                 </div>
+                {tx.dmrId !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Hash className="h-3 w-3" />
+                    <span className="font-medium">DMR ID:</span> {tx.dmrId.toString()}
+                  </div>
+                )}
+                {tx.dmrOperatorName && (
+                  <div className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    <span className="font-medium">Name:</span> {tx.dmrOperatorName}
+                  </div>
+                )}
+                {tx.dmrOperatorLocation && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    <span className="font-medium">Location:</span> {tx.dmrOperatorLocation}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">

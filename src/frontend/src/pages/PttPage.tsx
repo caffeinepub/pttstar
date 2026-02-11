@@ -1,84 +1,123 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Radio, AlertCircle, Settings } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { useGetCallerUserProfile } from '../hooks/useCurrentUserProfile';
 import PttControl from '../components/PttControl';
 import AudioLevelMeter from '../components/AudioLevelMeter';
-import TransmitDisclaimer from '../components/TransmitDisclaimer';
+import NowHearingList from '../components/NowHearingList';
 import RealTimeStatusBadge from '../components/RealTimeStatusBadge';
-import { Radio, Wifi, AlertCircle, Info, Server } from 'lucide-react';
-import {
-  loadConnection,
-  isIaxDvswitchConnection,
-  isDirectoryConnection,
-  type StoredConnection,
-} from '../hooks/usePreferredConnection';
-import { deriveRoomKey, deriveRoomLabel } from '../utils/roomKey';
 import { useWebRtcPtt } from '../hooks/useWebRtcPtt';
-import { useMicPttRecorder } from '../hooks/useMicPttRecorder';
-import ColorPageHeader from '../components/ColorPageHeader';
-import ColorAccentPanel from '../components/ColorAccentPanel';
+import { useGetNowHearing } from '../hooks/useNowHearing';
+import { loadConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured, isDirectoryConnection } from '../hooks/usePreferredConnection';
+import { deriveRoomKey, deriveRoomLabel } from '../utils/roomKey';
 
 export default function PttPage() {
   const navigate = useNavigate();
-  const { data: userProfile } = useGetCallerUserProfile();
-  const [connection, setConnection] = useState<StoredConnection | null>(null);
-  const [lastRecording, setLastRecording] = useState<string | null>(null);
+  const [connection, setConnection] = useState<ReturnType<typeof loadConnection>>(null);
+  const [roomKey, setRoomKey] = useState<string>('');
+  const [roomLabel, setRoomLabel] = useState<string>('');
+  const [showGatewayWarning, setShowGatewayWarning] = useState(false);
 
-  useEffect(() => {
-    const loaded = loadConnection();
-    if (loaded) {
-      setConnection(loaded);
-    }
-  }, []);
-
-  const roomKey = deriveRoomKey(connection);
-  const roomLabel = deriveRoomLabel(connection);
-
+  const { data: nowHearing = [], isLoading: isLoadingActivity } = useGetNowHearing();
   const {
     connectionStatus,
     isTransmitting,
     isReceiving,
-    error: webRtcError,
+    error,
     joinRoom,
     leaveRoom,
     startTransmit,
     stopTransmit,
   } = useWebRtcPtt(roomKey);
 
-  // Fallback recorder for testing
-  const { error: recorderError } = useMicPttRecorder(setLastRecording);
-
-  const canTransmit = userProfile?.licenseAcknowledgement === true;
-  const isIaxConnection = connection && isIaxDvswitchConnection(connection);
-
-  // Auto-join room when authenticated and connection exists
   useEffect(() => {
-    if (connection && connectionStatus === 'disconnected') {
-      joinRoom();
+    const conn = loadConnection();
+    setConnection(conn);
+
+    if (conn) {
+      const key = deriveRoomKey(conn);
+      const label = deriveRoomLabel(conn);
+      setRoomKey(key);
+      setRoomLabel(label);
+
+      // Check if Digital Voice gateway is configured
+      if (isDigitalVoiceConnection(conn)) {
+        const gatewayConfigured = isDigitalVoiceGatewayConfigured(conn);
+        setShowGatewayWarning(!gatewayConfigured);
+      } else {
+        setShowGatewayWarning(false);
+      }
     }
-  }, [connection, connectionStatus, joinRoom]);
+  }, []);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      leaveRoom();
-    };
-  }, [leaveRoom]);
+  const handleTransmitStart = async () => {
+    if (connectionStatus === 'connected') {
+      await startTransmit();
+    }
+  };
+
+  const handleTransmitStop = () => {
+    stopTransmit();
+  };
+
+  const handleJoinRoom = async () => {
+    if (showGatewayWarning) {
+      // Don't allow joining if gateway is not configured
+      return;
+    }
+    await joinRoom();
+  };
+
+  const handleLeaveRoom = () => {
+    leaveRoom();
+  };
+
+  const isConnected = connectionStatus === 'connected';
+  const isConnecting = connectionStatus === 'connecting';
+  const hasError = connectionStatus === 'error';
+
+  // Determine network label for display
+  let networkLabel = 'Unknown Network';
+  let talkgroupValue = '';
+  
+  if (connection) {
+    if (isDigitalVoiceConnection(connection)) {
+      networkLabel = `${connection.mode.toUpperCase()} / ${connection.reflector}`;
+      if (connection.bmServerLabel) {
+        networkLabel += ` (${connection.bmServerLabel})`;
+      }
+      talkgroupValue = connection.talkgroup || '';
+    } else if (isDirectoryConnection(connection)) {
+      networkLabel = connection.network.networkLabel;
+      talkgroupValue = connection.talkgroup;
+    } else {
+      networkLabel = roomLabel;
+    }
+  }
 
   if (!connection) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto max-w-4xl space-y-6 p-4">
         <Card>
           <CardHeader>
-            <CardTitle>No Connection</CardTitle>
-            <CardDescription>You need to connect to a network first.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Radio className="h-5 w-5" />
+              Push-to-Talk
+            </CardTitle>
+            <CardDescription>No connection configured</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate({ to: '/connect' })}>
-              <Wifi className="mr-2 h-4 w-4" />
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You need to configure a connection before using PTT. Go to the Connect page to set up your connection.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => navigate({ to: '/connect' })} className="mt-4">
+              <Settings className="mr-2 h-4 w-4" />
               Go to Connect
             </Button>
           </CardContent>
@@ -87,167 +126,128 @@ export default function PttPage() {
     );
   }
 
-  const displayError = webRtcError || (recorderError === 'permission-denied' ? 'Microphone permission denied. Please allow microphone access in your browser settings.' : null);
-
   return (
-    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-      <ColorPageHeader
-        title="Push to Talk"
-        subtitle="Hold the button to transmit live audio."
-        variant="ptt"
-        icon={<Radio className="h-8 w-8" />}
-      />
-
-      {isIaxConnection && (
-        <Alert className="mb-6">
-          <Info className="h-4 w-4" />
-          <AlertTitle>In-App Voice</AlertTitle>
-          <AlertDescription>
-            IAX / DVSwitch settings are used for room identification. Real-time voice is transmitted in-app between users, not to external ham radio networks.
+    <div className="container mx-auto max-w-4xl space-y-6 p-4">
+      {/* Gateway Warning for Digital Voice */}
+      {showGatewayWarning && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              Digital Voice Gateway not configured. Real transmission is not available. Please configure the gateway to enable actual voice transmission.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ to: '/connect' })}
+              className="ml-4 shrink-0"
+            >
+              Configure Gateway
+            </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      {!canTransmit && (
-        <div className="mb-6">
-          <TransmitDisclaimer />
-        </div>
-      )}
+      {/* Status Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Radio className="h-5 w-5" />
+            Push-to-Talk
+          </CardTitle>
+          <CardDescription>Real-time voice transmission control</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Real-time Status */}
+          <div className="space-y-3">
+            <RealTimeStatusBadge
+              connectionStatus={connectionStatus}
+              isTransmitting={isTransmitting}
+              isReceiving={isReceiving}
+            />
+          </div>
 
-      {displayError && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{displayError}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ColorAccentPanel variant="error">
-            <Card className="border-0 bg-transparent">
-              <CardHeader>
-                <CardTitle>PTT Control</CardTitle>
-                <CardDescription>Press and hold to transmit live audio</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="rounded-lg border border-border bg-muted/30 p-4">
-                  <RealTimeStatusBadge
-                    connectionStatus={connectionStatus}
-                    isTransmitting={isTransmitting}
-                    isReceiving={isReceiving}
-                    roomLabel={roomLabel}
-                  />
+          {/* Connection Info */}
+          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
+            <h4 className="text-sm font-medium">Connection Information</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Network</span>
+                <span className="text-sm font-medium">{networkLabel}</span>
+              </div>
+              {talkgroupValue && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Talkgroup</span>
+                  <Badge variant="outline">{talkgroupValue}</Badge>
                 </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Room Key</span>
+                <span className="text-sm font-mono text-muted-foreground">{roomKey}</span>
+              </div>
+            </div>
+          </div>
 
-                <div className="flex flex-col items-center justify-center py-8">
-                  <PttControl
-                    onTransmitStart={startTransmit}
-                    onTransmitStop={stopTransmit}
-                    isTransmitting={isTransmitting}
-                    disabled={!canTransmit || connectionStatus !== 'connected'}
-                  />
-                </div>
+          {/* Error Display */}
+          {hasError && error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-foreground">Audio Level</div>
-                  <AudioLevelMeter disabled={!canTransmit} />
-                </div>
+          {/* Audio Level Meter */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Audio Level</h4>
+            <AudioLevelMeter disabled={!isConnected} />
+          </div>
 
-                {lastRecording && (
-                  <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-4">
-                    <div className="text-sm font-medium text-muted-foreground">Fallback Test Recording</div>
-                    <audio controls src={lastRecording} className="w-full" />
-                    <p className="text-xs text-muted-foreground">
-                      This is a local recording for testing. Real-time audio is transmitted live to other users.
-                    </p>
-                  </div>
-                )}
+          {/* PTT Control */}
+          <div className="flex flex-col items-center gap-4">
+            <PttControl
+              onTransmitStart={handleTransmitStart}
+              onTransmitStop={handleTransmitStop}
+              disabled={!isConnected || showGatewayWarning}
+              isTransmitting={isTransmitting}
+            />
+            <p className="text-center text-sm text-muted-foreground">
+              {showGatewayWarning
+                ? 'Configure gateway to enable transmission'
+                : isConnected
+                ? 'Press and hold to transmit'
+                : 'Join room to enable transmission'}
+            </p>
+          </div>
 
-                {!canTransmit && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      You must acknowledge your amateur radio license in Settings before transmitting.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </ColorAccentPanel>
-        </div>
+          {/* Room Controls */}
+          <div className="flex gap-3">
+            {!isConnected ? (
+              <Button
+                onClick={handleJoinRoom}
+                className="flex-1"
+                disabled={isConnecting || showGatewayWarning}
+              >
+                {isConnecting ? 'Connecting...' : 'Join Room'}
+              </Button>
+            ) : (
+              <Button onClick={handleLeaveRoom} variant="outline" className="flex-1">
+                Leave Room
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <ColorAccentPanel variant="info" className="sticky top-4">
-            <Card className="border-0 bg-transparent">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  {isIaxConnection ? (
-                    <>
-                      <Server className="h-5 w-5" />
-                      IAX / DVSwitch Info
-                    </>
-                  ) : (
-                    <>
-                      <Radio className="h-5 w-5" />
-                      Connection Info
-                    </>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isIaxConnection ? (
-                  <>
-                    <div>
-                      <div className="text-xs font-medium uppercase text-muted-foreground">Gateway</div>
-                      <div className="text-sm font-medium text-foreground font-mono">{connection.gateway}</div>
-                    </div>
-                    {connection.iaxUsername && (
-                      <div>
-                        <div className="text-xs font-medium uppercase text-muted-foreground">IAX Username</div>
-                        <div className="text-sm font-medium text-foreground font-mono">{connection.iaxUsername}</div>
-                      </div>
-                    )}
-                    {connection.iaxPassword && (
-                      <div>
-                        <div className="text-xs font-medium uppercase text-muted-foreground">IAX Password</div>
-                        <div className="text-sm font-medium text-foreground font-mono">••••••••</div>
-                      </div>
-                    )}
-                    {connection.port && (
-                      <div>
-                        <div className="text-xs font-medium uppercase text-muted-foreground">Port</div>
-                        <div className="text-sm font-medium text-foreground font-mono">{connection.port}</div>
-                      </div>
-                    )}
-                    {connection.nodeNumber && (
-                      <div>
-                        <div className="text-xs font-medium uppercase text-muted-foreground">AllStar Node</div>
-                        <div className="text-sm font-medium text-foreground font-mono">{connection.nodeNumber}</div>
-                      </div>
-                    )}
-                  </>
-                ) : isDirectoryConnection(connection) ? (
-                  <>
-                    <div>
-                      <div className="text-xs font-medium uppercase text-muted-foreground">Network</div>
-                      <div className="text-sm font-medium text-foreground">{connection.network.networkLabel}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium uppercase text-muted-foreground">Mode</div>
-                      <div className="text-sm font-medium text-foreground uppercase">{connection.network.mode}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-medium uppercase text-muted-foreground">Talkgroup</div>
-                      <div className="text-sm font-medium text-foreground">{connection.talkgroup}</div>
-                    </div>
-                  </>
-                ) : null}
-              </CardContent>
-            </Card>
-          </ColorAccentPanel>
-        </div>
-      </div>
+      {/* Activity Feed */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Now Hearing</CardTitle>
+          <CardDescription>Recent transmissions on this network</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <NowHearingList transmissions={nowHearing} isLoading={isLoadingActivity} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

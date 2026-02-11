@@ -13,28 +13,35 @@ import type { Principal } from '@icp-sdk/core/principal';
 export interface ImmutableUserProfile {
   'name' : [] | [string],
   'licenseAcknowledgement' : boolean,
+  'ssid' : [] | [bigint],
   'favoriteNetworks' : Array<string>,
   'callsign' : string,
+  'dmrId' : [] | [bigint],
 }
-export type Mode = { 'dmr' : null } |
+export type NetworkType = { 'dmr' : null } |
   { 'p25' : null } |
   { 'ysf' : null } |
   { 'nxdn' : null } |
+  { 'analog' : null } |
   { 'others' : null } |
   { 'dstar' : null };
 export interface PersistentNetwork {
-  'mode' : Mode,
   'networkLabel' : string,
   'address' : string,
   'talkgroups' : Array<Talkgroup>,
+  'networkType' : NetworkType,
 }
 export interface PersistentTransmission {
   'fromCallsign' : string,
   'talkgroup' : string,
   'network' : string,
+  'dmrOperatorName' : [] | [string],
   'timestamp' : bigint,
+  'dmrId' : [] | [bigint],
+  'dmrOperatorLocation' : [] | [string],
 }
 export interface SignalMessage {
+  'roomKey' : string,
   'content' : string,
   'sender' : Principal,
   'timestamp' : Time,
@@ -52,13 +59,19 @@ export interface _SERVICE {
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getFavoriteNetworks' : ActorMethod<[], Array<string>>,
   'getNowHearing' : ActorMethod<[], Array<PersistentTransmission>>,
-  'getSignals' : ActorMethod<[bigint], Array<SignalMessage>>,
+  'getSignalsAfterTimestampForRoom' : ActorMethod<
+    [Time, string],
+    Array<SignalMessage>
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [ImmutableUserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[ImmutableUserProfile], undefined>,
-  'sendSignal' : ActorMethod<[string], undefined>,
+  'sendSignal' : ActorMethod<[string, string], undefined>,
   'toggleFavoriteNetwork' : ActorMethod<[string], boolean>,
-  'updateNowHearing' : ActorMethod<[], undefined>,
+  'updateNowHearing' : ActorMethod<
+    [string, string, string, [] | [bigint], [] | [string], [] | [string]],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

@@ -1,6 +1,9 @@
 import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
 import { useGetCallerUserProfile } from './hooks/useCurrentUserProfile';
+import { getRememberLoginPreference } from './hooks/useRememberLoginPreference';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import AppLayout from './components/AppLayout';
 import LandingPage from './pages/LandingPage';
 import ConnectPage from './pages/ConnectPage';
@@ -105,11 +108,25 @@ declare module '@tanstack/react-router' {
 }
 
 export default function App() {
-  const { identity, isInitializing } = useInternetIdentity();
+  const { identity, isInitializing, clear } = useInternetIdentity();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const queryClient = useQueryClient();
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+
+  // Check remember login preference on startup
+  useEffect(() => {
+    if (!isInitializing && identity) {
+      const rememberLogin = getRememberLoginPreference();
+      
+      // If remember login is OFF and user is authenticated, clear the session
+      if (!rememberLogin) {
+        clear();
+        queryClient.clear();
+      }
+    }
+  }, [isInitializing, identity, clear, queryClient]);
 
   if (isInitializing) {
     return (

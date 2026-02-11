@@ -1,57 +1,83 @@
-import type { StoredConnection } from '../hooks/usePreferredConnection';
-import { isIaxDvswitchConnection, isDirectoryConnection } from '../hooks/usePreferredConnection';
+import type { PersistentNetwork } from '../backend';
+import type { IaxDvswitchConnection, DigitalVoiceConnection } from '../hooks/usePreferredConnection';
 
 /**
- * Derive a stable room key from the current connection settings.
- * This key is used to scope WebRTC signaling to the correct room.
+ * Derives a stable, normalized room key from connection settings.
+ * Different networks/reflectors/talkgroups produce distinct rooms.
  */
-export function deriveRoomKey(connection: StoredConnection | null): string {
-  if (!connection) {
-    return 'default-room';
+export function deriveRoomKey(
+  connection:
+    | { network: PersistentNetwork; talkgroup: string }
+    | IaxDvswitchConnection
+    | DigitalVoiceConnection
+): string {
+  if ('type' in connection) {
+    if (connection.type === 'iax-dvswitch') {
+      // IAX/DVSwitch: room key based on gateway + node number
+      const gateway = connection.gateway.toLowerCase().trim();
+      const node = connection.nodeNumber?.toLowerCase().trim() || 'default';
+      return `iax-${gateway}-${node}`;
+    }
+
+    if (connection.type === 'digital-voice') {
+      // Digital Voice: room key based on mode + reflector + talkgroup + BrandMeister server + gateway room
+      const mode = connection.mode.toLowerCase().trim();
+      const reflector = connection.reflector.toLowerCase().trim();
+      const tg = connection.talkgroup?.toLowerCase().trim() || 'default';
+      const bmServer = connection.bmServerAddress?.toLowerCase().trim() || '';
+      const gatewayRoom = connection.gatewayRoom?.toLowerCase().trim() || '';
+      
+      // Include gateway room in room key if present (for gateway-specific scoping)
+      if (gatewayRoom) {
+        return `dv-${mode}-${reflector}-${bmServer}-${tg}-${gatewayRoom}`;
+      }
+      
+      // Include BrandMeister server in room key if present
+      if (bmServer) {
+        return `dv-${mode}-${reflector}-${bmServer}-${tg}`;
+      }
+      
+      return `dv-${mode}-${reflector}-${tg}`;
+    }
   }
 
-  if (isIaxDvswitchConnection(connection)) {
-    // For IAX/DVSwitch: use gateway + node number
-    const parts = [
-      'iax',
-      connection.gateway,
-      connection.nodeNumber || 'no-node',
-    ];
-    return parts.join(':');
-  }
-
-  if (isDirectoryConnection(connection)) {
-    // For directory connections: use network + talkgroup
-    const parts = [
-      'dir',
-      connection.network.networkLabel,
-      connection.talkgroup,
-    ];
-    return parts.join(':');
-  }
-
-  return 'default-room';
+  // Directory-based connection
+  const networkLabel = connection.network.networkLabel.toLowerCase().trim();
+  const tg = connection.talkgroup.toLowerCase().trim();
+  return `dir-${networkLabel}-${tg}`;
 }
 
 /**
- * Generate a human-readable label for the current room/connection.
+ * Derives a human-readable label from connection settings.
  */
-export function deriveRoomLabel(connection: StoredConnection | null): string {
-  if (!connection) {
-    return 'No Connection';
-  }
-
-  if (isIaxDvswitchConnection(connection)) {
-    const parts = [connection.gateway];
-    if (connection.nodeNumber) {
-      parts.push(`Node ${connection.nodeNumber}`);
+export function deriveRoomLabel(
+  connection:
+    | { network: PersistentNetwork; talkgroup: string }
+    | IaxDvswitchConnection
+    | DigitalVoiceConnection
+): string {
+  if ('type' in connection) {
+    if (connection.type === 'iax-dvswitch') {
+      // IAX/DVSwitch: label based on gateway + node
+      const node = connection.nodeNumber || 'Default';
+      return `IAX ${connection.gateway} (Node ${node})`;
     }
-    return parts.join(' / ');
+
+    if (connection.type === 'digital-voice') {
+      // Digital Voice: label based on mode + reflector + talkgroup + BrandMeister server
+      const mode = connection.mode.toUpperCase();
+      const reflector = connection.reflector;
+      const tg = connection.talkgroup || 'Default';
+      
+      // Include BrandMeister server in label if present
+      if (connection.bmServerLabel) {
+        return `${mode} ${reflector} (${connection.bmServerLabel}) TG ${tg}`;
+      }
+      
+      return `${mode} ${reflector} TG ${tg}`;
+    }
   }
 
-  if (isDirectoryConnection(connection)) {
-    return `${connection.network.networkLabel} / ${connection.talkgroup}`;
-  }
-
-  return 'Unknown Connection';
+  // Directory-based connection
+  return `${connection.network.networkLabel} TG ${connection.talkgroup}`;
 }

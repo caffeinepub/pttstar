@@ -1,54 +1,74 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T10:27:42.999Z",
+  "generatedAt": "2026-02-11T17:29:29.947Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
-        "id": "REQ-47",
-        "summary": "Fix the global theme color tokens so Tailwind utilities like `bg-background` resolve to a valid dark/black color (instead of falling back to white), by ensuring CSS variables used by `oklch(var(--background))` are stored as raw OKLCH components (e.g., `0.15 0.01 240`) rather than nested `oklch(...)` strings.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/index.css"
-        ],
-        "matchedFiles": [
-          "frontend/src/index.css"
-        ]
-      },
-      {
-        "id": "REQ-48",
-        "summary": "Add a safe global fallback so the document never renders white even if CSS variables fail to resolve, by applying an explicit dark background color to the `html`, `body`, and `#root` base styles in `frontend/src/index.css` (in addition to existing Tailwind `bg-background` usage).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/index.css"
-        ],
-        "matchedFiles": [
-          "frontend/src/index.css"
-        ]
-      },
-      {
-        "id": "REQ-49",
-        "summary": "Eliminate any conflicting global CSS that could be reintroducing a light theme by ensuring there is no additional global stylesheet defining light `:root` tokens that overrides `frontend/src/index.css` at runtime (e.g., reconcile or remove overrides from `frontend/index.css` if it is being included in the build).",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/index.css"
-        ],
+        "id": "REQ-1",
+        "summary": "Fix the builtin DMR network directory entries returned by backend getBuiltinNetworks() so each returned PersistentNetwork includes the correct networkLabel (e.g., \"BrandMeister Worldwide\") instead of an empty string, ensuring BrandMeister servers are identifiable in the UI.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add a \"Quick Setup\" section to the Connection Settings (ConnectPage) that provides a simple, guided way to start configuring the two requested networks: (1) BrandMeister via Digital Voice (DMR) and (2) AllStar via IAX / DVSwitch. Each option must switch the UI to the correct connection type tab and prefill sensible defaults in the corresponding form (without requiring the user to manually hunt through settings first).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/ConnectPage.tsx",
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/ConnectPage.tsx",
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Improve the DigitalVoiceConnectForm BrandMeister flow so a user can configure a working BrandMeister DMR connection with minimal steps: default the talkgroup field to a common value (e.g., \"91\") when BrandMeister is selected (unless the user already has a saved value), and make BrandMeister server selection easy by using the backend-provided server list with human-readable labels.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Improve the IaxDvswitchConnectForm AllStar flow so a user can configure an AllStar IAX connection with minimal friction: provide an explicit AllStar-focused preset/state that defaults the IAX port to 4569 (unless the user already has a saved value), clearly indicates which fields are required for AllStar (gateway/server, node number), and uses AllStar-specific labels/help text consistently.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/index.css",
+    "frontend/src/components/DigitalVoiceConnectForm.tsx",
+    "frontend/src/components/DigitalVoiceSavedConfigurationTab.tsx",
+    "frontend/src/components/IaxDvswitchConnectForm.tsx",
+    "frontend/src/pages/ConnectPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
