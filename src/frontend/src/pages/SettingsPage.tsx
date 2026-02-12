@@ -3,22 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Save, AlertCircle, Info, CheckCircle2, RefreshCw, Database } from 'lucide-react';
 import { useGetCallerUserProfile, useSaveCallerUserProfile } from '../hooks/useCurrentUserProfile';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
-import { Settings, User, Save, LogOut, Info, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useRememberLoginPreference } from '../hooks/useRememberLoginPreference';
 import ColorPageHeader from '../components/ColorPageHeader';
-import ColorAccentPanel from '../components/ColorAccentPanel';
+import {
+  useServerDirectorySources,
+  useUpdateServerDirectorySources,
+  useRefreshBrandmeisterServers,
+  useRefreshAllstarServers,
+  useBrandmeisterMetadata,
+  useAllstarMetadata,
+} from '../hooks/useServerDirectories';
+import { getCacheAge } from '../utils/serverDirectoryCache';
 
 export default function SettingsPage() {
-  const queryClient = useQueryClient();
-  const { clear } = useInternetIdentity();
   const { data: userProfile, isLoading } = useGetCallerUserProfile();
-  const saveProfile = useSaveCallerUserProfile();
+  const saveProfileMutation = useSaveCallerUserProfile();
   const { rememberLogin, setRememberLogin } = useRememberLoginPreference();
 
   const [callsign, setCallsign] = useState('');
@@ -26,7 +29,19 @@ export default function SettingsPage() {
   const [dmrId, setDmrId] = useState('');
   const [ssid, setSsid] = useState('');
   const [licenseAcknowledgement, setLicenseAcknowledgement] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [validationError, setValidationError] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+
+  // Server directory sources
+  const { data: sources } = useServerDirectorySources();
+  const updateSourcesMutation = useUpdateServerDirectorySources();
+  const refreshBrandmeisterMutation = useRefreshBrandmeisterServers();
+  const refreshAllstarMutation = useRefreshAllstarServers();
+  const { data: bmMetadata } = useBrandmeisterMetadata();
+  const { data: allstarMetadata } = useAllstarMetadata();
+
+  const [bmSourceUrl, setBmSourceUrl] = useState('');
+  const [allstarSourceUrl, setAllstarSourceUrl] = useState('');
 
   useEffect(() => {
     if (userProfile) {
@@ -38,256 +53,334 @@ export default function SettingsPage() {
     }
   }, [userProfile]);
 
+  useEffect(() => {
+    if (sources) {
+      setBmSourceUrl(sources.brandmeister);
+      setAllstarSourceUrl(sources.allstar);
+    }
+  }, [sources]);
+
   const handleSave = async () => {
+    setValidationError('');
+    setSuccessMessage('');
+
+    if (!callsign) {
+      setValidationError('Callsign is required');
+      return;
+    }
+
+    if (!licenseAcknowledgement) {
+      setValidationError('You must acknowledge that you hold a valid amateur radio license');
+      return;
+    }
+
     try {
-      await saveProfile.mutateAsync({
-        callsign: callsign.trim().toUpperCase(),
-        name: name.trim() || undefined,
-        dmrId: dmrId.trim() ? BigInt(dmrId.trim()) : undefined,
-        ssid: ssid.trim() ? BigInt(ssid.trim()) : undefined,
+      await saveProfileMutation.mutateAsync({
+        callsign: callsign.toUpperCase(),
+        name: name || undefined,
+        dmrId: dmrId ? BigInt(dmrId) : undefined,
+        ssid: ssid ? BigInt(ssid) : undefined,
         licenseAcknowledgement,
         favoriteNetworks: userProfile?.favoriteNetworks || [],
       });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error('Failed to save profile:', error);
+      setSuccessMessage('Profile saved successfully');
+    } catch (error: any) {
+      setValidationError(error.message || 'Failed to save profile');
     }
   };
 
-  const handleLogout = async () => {
-    await clear();
-    queryClient.clear();
+  const handleSaveSources = async () => {
+    try {
+      await updateSourcesMutation.mutateAsync({
+        brandmeister: bmSourceUrl,
+        allstar: allstarSourceUrl,
+      });
+      setSuccessMessage('Server directory sources updated successfully');
+    } catch (error: any) {
+      setValidationError(error.message || 'Failed to update sources');
+    }
   };
 
-  const handleRememberLoginChange = (checked: boolean) => {
-    setRememberLogin(checked);
+  const handleRefreshBrandmeister = async () => {
+    setValidationError('');
+    setSuccessMessage('');
+    try {
+      await refreshBrandmeisterMutation.mutateAsync();
+      setSuccessMessage('BrandMeister server list refreshed successfully');
+    } catch (error: any) {
+      setValidationError(`Failed to refresh BrandMeister servers: ${error.message}`);
+    }
+  };
+
+  const handleRefreshAllstar = async () => {
+    setValidationError('');
+    setSuccessMessage('');
+    try {
+      await refreshAllstarMutation.mutateAsync();
+      setSuccessMessage('AllStar server list refreshed successfully');
+    } catch (error: any) {
+      setValidationError(`Failed to refresh AllStar servers: ${error.message}`);
+    }
+  };
+
+  const formatTimestamp = (timestamp: number | null) => {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
+
+  const formatCacheAge = (type: 'brandmeister' | 'allstar') => {
+    const age = getCacheAge(type);
+    if (!age) return 'No cache';
+    const hours = Math.floor(age / 1000 / 60 / 60);
+    const minutes = Math.floor((age / 1000 / 60) % 60);
+    if (hours > 0) return `${hours}h ${minutes}m ago`;
+    return `${minutes}m ago`;
   };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+      <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
         <ColorPageHeader
           title="Settings"
           subtitle="Manage your profile and preferences"
           variant="settings"
-          icon={<Settings className="h-8 w-8" />}
+          icon={<Settings className="h-7 w-7" />}
         />
         <div className="mx-auto max-w-2xl">
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              Loading settings...
-            </CardContent>
-          </Card>
+          <p className="text-xs text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <ColorPageHeader
         title="Settings"
         subtitle="Manage your profile and preferences"
         variant="settings"
-        icon={<Settings className="h-8 w-8" />}
+        icon={<Settings className="h-7 w-7" />}
       />
 
-      <div className="mx-auto max-w-2xl space-y-6">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Your profile information is stored on the Internet Computer blockchain and synced across devices. Connection settings are stored locally on this device only.
-          </AlertDescription>
-        </Alert>
-
-        <ColorAccentPanel variant="info">
-          <Card className="border-0 bg-transparent">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Sign-In Preferences
-              </CardTitle>
-              <CardDescription>Control how PTTStar handles your login session</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="remember-login"
-                  checked={rememberLogin}
-                  onCheckedChange={handleRememberLoginChange}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="remember-login" className="cursor-pointer font-medium">
-                    Remember my login on this device
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    When enabled, you'll stay logged in across browser sessions. When disabled, you'll be logged out when you close the browser or navigate away. <strong>Disable this on shared devices for security.</strong>
-                  </p>
-                </div>
-              </div>
-
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Security Note:</strong> If you're using a shared or public device, disable "Remember my login" and always log out when finished to protect your account.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </ColorAccentPanel>
-
-        {saveSuccess && (
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Profile Saved</AlertTitle>
-            <AlertDescription>Your profile information has been updated successfully.</AlertDescription>
+      <div className="mx-auto max-w-2xl space-y-4">
+        {validationError && (
+          <Alert variant="destructive" className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">{validationError}</AlertDescription>
           </Alert>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Your amateur radio operator details and identification</CardDescription>
+        {successMessage && (
+          <Alert className="console-panel border-status-active/50 bg-status-active/10">
+            <CheckCircle2 className="h-3.5 w-3.5 text-status-active" />
+            <AlertDescription className="text-xs text-status-active">{successMessage}</AlertDescription>
+          </Alert>
+        )}
+
+        <Card className="console-panel">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Profile Information</CardTitle>
+            <CardDescription className="text-xs">Your operator details stored on-chain</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="callsign">Callsign *</Label>
-                <Input
-                  id="callsign"
-                  value={callsign}
-                  onChange={(e) => setCallsign(e.target.value.toUpperCase())}
-                  placeholder="e.g., W1AW"
-                  className="font-mono uppercase"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Required: Your FCC-issued amateur radio callsign. Must be valid and properly formatted (e.g., W1AW, KE0ABC).
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional: Your name as you'd like it displayed in the app.
-                </p>
-              </div>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="callsign" className="text-xs">Callsign <span className="text-destructive">*</span></Label>
+              <Input
+                id="callsign"
+                placeholder="e.g., KO4RXE"
+                value={callsign}
+                onChange={(e) => setCallsign(e.target.value.toUpperCase())}
+                className="text-xs font-mono uppercase"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Your amateur radio callsign. Format: letters and numbers only (e.g., KO4RXE, W1AW).
+              </p>
             </div>
 
-            <Separator />
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <h3 className="text-sm font-semibold text-foreground">DMR Configuration</h3>
-              </div>
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  DMR ID and SSID are only required if you plan to use DMR networks. Register for a DMR ID at <strong>radioid.net</strong> or your regional DMR registry. SSID is an optional suffix (0-9) for your DMR ID.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <Label htmlFor="dmr-id">DMR ID</Label>
-                <Input
-                  id="dmr-id"
-                  value={dmrId}
-                  onChange={(e) => setDmrId(e.target.value.replace(/\D/g, ''))}
-                  placeholder="e.g., 1234567"
-                  type="text"
-                  className="font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional: Your registered DMR ID number. Required for DMR network connections. Register at radioid.net if you don't have one.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ssid">SSID</Label>
-                <Input
-                  id="ssid"
-                  value={ssid}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '');
-                    if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 9)) {
-                      setSsid(val);
-                    }
-                  }}
-                  placeholder="e.g., 0"
-                  type="text"
-                  className="font-mono"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Optional: SSID (Subscriber ID) is a single-digit suffix (0-9) for your DMR ID. Use 0 if unsure or leave blank.
-                </p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-xs">Name (Optional)</Label>
+              <Input
+                id="name"
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="text-xs"
+              />
             </div>
 
-            <Separator />
+            <div className="space-y-2">
+              <Label htmlFor="dmrId" className="text-xs">DMR ID (Optional)</Label>
+              <Input
+                id="dmrId"
+                placeholder="e.g., 3123456"
+                value={dmrId}
+                onChange={(e) => setDmrId(e.target.value)}
+                className="text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Your registered DMR ID from radioid.net or your regional DMR registry. Required for DMR networks.
+              </p>
+            </div>
 
-            <div className="space-y-4">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>License Acknowledgement Required</AlertTitle>
-                <AlertDescription>
-                  You must acknowledge that you hold a valid amateur radio license to enable transmit functionality. Transmitting without a license is illegal in most jurisdictions.
-                </AlertDescription>
-              </Alert>
+            <div className="space-y-2">
+              <Label htmlFor="ssid" className="text-xs">SSID (Optional)</Label>
+              <Input
+                id="ssid"
+                placeholder="e.g., 01"
+                value={ssid}
+                onChange={(e) => setSsid(e.target.value)}
+                className="text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                DMR SSID (00-99) for multiple devices under one DMR ID. Leave blank if you only use one device.
+              </p>
+            </div>
 
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="license-ack"
+            <div className="console-section">
+              <div className="flex items-start gap-3">
+                <Switch
+                  id="license"
                   checked={licenseAcknowledgement}
-                  onCheckedChange={(checked) => setLicenseAcknowledgement(checked === true)}
+                  onCheckedChange={setLicenseAcknowledgement}
                 />
                 <div className="space-y-1">
-                  <Label htmlFor="license-ack" className="cursor-pointer font-medium">
-                    I acknowledge that I hold a valid amateur radio license
+                  <Label htmlFor="license" className="text-xs cursor-pointer">
+                    I hold a valid amateur radio license <span className="text-destructive">*</span>
                   </Label>
-                  <p className="text-sm text-muted-foreground">
-                    By checking this box, you confirm that you are a licensed amateur radio operator authorized to transmit on the frequencies and modes you intend to use. You are responsible for complying with all applicable regulations.
+                  <p className="text-[10px] text-muted-foreground">
+                    You must acknowledge that you hold a valid amateur radio license to use transmit functionality. Disabling this will prevent you from transmitting.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={!callsign.trim() || saveProfile.isPending}
-                className="flex-1"
-                size="lg"
-              >
-                <Save className="mr-2 h-4 w-4" />
-                {saveProfile.isPending ? 'Saving...' : 'Save Profile'}
-              </Button>
-            </div>
+            <Button onClick={handleSave} disabled={saveProfileMutation.isPending} className="w-full text-xs">
+              <Save className="mr-2 h-3.5 w-3.5" />
+              {saveProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Actions</CardTitle>
-            <CardDescription>Manage your Internet Identity session</CardDescription>
+        <Card className="console-panel">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              <CardTitle className="text-base">Server Directory Sources</CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              Configure GitHub sources for BrandMeister and AllStar server lists
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Alert className="mb-4">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Logging out will clear your session and all locally stored connection settings. Your profile data remains saved on the blockchain and will be available when you log in again.
+          <CardContent className="space-y-4">
+            <Alert className="console-panel">
+              <Info className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">
+                Server lists are fetched from GitHub and cached locally. Refresh manually to get the latest servers.
               </AlertDescription>
             </Alert>
-            <Button onClick={handleLogout} variant="destructive" size="lg" className="w-full">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="bmSource" className="text-xs">BrandMeister Source URL</Label>
+                <Input
+                  id="bmSource"
+                  placeholder="GitHub raw URL"
+                  value={bmSourceUrl}
+                  onChange={(e) => setBmSourceUrl(e.target.value)}
+                  className="text-xs font-mono"
+                />
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>Last updated: {formatTimestamp(bmMetadata?.lastUpdated || null)}</span>
+                  <span>Cache: {formatCacheAge('brandmeister')}</span>
+                </div>
+                {bmMetadata?.lastError && (
+                  <p className="text-[10px] text-destructive">{bmMetadata.lastError}</p>
+                )}
+                <Button
+                  onClick={handleRefreshBrandmeister}
+                  disabled={refreshBrandmeisterMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                >
+                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshBrandmeisterMutation.isPending ? 'animate-spin' : ''}`} />
+                  {refreshBrandmeisterMutation.isPending ? 'Refreshing...' : 'Refresh BrandMeister List'}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="allstarSource" className="text-xs">AllStar Source URL</Label>
+                <Input
+                  id="allstarSource"
+                  placeholder="GitHub raw URL"
+                  value={allstarSourceUrl}
+                  onChange={(e) => setAllstarSourceUrl(e.target.value)}
+                  className="text-xs font-mono"
+                />
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>Last updated: {formatTimestamp(allstarMetadata?.lastUpdated || null)}</span>
+                  <span>Cache: {formatCacheAge('allstar')}</span>
+                </div>
+                {allstarMetadata?.lastError && (
+                  <p className="text-[10px] text-destructive">{allstarMetadata.lastError}</p>
+                )}
+                <Button
+                  onClick={handleRefreshAllstar}
+                  disabled={refreshAllstarMutation.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                >
+                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshAllstarMutation.isPending ? 'animate-spin' : ''}`} />
+                  {refreshAllstarMutation.isPending ? 'Refreshing...' : 'Refresh AllStar List'}
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSaveSources}
+              disabled={updateSourcesMutation.isPending}
+              variant="secondary"
+              size="sm"
+              className="w-full text-xs"
+            >
+              <Save className="mr-2 h-3.5 w-3.5" />
+              {updateSourcesMutation.isPending ? 'Saving...' : 'Save Source URLs'}
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="console-panel">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Login Preferences</CardTitle>
+            <CardDescription className="text-xs">Control how your login session is managed</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="console-section">
+              <div className="flex items-start gap-3">
+                <Switch
+                  id="rememberLogin"
+                  checked={rememberLogin}
+                  onCheckedChange={setRememberLogin}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="rememberLogin" className="text-xs cursor-pointer">
+                    Remember my login on this device
+                  </Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    When enabled, you'll stay logged in across browser sessions. Disable this on shared devices for security.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Alert className="console-panel">
+              <Info className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">
+                <strong>Shared Device Warning:</strong> If you're using a shared or public device, disable "Remember my login" and log out when finished to protect your account.
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       </div>

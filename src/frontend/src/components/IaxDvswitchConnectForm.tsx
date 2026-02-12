@@ -3,332 +3,337 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Wifi, Server, Hash, Save, Info, AlertCircle } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Server, Save, AlertCircle, ChevronDown } from 'lucide-react';
+import { useGetCallerUserProfile } from '../hooks/useCurrentUserProfile';
+import { useAllstarServers } from '../hooks/useServerDirectories';
 import { useNavigate } from '@tanstack/react-router';
-import { saveConnection, loadConnection, isIaxDvswitchConnection } from '../hooks/usePreferredConnection';
-import type { IaxDvswitchConnection } from '../hooks/usePreferredConnection';
+import { saveConnection, loadConnection, isIaxDvswitchConnection, areAllstarRequiredFieldsSatisfied } from '../hooks/usePreferredConnection';
+import { getPersistedGatewayParameter } from '../utils/gatewayUrlBootstrap';
+import { normalizeServerAddress } from '../utils/serverAddress';
 
 interface IaxDvswitchConnectFormProps {
   onSaved?: () => void;
-  preset?: 'brandmeister-dmr' | 'allstar' | null;
+  preset?: 'allstar' | null;
   onPresetApplied?: () => void;
 }
 
+const AUTO_SAVE_ATTEMPTED_KEY = 'pttstar_iax_auto_save_attempted';
+const DEFAULT_ALLSTAR_GATEWAY = 'allstarlink.org';
+
 export default function IaxDvswitchConnectForm({ onSaved, preset, onPresetApplied }: IaxDvswitchConnectFormProps) {
   const navigate = useNavigate();
+  const { data: userProfile } = useGetCallerUserProfile();
+  const { data: fetchedAllstarServers = [], isLoading: allstarServersLoading } = useAllstarServers();
+
   const [gateway, setGateway] = useState('');
   const [iaxUsername, setIaxUsername] = useState('');
   const [iaxPassword, setIaxPassword] = useState('');
-  const [port, setPort] = useState('');
-  const [nodeNumber, setNodeNumber] = useState('');
   const [userCallsign, setUserCallsign] = useState('');
-  const [allstarId, setAllstarId] = useState('');
+  const [port, setPort] = useState('4569');
+  const [nodeNumber, setNodeNumber] = useState('');
+  const [allstarUsername, setAllstarUsername] = useState('');
   const [allstarPassword, setAllstarPassword] = useState('');
   const [validationError, setValidationError] = useState<string>('');
-  const [isAllstarPreset, setIsAllstarPreset] = useState(false);
 
-  // Prefill form from sessionStorage on mount
+  // Track if AllStar preset was applied internally
+  const [isAllstarPresetApplied, setIsAllstarPresetApplied] = useState(false);
+
+  // Advanced section state
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+
+  // Load saved configuration on mount
   useEffect(() => {
     const connection = loadConnection();
     if (connection && isIaxDvswitchConnection(connection)) {
-      setGateway(connection.gateway || '');
+      setGateway(connection.gateway);
       setIaxUsername(connection.iaxUsername || '');
       setIaxPassword(connection.iaxPassword || '');
-      setPort(connection.port || '');
+      setUserCallsign(connection.userCallsign);
+      setPort(connection.port || '4569');
       setNodeNumber(connection.nodeNumber || '');
-      setUserCallsign(connection.userCallsign || '');
-      setAllstarId(connection.allstarId || '');
+      setAllstarUsername(connection.allstarUsername || '');
       setAllstarPassword(connection.allstarPassword || '');
+    } else {
+      // No saved connection, try to prefill from URL parameters
+      const urlGateway = getPersistedGatewayParameter('gateway') || getPersistedGatewayParameter('server');
+      const urlPort = getPersistedGatewayParameter('port');
+      const urlNode = getPersistedGatewayParameter('node');
+
+      if (urlGateway && !gateway) {
+        console.log('IaxDvswitchConnectForm: Prefilling gateway from URL parameter:', urlGateway);
+        setGateway(normalizeServerAddress(urlGateway));
+      }
+      if (urlPort && !port) {
+        console.log('IaxDvswitchConnectForm: Prefilling port from URL parameter:', urlPort);
+        setPort(urlPort);
+      }
+      if (urlNode && !nodeNumber) {
+        console.log('IaxDvswitchConnectForm: Prefilling node number from URL parameter:', urlNode);
+        setNodeNumber(urlNode);
+      }
     }
   }, []);
 
-  // Apply AllStar preset
   useEffect(() => {
-    if (preset === 'allstar') {
+    if (userProfile) {
+      setUserCallsign(userProfile.callsign || '');
+    }
+  }, [userProfile]);
+
+  // Apply AllStar preset - auto-set gateway to allstarlink.org
+  useEffect(() => {
+    if (preset === 'allstar' && onPresetApplied) {
       const connection = loadConnection();
       const hasExistingConnection = connection && isIaxDvswitchConnection(connection);
-      
-      setIsAllstarPreset(true);
-      
-      // Prefill port to 4569 only if empty and no saved port
-      if (!port && (!hasExistingConnection || !connection.port)) {
-        setPort('4569');
-      }
-      
-      if (onPresetApplied) {
-        onPresetApplied();
-      }
-    }
-  }, [preset, onPresetApplied]);
 
-  const validateForm = (): boolean => {
-    if (!gateway.trim()) {
-      if (isAllstarPreset) {
-        setValidationError('AllStar Gateway/Server is required');
-      } else {
-        setValidationError('Gateway / Server Address is required');
+      if (!hasExistingConnection) {
+        console.log('IaxDvswitchConnectForm: Applying AllStar preset');
+        
+        // Auto-set gateway to allstarlink.org or first fetched server
+        if (!gateway) {
+          if (fetchedAllstarServers.length > 0) {
+            const firstServer = fetchedAllstarServers[0];
+            console.log('IaxDvswitchConnectForm: Auto-selected AllStar server:', firstServer.label);
+            setGateway(normalizeServerAddress(firstServer.address));
+          } else {
+            console.log('IaxDvswitchConnectForm: Auto-set gateway to default:', DEFAULT_ALLSTAR_GATEWAY);
+            setGateway(normalizeServerAddress(DEFAULT_ALLSTAR_GATEWAY));
+          }
+        }
+
+        setIsAllstarPresetApplied(true);
       }
-      return false;
-    }
 
-    if (isAllstarPreset && !nodeNumber.trim()) {
-      setValidationError('AllStar Node Number is required');
-      return false;
+      onPresetApplied();
     }
-    
-    if (port && !/^\d+$/.test(port.trim())) {
-      setValidationError('Port must be a valid number');
-      return false;
-    }
-    
-    setValidationError('');
-    return true;
-  };
+  }, [preset, onPresetApplied, fetchedAllstarServers, gateway]);
 
-  const buildConnection = (): IaxDvswitchConnection => {
-    return {
-      type: 'iax-dvswitch',
-      gateway: gateway.trim(),
-      iaxUsername: iaxUsername.trim() || undefined,
-      iaxPassword: iaxPassword.trim() || undefined,
-      port: port.trim() || undefined,
-      nodeNumber: nodeNumber.trim() || undefined,
-      userCallsign: userCallsign.trim() || undefined,
-      allstarId: allstarId.trim() || undefined,
-      allstarPassword: allstarPassword.trim() || undefined,
+  // Auto-save and navigate when AllStar preset required fields are complete
+  useEffect(() => {
+    if (!isAllstarPresetApplied) return;
+
+    const autoSaveAttempted = sessionStorage.getItem(AUTO_SAVE_ATTEMPTED_KEY) === 'true';
+    if (autoSaveAttempted) return;
+
+    const tempConnection = {
+      type: 'iax-dvswitch' as const,
+      gateway: normalizeServerAddress(gateway),
+      iaxUsername,
+      iaxPassword,
+      userCallsign,
+      port,
+      nodeNumber,
+      allstarUsername,
+      allstarPassword,
     };
-  };
+
+    const requiredFieldsSatisfied = areAllstarRequiredFieldsSatisfied(tempConnection);
+
+    if (requiredFieldsSatisfied) {
+      console.log('IaxDvswitchConnectForm: AllStar required fields satisfied, auto-saving and navigating to PTT');
+      sessionStorage.setItem(AUTO_SAVE_ATTEMPTED_KEY, 'true');
+      handleSave();
+    }
+  }, [isAllstarPresetApplied, gateway, iaxUsername, iaxPassword, userCallsign, port, nodeNumber, allstarUsername, allstarPassword]);
 
   const handleSave = () => {
-    if (!validateForm()) return;
-    const connection = buildConnection();
-    saveConnection(connection);
-    if (onSaved) {
-      onSaved();
-    }
-  };
+    setValidationError('');
 
-  const handleSaveAndGoToPtt = () => {
-    if (!validateForm()) return;
-    const connection = buildConnection();
+    if (!gateway) {
+      setValidationError('Gateway/Server is required');
+      return;
+    }
+
+    if (!userCallsign) {
+      setValidationError('Callsign is required');
+      return;
+    }
+
+    const connection = {
+      type: 'iax-dvswitch' as const,
+      gateway: normalizeServerAddress(gateway),
+      iaxUsername,
+      iaxPassword,
+      userCallsign,
+      port,
+      nodeNumber,
+      allstarUsername,
+      allstarPassword,
+    };
+
     saveConnection(connection);
+    onSaved?.();
     navigate({ to: '/ptt' });
   };
 
+  const handleAllstarServerChange = (address: string) => {
+    setGateway(normalizeServerAddress(address));
+  };
+
+  // Get display label for current gateway
+  const gatewayDisplayLabel = fetchedAllstarServers.find(s => 
+    normalizeServerAddress(s.address) === normalizeServerAddress(gateway)
+  )?.label || gateway || DEFAULT_ALLSTAR_GATEWAY;
+
   return (
-    <div className="space-y-6">
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          {isAllstarPreset ? (
-            <>
-              <strong>AllStar Network Setup:</strong> Configure your AllStar connection. The gateway address and node number are required; other fields are optional depending on your setup.
-            </>
-          ) : (
-            <>
-              Configure your IAX or DVSwitch gateway connection. The gateway address is required; all other fields are optional and depend on your specific setup.
-            </>
-          )}
-        </AlertDescription>
-      </Alert>
+    <Card className="console-panel">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Server className="h-4 w-4" />
+          <CardTitle className="text-base">IAX / DVSwitch Configuration</CardTitle>
+        </div>
+        <CardDescription className="text-xs">
+          Configure AllStar, DVSwitch, or other IAX-based connections
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {validationError && (
+          <Alert variant="destructive" className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">{validationError}</AlertDescription>
+          </Alert>
+        )}
 
-      {validationError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{validationError}</AlertDescription>
-        </Alert>
-      )}
+        {/* Gateway display (non-editable in basic view) */}
+        <div className="space-y-2">
+          <Label className="text-xs">AllStar Gateway</Label>
+          <div className="console-panel p-3 rounded-md border border-border">
+            <p className="text-xs font-mono">{gatewayDisplayLabel}</p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Connected to {gatewayDisplayLabel}. Change gateway in Advanced Settings below.
+          </p>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            {isAllstarPreset ? 'AllStar Gateway Configuration' : 'Gateway Configuration'}
-          </CardTitle>
-          <CardDescription>
-            {isAllstarPreset 
-              ? 'Enter your AllStar gateway connection details and node information.'
-              : 'Enter your IAX or DVSwitch gateway connection details.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="nodeNumber" className="text-xs">Node Number</Label>
+          <Input
+            id="nodeNumber"
+            placeholder="e.g., 12345"
+            value={nodeNumber}
+            onChange={(e) => setNodeNumber(e.target.value)}
+            className="text-xs font-mono"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="allstarUsername" className="text-xs">AllStar Username</Label>
+          <Input
+            id="allstarUsername"
+            placeholder="Your AllStar username"
+            value={allstarUsername}
+            onChange={(e) => setAllstarUsername(e.target.value)}
+            className="text-xs"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="allstarPassword" className="text-xs">AllStar Password</Label>
+          <Input
+            id="allstarPassword"
+            type="password"
+            placeholder="Your AllStar password"
+            value={allstarPassword}
+            onChange={(e) => setAllstarPassword(e.target.value)}
+            className="text-xs"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="userCallsign" className="text-xs">Your Callsign <span className="text-destructive">*</span></Label>
+          <Input
+            id="userCallsign"
+            placeholder="e.g., KO4RXE"
+            value={userCallsign}
+            onChange={(e) => setUserCallsign(e.target.value.toUpperCase())}
+            className="text-xs font-mono uppercase"
+          />
+        </div>
+
+        <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-between text-xs">
+              Advanced Settings
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 mt-4">
+            {fetchedAllstarServers.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="allstarServer" className="text-xs">AllStar Server</Label>
+                <Select value={gateway} onValueChange={handleAllstarServerChange}>
+                  <SelectTrigger id="allstarServer" className="text-xs">
+                    <SelectValue placeholder={allstarServersLoading ? "Loading servers..." : "Select an AllStar server"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fetchedAllstarServers.map((server) => (
+                      <SelectItem key={server.address} value={server.address} className="text-xs">
+                        {server.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  {fetchedAllstarServers.length} servers loaded from GitHub. Configure sources in Settings.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="gateway">
-                {isAllstarPreset ? 'AllStar Gateway / Server *' : 'Gateway / Server Address *'}
-              </Label>
+              <Label htmlFor="gateway" className="text-xs">Gateway / Server</Label>
               <Input
                 id="gateway"
-                placeholder={isAllstarPreset ? 'allstar.example.com or allstar.example.com:4569' : 'example.com or example.com:4569'}
+                placeholder="e.g., allstarlink.org"
                 value={gateway}
                 onChange={(e) => setGateway(e.target.value)}
-                className="font-mono text-sm"
+                className="text-xs font-mono"
               />
-              <p className="text-xs text-muted-foreground">
-                {isAllstarPreset 
-                  ? 'Enter the hostname or IP address of your AllStar gateway. You can include the port (e.g., allstar.example.com:4569) or specify it separately below.'
-                  : 'Enter the hostname or IP address of your gateway. You can include the port (e.g., example.com:4569) or specify it separately below.'}
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="iaxUsername">IAX Username</Label>
+              <Label htmlFor="port" className="text-xs">Port</Label>
+              <Input
+                id="port"
+                placeholder="4569"
+                value={port}
+                onChange={(e) => setPort(e.target.value)}
+                className="text-xs font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="iaxUsername" className="text-xs">IAX Username</Label>
               <Input
                 id="iaxUsername"
-                placeholder="IAX Username"
+                placeholder="Optional"
                 value={iaxUsername}
                 onChange={(e) => setIaxUsername(e.target.value)}
-                className="font-mono text-sm"
+                className="text-xs"
               />
-              <p className="text-xs text-muted-foreground">
-                Optional: Your IAX authentication username if required by your gateway.
-              </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="iaxPassword">IAX Password</Label>
+              <Label htmlFor="iaxPassword" className="text-xs">IAX Password</Label>
               <Input
                 id="iaxPassword"
                 type="password"
-                placeholder="IAX Password"
+                placeholder="Optional"
                 value={iaxPassword}
                 onChange={(e) => setIaxPassword(e.target.value)}
-                className="font-mono text-sm"
+                className="text-xs"
               />
-              <p className="text-xs text-muted-foreground">
-                Optional: Your IAX authentication password if required by your gateway.
-              </p>
             </div>
+          </CollapsibleContent>
+        </Collapsible>
 
-            <div className="space-y-2">
-              <Label htmlFor="userCallsign">User Callsign</Label>
-              <Input
-                id="userCallsign"
-                placeholder="e.g., W1AW"
-                value={userCallsign}
-                onChange={(e) => setUserCallsign(e.target.value)}
-                className="font-mono text-sm uppercase"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Your amateur radio callsign for this connection. This will be displayed during transmissions.
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Hash className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">
-                {isAllstarPreset ? 'AllStar Port & Node' : 'Ports & Node'}
-              </h3>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="port">Port</Label>
-              <Input
-                id="port"
-                placeholder="e.g., 4569"
-                value={port}
-                onChange={(e) => setPort(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                {isAllstarPreset 
-                  ? 'AllStar IAX port number. Default is 4569 for AllStar networks.'
-                  : 'Optional: IAX port number. Default is typically 4569 if not specified in the gateway address.'}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nodeNumber">
-                {isAllstarPreset ? 'AllStar Node Number *' : 'AllStar Node Number'}
-              </Label>
-              <Input
-                id="nodeNumber"
-                placeholder="e.g., 12345"
-                value={nodeNumber}
-                onChange={(e) => setNodeNumber(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                {isAllstarPreset 
-                  ? 'Your AllStar node number (required for AllStar connections).'
-                  : 'Optional: Your AllStar node number if you\'re connecting to an AllStar network.'}
-              </p>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Server className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">AllStar Credentials</h3>
-            </div>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                AllStar credentials are optional and only needed if your AllStar node requires authentication. These are stored locally on your device and are separate from your Internet Identity login.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-2">
-              <Label htmlFor="allstarId">AllStar ID / Username</Label>
-              <Input
-                id="allstarId"
-                placeholder="AllStar ID or Username"
-                value={allstarId}
-                onChange={(e) => setAllstarId(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Your AllStar node identifier or username for authentication.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="allstarPassword">AllStar Password</Label>
-              <Input
-                id="allstarPassword"
-                type="password"
-                placeholder="AllStar Password"
-                value={allstarPassword}
-                onChange={(e) => setAllstarPassword(e.target.value)}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Your AllStar node password for authentication.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Button
-              onClick={handleSaveAndGoToPtt}
-              disabled={!gateway.trim() || (isAllstarPreset && !nodeNumber.trim())}
-              className="w-full"
-              size="lg"
-            >
-              <Wifi className="mr-2 h-4 w-4" />
-              Save and Go to PTT
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!gateway.trim() || (isAllstarPreset && !nodeNumber.trim())}
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              Save
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <Button onClick={handleSave} className="w-full text-xs">
+          <Save className="mr-2 h-3.5 w-3.5" />
+          Save Configuration
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

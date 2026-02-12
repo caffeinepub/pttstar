@@ -14,6 +14,7 @@ import {
   isBrandmeisterDmrConnection,
   isTgifDmrConnection
 } from '../hooks/usePreferredConnection';
+import AutoGatewayStatusIndicator from './AutoGatewayStatusIndicator';
 
 interface DigitalVoiceSavedConfigurationTabProps {
   onEdit?: () => void;
@@ -30,19 +31,19 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
 
   if (!connection || !isDigitalVoiceConnection(connection)) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Radio className="h-5 w-5" />
+      <Card className="console-panel">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Radio className="h-4 w-4" />
             Digital Voice Configuration
           </CardTitle>
-          <CardDescription>No saved Digital Voice configuration found</CardDescription>
+          <CardDescription className="text-xs">No saved Digital Voice configuration found</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              You haven't configured a Digital Voice connection yet. Use the form above to set up your connection.
+          <Alert className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">
+              You haven't configured a Digital Voice connection yet. Use the Configure tab to set up your connection.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -70,20 +71,23 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Radio className="h-5 w-5" />
+    <Card className="console-panel">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Radio className="h-4 w-4" />
           Saved Digital Voice Configuration
         </CardTitle>
-        <CardDescription>Your current Digital Voice connection settings</CardDescription>
+        <CardDescription className="text-xs">Your current Digital Voice connection settings</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
+        {/* Auto Gateway Status Indicator */}
+        <AutoGatewayStatusIndicator />
+
         {/* Missing Fields Alert */}
         {hasMissingFields && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+          <Alert variant="destructive" className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">
               {isBrandmeisterDmr && 'BrandMeister configuration incomplete. '}
               {isTgifDmr && 'TGIF configuration incomplete. '}
               Missing: {missingFields.join(', ')}. Please edit your configuration to complete setup.
@@ -93,150 +97,154 @@ export default function DigitalVoiceSavedConfigurationTab({ onEdit }: DigitalVoi
 
         {/* Gateway Status Alert */}
         {!hasMissingFields && isGatewayConfigured && (
-          <Alert className="border-green-500/50 bg-green-500/10">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-700 dark:text-green-300">
+          <Alert className="console-panel border-status-active/50 bg-status-active/10">
+            <CheckCircle2 className="h-3.5 w-3.5 text-status-active" />
+            <AlertDescription className="text-xs text-status-active">
               Gateway configured - ready for real transmission
             </AlertDescription>
           </Alert>
         )}
         
         {!hasMissingFields && !isGatewayConfigured && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
+          <Alert variant="destructive" className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">
               Gateway not configured - real transmission is not available. Please configure the Digital Voice Gateway to enable actual voice transmission.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Mode and Network */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Mode</span>
-            <Badge variant="outline">{connection.mode.toUpperCase()}</Badge>
+        {/* Mode and Network Section */}
+        <div className="console-section">
+          <h4 className="console-label mb-2">Network Configuration</h4>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Mode</span>
+              <Badge variant="outline" className="text-xs">{connection.mode.toUpperCase()}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Network / Reflector</span>
+              <span className="console-value">{connection.reflector}</span>
+            </div>
+            {connection.bmServerLabel && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">BrandMeister Server</span>
+                <span className="console-value">{connection.bmServerLabel}</span>
+              </div>
+            )}
+            {!connection.bmServerLabel && connection.bmServerAddress && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">BrandMeister Server</span>
+                <span className="console-value">{connection.bmServerAddress}</span>
+              </div>
+            )}
+            {connection.talkgroup && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Talkgroup</span>
+                <span className="console-value">{connection.talkgroup}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">Network / Reflector</span>
-            <span className="text-sm font-medium">{connection.reflector}</span>
-          </div>
-          {connection.bmServerLabel && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">BrandMeister Server</span>
-              <span className="text-sm font-medium">{connection.bmServerLabel}</span>
-            </div>
-          )}
-          {!connection.bmServerLabel && connection.bmServerAddress && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">BrandMeister Server</span>
-              <span className="font-mono text-xs">{connection.bmServerAddress}</span>
-            </div>
-          )}
-          {connection.talkgroup && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Talkgroup</span>
-              <span className="text-sm font-medium">{connection.talkgroup}</span>
-            </div>
-          )}
         </div>
 
-        {/* BrandMeister Credentials */}
+        {/* BrandMeister Credentials Section */}
         {(connection.bmUsername || connection.bmPassword) && (
-          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
-            <h4 className="text-sm font-medium">BrandMeister Credentials</h4>
+          <div className="console-section">
+            <h4 className="console-label mb-2">BrandMeister Credentials</h4>
             <div className="space-y-2">
               {connection.bmUsername && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Username</span>
-                  <span className="text-sm font-mono">{connection.bmUsername}</span>
+                  <span className="text-xs text-muted-foreground">Username</span>
+                  <span className="console-value">{connection.bmUsername}</span>
                 </div>
               )}
               {connection.bmPassword && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Password</span>
-                  <span className="text-sm font-mono">{maskPassword(connection.bmPassword)}</span>
+                  <span className="text-xs text-muted-foreground">Password</span>
+                  <span className="console-value">{maskPassword(connection.bmPassword)}</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* TGIF Hotspot Security Password */}
+        {/* TGIF Hotspot Security Password Section */}
         {connection.tgifHotspotSecurityPassword && (
-          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
-            <h4 className="text-sm font-medium">TGIF Authentication</h4>
+          <div className="console-section">
+            <h4 className="console-label mb-2">TGIF Authentication</h4>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Hotspot Security Password</span>
-              <span className="text-sm font-mono">{maskPassword(connection.tgifHotspotSecurityPassword)}</span>
+              <span className="text-xs text-muted-foreground">Hotspot Security Password</span>
+              <span className="console-value">{maskPassword(connection.tgifHotspotSecurityPassword)}</span>
             </div>
           </div>
         )}
 
-        {/* DMR ID and SSID */}
+        {/* DMR ID and SSID Section */}
         {(connection.dmrId || connection.ssid) && (
-          <div className="space-y-3 rounded-lg border border-border bg-card/50 p-4">
-            <h4 className="text-sm font-medium">DMR Identification</h4>
+          <div className="console-section">
+            <h4 className="console-label mb-2">DMR Identification</h4>
             <div className="space-y-2">
               {connection.dmrId && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">DMR ID</span>
-                  <span className="text-sm font-mono">{connection.dmrId}</span>
+                  <span className="text-xs text-muted-foreground">DMR ID</span>
+                  <span className="console-value">{connection.dmrId}</span>
                 </div>
               )}
               {connection.ssid && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">SSID</span>
-                  <span className="text-sm font-mono">{connection.ssid}</span>
+                  <span className="text-xs text-muted-foreground">SSID</span>
+                  <span className="console-value">{connection.ssid}</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Digital Voice Gateway Configuration */}
-        <div className={`space-y-3 rounded-lg border-2 p-4 ${isGatewayConfigured ? 'border-primary/20 bg-primary/5' : 'border-destructive/20 bg-destructive/5'}`}>
-          <div className="flex items-center gap-2">
-            <Wifi className={`h-5 w-5 ${isGatewayConfigured ? 'text-primary' : 'text-destructive'}`} />
-            <h4 className="text-sm font-semibold">Digital Voice Gateway</h4>
+        {/* Digital Voice Gateway Section */}
+        <div className={`console-section ${isGatewayConfigured ? 'border-primary/30' : 'border-destructive/30'}`}>
+          <div className="flex items-center gap-2 mb-2">
+            <Wifi className={`h-4 w-4 ${isGatewayConfigured ? 'text-primary' : 'text-destructive'}`} />
+            <h4 className="console-label">Digital Voice Gateway</h4>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Gateway URL</span>
-              <span className="text-sm font-mono">{connection.gatewayUrl || 'Not configured'}</span>
+              <span className="text-xs text-muted-foreground">Gateway URL</span>
+              <span className="console-value">{connection.gatewayUrl || 'Not configured'}</span>
             </div>
             {connection.gatewayToken && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Token</span>
-                <span className="text-sm font-mono">{maskToken(connection.gatewayToken)}</span>
+                <span className="text-xs text-muted-foreground">Token</span>
+                <span className="console-value">{maskToken(connection.gatewayToken)}</span>
               </div>
             )}
             {connection.gatewayRoom && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Room</span>
-                <span className="text-sm font-mono">{connection.gatewayRoom}</span>
+                <span className="text-xs text-muted-foreground">Room</span>
+                <span className="console-value">{connection.gatewayRoom}</span>
               </div>
             )}
             {connection.gatewayUsername && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Username</span>
-                <span className="text-sm font-mono">{connection.gatewayUsername}</span>
+                <span className="text-xs text-muted-foreground">Username</span>
+                <span className="console-value">{connection.gatewayUsername}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button onClick={onEdit} variant="outline" className="flex-1">
-            <Edit className="mr-2 h-4 w-4" />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={onEdit} variant="outline" size="sm" className="flex-1 text-xs">
+            <Edit className="mr-2 h-3.5 w-3.5" />
             Edit Configuration
           </Button>
           <Button
             onClick={() => navigate({ to: '/ptt' })}
-            className="flex-1"
+            size="sm"
+            className="flex-1 text-xs"
             disabled={hasMissingFields}
           >
-            <Radio className="mr-2 h-4 w-4" />
+            <Radio className="mr-2 h-3.5 w-3.5" />
             {hasMissingFields ? 'Complete Setup First' : isGatewayConfigured ? 'Go to PTT' : 'Go to PTT (Simulation)'}
           </Button>
         </div>

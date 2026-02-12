@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useActor } from './useActor';
 import { useGetCallerUserProfile } from './useCurrentUserProfile';
-import { loadConnection, isDirectoryConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured } from './usePreferredConnection';
+import { loadConnection, isDirectoryBasedConnection, isDigitalVoiceConnection, isDigitalVoiceGatewayConfigured } from './usePreferredConnection';
 import { deriveRoomLabel } from '../utils/roomKey';
 import { DigitalVoiceGatewayClient } from '../utils/digitalVoiceGatewayClient';
 
@@ -317,16 +317,19 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
         let dmrOperatorName: string | null = null;
         let dmrOperatorLocation: string | null = null;
 
-        if (connection && isDigitalVoiceConnection(connection)) {
-          network = connection.reflector;
-          talkgroup = connection.talkgroup || 'Unknown';
-          
-          if (connection.mode === 'dmr') {
-            dmrId = connection.dmrId ? BigInt(connection.dmrId) : (userProfile.dmrId || null);
+        if (connection) {
+          if (isDirectoryBasedConnection(connection)) {
+            network = connection.networkLabel;
+            talkgroup = connection.talkgroupId || 'Unknown';
+          } else if (isDigitalVoiceConnection(connection)) {
+            network = connection.reflector;
+            talkgroup = connection.talkgroup || 'Unknown';
+            if (connection.dmrId) {
+              dmrId = BigInt(connection.dmrId);
+            }
+          } else {
+            network = deriveRoomLabel(connection);
           }
-        } else if (connection && isDirectoryConnection(connection)) {
-          network = connection.network.networkLabel;
-          talkgroup = connection.talkgroup;
         }
 
         try {
@@ -344,7 +347,7 @@ export function useWebRtcPtt(roomKey: string): WebRtcPttState & WebRtcPttActions
       }
     } catch (err) {
       console.error('Failed to start transmit:', err);
-      setError('Failed to access microphone. Please check permissions.');
+      setError('Failed to access microphone. Please check your permissions.');
     }
   }, [actor, userProfile]);
 

@@ -1,60 +1,70 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T21:43:25.997Z",
+  "generatedAt": "2026-02-12T11:44:23.785Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 4,
     "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/hooks/useCurrentUserProfile.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
+        "summary": "Update the built-in BrandMeister United States network address to the correct BrandMeister US master hostname \"3102.master.brandmeister.network\" so that any default/preset selection uses this value.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
+        "summary": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/PostLoginInterstitial.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/DigitalVoiceConnectForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/PostLoginInterstitial.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/DigitalVoiceConnectForm.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+        "summary": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/PostLoginInterstitial.tsx",
+    "frontend/src/components/DigitalVoiceConnectForm.tsx",
+    "frontend/src/components/IaxDvswitchConnectForm.tsx",
+    "frontend/src/hooks/usePreferredConnection.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

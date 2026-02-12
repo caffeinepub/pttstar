@@ -6,12 +6,14 @@ import IaxDvswitchConnectForm from '../components/IaxDvswitchConnectForm';
 import IaxDvswitchSavedConfigurationTab from '../components/IaxDvswitchSavedConfigurationTab';
 import DigitalVoiceConnectForm from '../components/DigitalVoiceConnectForm';
 import DigitalVoiceSavedConfigurationTab from '../components/DigitalVoiceSavedConfigurationTab';
+import AutoGatewayStatusIndicator from '../components/AutoGatewayStatusIndicator';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Server, WifiOff, Info, Bookmark, Zap, ExternalLink } from 'lucide-react';
+import { Server, WifiOff, Info, Zap, ExternalLink, AlertCircle } from 'lucide-react';
 import { loadConnection, clearConnection, isIaxDvswitchConnection, isDigitalVoiceConnection } from '../hooks/usePreferredConnection';
 import { useState, useEffect } from 'react';
 import ColorPageHeader from '../components/ColorPageHeader';
-import ColorAccentPanel from '../components/ColorAccentPanel';
+import { getInferredPreset, hasAutoFlowBeenAttempted, markAutoFlowAttempted } from '../utils/gatewayUrlBootstrap';
+import { getCacheAge } from '../utils/serverDirectoryCache';
 
 export default function ConnectPage() {
   const navigate = useNavigate();
@@ -26,22 +28,34 @@ export default function ConnectPage() {
     const hasSavedConnection = connection !== null && (isIaxDvswitchConnection(connection) || isDigitalVoiceConnection(connection));
     setHasConnection(hasSavedConnection);
     
-    // Determine connection type
     if (connection && isDigitalVoiceConnection(connection)) {
       setConnectionType('digital-voice');
     } else {
       setConnectionType('iax');
     }
     
-    // Check for onboarding query flag
     if (search.preset === 'brandmeister-dmr' && !hasSavedConnection) {
       setActiveTab('connect');
       setConnectionType('digital-voice');
       setPreset('brandmeister-dmr');
-      // Clear the query param after applying
       navigate({ to: '/connect', replace: true });
+    } else if (!hasSavedConnection && !hasAutoFlowBeenAttempted()) {
+      const inferredPreset = getInferredPreset();
+      if (inferredPreset) {
+        console.log('ConnectPage: Auto-applying inferred preset:', inferredPreset);
+        setActiveTab('connect');
+        
+        if (inferredPreset === 'brandmeister-dmr') {
+          setConnectionType('digital-voice');
+          setPreset('brandmeister-dmr');
+        } else if (inferredPreset === 'allstar') {
+          setConnectionType('iax');
+          setPreset('allstar');
+        }
+        
+        markAutoFlowAttempted();
+      }
     } else {
-      // Default to Saved tab if connection exists, otherwise Connect tab
       setActiveTab(hasSavedConnection ? 'saved' : 'connect');
     }
   }, [search.preset, navigate]);
@@ -49,13 +63,11 @@ export default function ConnectPage() {
   const handleDisconnect = () => {
     clearConnection();
     setHasConnection(false);
-    // Switch to connect tab after disconnect
     setActiveTab('connect');
   };
 
   const handleSaved = () => {
     setHasConnection(true);
-    // Switch to Saved tab after saving
     setActiveTab('saved');
   };
 
@@ -65,7 +77,7 @@ export default function ConnectPage() {
 
   const handleConnectionTypeChange = (type: 'iax' | 'digital-voice') => {
     setConnectionType(type);
-    setPreset(null); // Clear preset when manually switching tabs
+    setPreset(null);
   };
 
   const handleBrandmeisterQuickSetup = () => {
@@ -80,182 +92,164 @@ export default function ConnectPage() {
     setPreset('allstar');
   };
 
+  const bmCacheAge = getCacheAge('brandmeister');
+  const allstarCacheAge = getCacheAge('allstar');
+  const showStaleWarning = (bmCacheAge && bmCacheAge > 7 * 24 * 60 * 60 * 1000) || 
+                           (allstarCacheAge && allstarCacheAge > 7 * 24 * 60 * 60 * 1000);
+
   return (
-    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
       <ColorPageHeader
         title="Connection Settings"
-        subtitle="Configure your radio connection to start transmitting."
+        subtitle="Configure your radio connection to start transmitting"
         variant="connect"
-        icon={<Server className="h-8 w-8" />}
+        icon={<Server className="h-7 w-7" />}
       />
 
-      <div className="mx-auto max-w-2xl space-y-6">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Choose your connection type:</strong> Use <strong>IAX / DVSwitch</strong> for AllStar and similar networks, or <strong>Digital Voice</strong> for DMR, D-Star, YSF, P25, NXDN, and M17 modes. Your saved configuration persists on this device until you disconnect or clear it. This does not affect your Internet Identity login.
-          </AlertDescription>
-        </Alert>
-
-        {/* BrandMeister Onboarding Callout */}
-        <Alert className="border-primary/30 bg-primary/10">
-          <Info className="h-4 w-4 text-primary" />
-          <AlertDescription>
-            <strong>Using DMR?</strong> A BrandMeister account is recommended for DMR use in PTTStar.{' '}
-            <a
-              href="https://brandmeister.network/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-foreground underline hover:text-accent-foreground"
-            >
-              Sign up at brandmeister.network
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </AlertDescription>
-        </Alert>
-
+      <div className="mx-auto max-w-2xl space-y-4">
         {/* Quick Setup Panel */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Zap className="h-5 w-5 text-primary" />
-              Quick Setup
-            </CardTitle>
-            <CardDescription>
-              One-click presets for popular networks
+        <Card className="console-panel border-primary/30">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Quick Setup</CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              Get started quickly with recommended configurations
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="space-y-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Button
                 onClick={handleBrandmeisterQuickSetup}
                 variant="outline"
-                size="lg"
-                className="h-auto flex-col gap-2 py-4"
+                size="sm"
+                className="w-full justify-start text-xs"
               >
-                <Server className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-semibold">BrandMeister</div>
-                  <div className="text-xs text-muted-foreground">DMR Network</div>
-                </div>
+                <Server className="mr-2 h-3.5 w-3.5" />
+                BrandMeister DMR
               </Button>
               <Button
                 onClick={handleAllstarQuickSetup}
                 variant="outline"
-                size="lg"
-                className="h-auto flex-col gap-2 py-4"
+                size="sm"
+                className="w-full justify-start text-xs"
               >
-                <Server className="h-6 w-6" />
-                <div className="text-center">
-                  <div className="font-semibold">AllStar</div>
-                  <div className="text-xs text-muted-foreground">IAX / DVSwitch</div>
-                </div>
+                <Server className="mr-2 h-3.5 w-3.5" />
+                AllStar Network
               </Button>
             </div>
+            <Alert className="console-panel">
+              <Info className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">
+                <strong>New to DMR?</strong> BrandMeister is recommended for DMR use.{' '}
+                <a
+                  href="https://brandmeister.network/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-foreground underline hover:text-accent-foreground"
+                >
+                  Sign up at brandmeister.network
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
 
-        <ColorAccentPanel variant="info">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 gap-1">
-              <TabsTrigger value="saved" className="flex items-center gap-2 text-xs sm:text-sm">
-                <Bookmark className="h-4 w-4" />
-                <span className="hidden sm:inline">Saved</span>
-                <span className="sm:hidden">Saved</span>
-              </TabsTrigger>
-              <TabsTrigger value="connect" className="flex items-center gap-2 text-xs sm:text-sm">
-                <Server className="h-4 w-4" />
-                <span className="hidden sm:inline">Connect</span>
-                <span className="sm:hidden">Edit</span>
-              </TabsTrigger>
-              <TabsTrigger value="disconnect" className="flex items-center gap-2 text-xs sm:text-sm">
-                <WifiOff className="h-4 w-4" />
-                <span className="hidden sm:inline">Disconnect</span>
-                <span className="sm:hidden">Clear</span>
-              </TabsTrigger>
-            </TabsList>
+        {/* Stale Cache Warning */}
+        {showStaleWarning && (
+          <Alert variant="destructive" className="console-panel">
+            <AlertCircle className="h-3.5 w-3.5" />
+            <AlertDescription className="text-xs">
+              <strong>Server lists may be outdated.</strong> Visit Settings to refresh BrandMeister and AllStar server directories from GitHub.
+            </AlertDescription>
+          </Alert>
+        )}
 
-            <TabsContent value="saved" className="space-y-4">
-              <Tabs value={connectionType} onValueChange={(v) => handleConnectionTypeChange(v as 'iax' | 'digital-voice')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="iax">IAX / DVSwitch</TabsTrigger>
-                  <TabsTrigger value="digital-voice">Digital Voice</TabsTrigger>
-                </TabsList>
+        {/* Auto Gateway Status */}
+        <AutoGatewayStatusIndicator />
 
-                <TabsContent value="iax" className="mt-6">
-                  <IaxDvswitchSavedConfigurationTab
-                    onEdit={handleEditFromSaved}
-                  />
-                </TabsContent>
+        {/* Main Configuration Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="connect" className="text-xs">Configure</TabsTrigger>
+            <TabsTrigger value="saved" className="text-xs">Saved</TabsTrigger>
+          </TabsList>
 
-                <TabsContent value="digital-voice" className="mt-6">
-                  <DigitalVoiceSavedConfigurationTab
-                    onEdit={handleEditFromSaved}
-                  />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
+          <TabsContent value="connect" className="space-y-4">
+            <Alert className="console-panel">
+              <Info className="h-3.5 w-3.5" />
+              <AlertDescription className="text-xs">
+                <strong>Choose your connection type:</strong> Use <strong>IAX / DVSwitch</strong> for AllStar and similar networks, or <strong>Digital Voice</strong> for DMR, D-Star, YSF, P25, NXDN, and M17 modes.
+              </AlertDescription>
+            </Alert>
 
-            <TabsContent value="connect" className="space-y-4">
-              <Tabs value={connectionType} onValueChange={(v) => handleConnectionTypeChange(v as 'iax' | 'digital-voice')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="iax">IAX / DVSwitch</TabsTrigger>
-                  <TabsTrigger value="digital-voice">Digital Voice</TabsTrigger>
-                </TabsList>
+            <Tabs value={connectionType} onValueChange={(v) => handleConnectionTypeChange(v as 'iax' | 'digital-voice')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="iax" className="text-xs">IAX / DVSwitch</TabsTrigger>
+                <TabsTrigger value="digital-voice" className="text-xs">Digital Voice</TabsTrigger>
+              </TabsList>
 
-                <TabsContent value="iax" className="mt-6">
-                  <IaxDvswitchConnectForm onSaved={handleSaved} preset={preset} onPresetApplied={() => setPreset(null)} />
-                </TabsContent>
+              <TabsContent value="iax" className="mt-4">
+                <IaxDvswitchConnectForm
+                  onSaved={handleSaved}
+                  preset={preset === 'allstar' ? 'allstar' : null}
+                  onPresetApplied={() => setPreset(null)}
+                />
+              </TabsContent>
 
-                <TabsContent value="digital-voice" className="mt-6">
-                  <DigitalVoiceConnectForm onSaved={handleSaved} preset={preset} onPresetApplied={() => setPreset(null)} />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
+              <TabsContent value="digital-voice" className="mt-4">
+                <DigitalVoiceConnectForm
+                  onSaved={handleSaved}
+                  preset={preset === 'brandmeister-dmr' ? 'brandmeister-dmr' : null}
+                  onPresetApplied={() => setPreset(null)}
+                />
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
 
-            <TabsContent value="disconnect" className="space-y-4">
-              <Card className="border-0 bg-transparent">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <WifiOff className="h-5 w-5" />
-                    Disconnect & Clear
-                  </CardTitle>
-                  <CardDescription>
-                    Clear your saved connection settings from this device.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {hasConnection ? (
-                    <>
-                      <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertDescription>
-                          This will remove your saved connection configuration from this device. You'll need to reconfigure your connection to use PTT again. Your Internet Identity login and profile data will not be affected.
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        onClick={handleDisconnect}
-                        variant="destructive"
-                        size="lg"
-                        className="w-full"
-                      >
-                        <WifiOff className="mr-2 h-4 w-4" />
-                        Clear Saved Connection
-                      </Button>
-                    </>
-                  ) : (
-                    <Alert>
-                      <Info className="h-4 w-4" />
-                      <AlertDescription>
-                        No saved connection found. Use the Connect tab to configure a new connection.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </ColorAccentPanel>
+          <TabsContent value="saved" className="space-y-4">
+            {hasConnection ? (
+              <>
+                {connectionType === 'iax' ? (
+                  <IaxDvswitchSavedConfigurationTab onEdit={handleEditFromSaved} />
+                ) : (
+                  <DigitalVoiceSavedConfigurationTab onEdit={handleEditFromSaved} />
+                )}
+                <Card className="console-panel border-destructive/30">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <WifiOff className="h-4 w-4 text-destructive" />
+                      <CardTitle className="text-base">Disconnect</CardTitle>
+                    </div>
+                    <CardDescription className="text-xs">
+                      Clear your saved connection settings from this device
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      onClick={handleDisconnect}
+                      variant="destructive"
+                      size="sm"
+                      className="w-full text-xs"
+                    >
+                      <WifiOff className="mr-2 h-3.5 w-3.5" />
+                      Disconnect
+                    </Button>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Alert className="console-panel">
+                <Info className="h-3.5 w-3.5" />
+                <AlertDescription className="text-xs">
+                  No saved connection found. Use the Configure tab to set up your connection.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -13,7 +13,8 @@ import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
-(actor {
+// ACTOR DEFINITION
+actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
@@ -118,18 +119,13 @@ import AccessControl "authorization/access-control";
 
   // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?ImmutableUserProfile {
-    // Allow any authenticated user (not anonymous) to view their own profile
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view profiles");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view profiles");
     };
     userProfiles.get(caller).map(toSharedImmutableProfile);
   };
 
   public query ({ caller }) func getUserProfile(profileOwner : Principal) : async ?ImmutableUserProfile {
-    // Allow users to view their own profile, admins can view any profile
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view profiles");
-    };
     if (profileOwner != caller and not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Can only view your own profile unless admin");
     };
@@ -137,9 +133,8 @@ import AccessControl "authorization/access-control";
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : ImmutableUserProfile) : async () {
-    // Allow any authenticated user (not anonymous) to save their own profile
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot save profiles");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
     };
     let persistentProfile : PersistentUserProfile = {
       callsign = profile.callsign;
@@ -177,7 +172,7 @@ import AccessControl "authorization/access-control";
       {
         identifier = "brandmeister_us";
         networkLabel = "BrandMeister United States";
-        address = "107.191.99.14:62031";
+        address = "3102.master.brandmeister.network";
         talkgroups = [
           { name = "United States"; id = "3100" },
           { name = "North America"; id = "93" },
@@ -338,9 +333,8 @@ import AccessControl "authorization/access-control";
     dmrOperatorName : ?Text,
     dmrOperatorLocation : ?Text,
   ) : async () {
-    // Allow any authenticated user (not anonymous) to update activity
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot update activity");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update activity");
     };
 
     let transmission : PersistentTransmission = {
@@ -358,9 +352,8 @@ import AccessControl "authorization/access-control";
 
   // Favorite Networks
   public shared ({ caller }) func toggleFavoriteNetwork(networkId : Text) : async Bool {
-    // Allow any authenticated user (not anonymous) to manage their favorites
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot manage favorites");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can manage favorites");
     };
     let persistentProfile = switch (userProfiles.get(caller)) {
       case (null) {
@@ -389,9 +382,8 @@ import AccessControl "authorization/access-control";
   };
 
   public query ({ caller }) func getFavoriteNetworks() : async [Text] {
-    // Allow any authenticated user (not anonymous) to view their favorites
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot view favorites");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view favorites");
     };
     let persistentProfile = switch (userProfiles.get(caller)) {
       case (null) {
@@ -412,9 +404,8 @@ import AccessControl "authorization/access-control";
 
   // Signaling Functions (room-based, timestamped)
   public shared ({ caller }) func sendSignal(content : Text, roomKey : Text) : async () {
-    // Allow any authenticated user (not anonymous) to send signals
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot send signals");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can send signals");
     };
 
     let message : SignalMessage = {
@@ -428,9 +419,8 @@ import AccessControl "authorization/access-control";
   };
 
   public query ({ caller }) func getSignalsAfterTimestampForRoom(callerTimestamp : Time.Time, roomKey : Text) : async [SignalMessage] {
-    // Allow any authenticated user (not anonymous) to retrieve signals
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Anonymous users cannot retrieve signals");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can retrieve signals");
     };
 
     let filteredMessages : List.List<SignalMessage> = List.empty<SignalMessage>();
@@ -443,4 +433,4 @@ import AccessControl "authorization/access-control";
 
     filteredMessages.toArray();
   };
-});
+};

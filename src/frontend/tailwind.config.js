@@ -84,7 +84,12 @@ export default {
                 ]
             },
             boxShadow: {
-                xs: '0 1px 2px 0 rgba(0,0,0,0.05)'
+                xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
+                console: '0 2px 8px rgba(0,0,0,0.3)'
+            },
+            spacing: {
+                '18': '4.5rem',
+                '22': '5.5rem'
             },
             keyframes: {
                 'accordion-down': {

@@ -1,32 +1,35 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "App should auto-connect to BrandMeister and AllStar (IAX) using only user credentials, with server URLs preconfigured (no user-entered URL).",
+  "architectural_notes": [
+    "Maintain a predefined list of BrandMeister master servers (including 3102.master.brandmeister.network for US) and select/connect automatically after successful login.",
+    "Connection endpoints (BrandMeister masters, AllStar IAX) should be derived from provider selection and/or credentials, not user-entered URLs."
+  ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-refine-the-post-login-redirect-behavior-so-it-feels-seamless-and-never-competes-with-first-time-profile-onboarding-specifically-do-not-perform-the-post-login-redirect-to-connect-while-the-profilesetupdialog-is-expected-to-be-shown-i-e-authenticated-and-caller-profile-is-null-and-only-consider-redirecting-after-the-profile-state-is-confirmed-present",
-      "title": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-improve-the-post-login-transition-ux-by-showing-a-clear-non-error-loading-interstitial-state-when-the-user-has-completed-internet-identity-authentication-but-the-app-is-still-fetching-required-post-login-data-e-g-caller-profile-and-or-preparing-the-redirect-decision-so-the-user-does-not-briefly-see-unrelated-page-content-during-this-window",
-      "title": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
+      "id": "feature-modify-the-brandmeister-dmr-connection-flow-so-users-are-not-required-to-type-or-paste-any-server-url-hostname-when-the-brandmeister-preset-quick-setup-is-chosen-automatically-select-a-brandmeister-master-server-prefer-brandmeister-united-states-when-present-and-keep-manual-server-entry-hidden-behind-an-advanced-section-or-removed",
+      "title": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-when-postloginredirector-performs-the-one-time-redirect-to-connect-with-preset-brandmeister-dmr-ensure-the-navigation-does-not-create-an-extra-history-entry-so-that-using-the-browser-back-button-does-not-bounce-the-user-through-a-transient-post-login-route-state",
-      "title": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+      "id": "feature-modify-the-allstar-iax-dvswitch-connection-flow-so-users-are-not-required-to-type-or-paste-any-gateway-server-url-hostname-when-the-allstar-preset-quick-setup-is-chosen-automatically-set-the-iax-gateway-server-to-allstarlink-org-or-a-directory-provided-allstarlink-entry-when-available-and-keep-any-freeform-gateway-server-input-hidden-behind-an-advanced-section-or-removed",
+      "title": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-app-s-post-credential-flow-auto-saves-and-navigates-to-ptt-once-required-non-url-fields-are-provided-for-brandmeister-and-allstar-matching-the-credentials-only-onboarding-expectation-similar-to-droidstar-dvswitch",
+      "title": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
@@ -34,12 +37,33 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Refine the post-login transition flow (improve behavior after successful login)",
+      "summary": "BrandMeister login should auto-select/connect to the appropriate master server(s) (e.g., 3102.master.brandmeister.network US) using only username + hotspot security password (no URL input).",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "AllStarLink login should automatically establish the IAX connection using only username + password (no URL input).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove/avoid any UI requiring users to enter server URLs; apps should only prompt for login credentials similar to DroidStar/DVSwitch.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Update the built-in BrandMeister United States network address to the correct BrandMeister US master hostname \"3102.master.brandmeister.network\" so that any default/preset selection uses this value.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Refine post-login transition flow",
+  "gameProjectType": "none",
+  "projectName": "Auto-select BrandMeister US and AllStarLink servers so users enter credentials only (no URLs)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -17,6 +17,7 @@ import ProfileSetupDialog from './components/ProfileSetupDialog';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import PostLoginInterstitial from './components/PostLoginInterstitial';
 import { loadConnection } from './hooks/usePreferredConnection';
+import { captureGatewayParameters } from './utils/gatewayUrlBootstrap';
 
 function PostLoginRedirector() {
   const navigate = useNavigate();
@@ -170,9 +171,18 @@ export default function App() {
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const queryClient = useQueryClient();
   const rememberLoginCheckedRef = useRef(false);
+  const gatewayBootstrapRef = useRef(false);
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
+
+  // Capture gateway URL parameters on app startup (once)
+  useEffect(() => {
+    if (!gatewayBootstrapRef.current) {
+      gatewayBootstrapRef.current = true;
+      captureGatewayParameters();
+    }
+  }, []);
 
   // Check remember login preference on startup (only once)
   useEffect(() => {

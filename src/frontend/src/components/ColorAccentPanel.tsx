@@ -7,9 +7,9 @@ interface ColorAccentPanelProps {
 }
 
 export default function ColorAccentPanel({ children, variant = 'primary', className = '' }: ColorAccentPanelProps) {
-  // Neutral dark theme styling - subtle container without bright colors
+  // Console-style panel
   return (
-    <div className={`rounded-lg border border-border bg-card/50 ${className}`}>
+    <div className={`console-panel ${className}`}>
       {children}
     </div>
   );

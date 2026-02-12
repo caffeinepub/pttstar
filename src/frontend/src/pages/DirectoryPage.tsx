@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BookOpen, Info, Radio } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import DirectoryBrowser from '../components/DirectoryBrowser';
 import PersonalDirectoryEntries from '../components/PersonalDirectoryEntries';
-import { BookOpen, Star, Radio, Info } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
 import { saveConnection } from '../hooks/usePreferredConnection';
+import ColorPageHeader from '../components/ColorPageHeader';
 import type { PersistentNetwork } from '../backend';
 
 export default function DirectoryPage() {
@@ -15,87 +15,82 @@ export default function DirectoryPage() {
   const [selectedNetwork, setSelectedNetwork] = useState<PersistentNetwork | null>(null);
   const [selectedTalkgroup, setSelectedTalkgroup] = useState<string | null>(null);
 
-  const canProceedToPtt = selectedNetwork && selectedTalkgroup;
+  const handleNetworkSelect = (network: PersistentNetwork | null) => {
+    setSelectedNetwork(network);
+    setSelectedTalkgroup(null);
+  };
+
+  const handleTalkgroupSelect = (talkgroup: string | null) => {
+    setSelectedTalkgroup(talkgroup);
+  };
 
   const handleGoToPtt = () => {
-    if (!selectedNetwork || !selectedTalkgroup) return;
+    if (!selectedNetwork || !selectedTalkgroup) {
+      return;
+    }
 
-    // Save the directory-based connection
-    saveConnection({
-      network: selectedNetwork,
-      talkgroup: selectedTalkgroup,
-    });
+    // Find the talkgroup name from the network's talkgroups list
+    const talkgroupObj = selectedNetwork.talkgroups.find(tg => tg.id === selectedTalkgroup);
+    const talkgroupName = talkgroupObj?.name || `TG ${selectedTalkgroup}`;
 
-    // Navigate to PTT page
+    const connection = {
+      type: 'directory-based' as const,
+      networkLabel: selectedNetwork.networkLabel,
+      networkAddress: selectedNetwork.address,
+      talkgroupId: selectedTalkgroup,
+      talkgroupName: talkgroupName,
+    };
+
+    saveConnection(connection);
     navigate({ to: '/ptt' });
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-foreground">Directory</h1>
-        <p className="text-muted-foreground">Browse available networks, manage your favorites, and save personal directory entries for quick access.</p>
-      </div>
+  const canGoToPtt = selectedNetwork && selectedTalkgroup;
 
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Browse Networks:</strong> Explore built-in digital voice networks and talkgroups. Select a network and talkgroup, then click "Go to PTT" to connect. <strong>Personal Entries:</strong> Add your own custom networks stored locally on this device. <strong>Favorites:</strong> Star networks for quick access.
+  return (
+    <div className="container mx-auto px-4 py-6 pb-20 md:pb-6">
+      <ColorPageHeader
+        title="Network Directory"
+        subtitle="Browse networks and talkgroups"
+        variant="directory"
+        icon={<BookOpen className="h-7 w-7" />}
+      />
+
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Alert className="console-panel">
+          <Info className="h-3.5 w-3.5" />
+          <AlertDescription className="text-xs">
+            <strong>Browse vs. Personal Entries:</strong> The directory below shows all available networks and talkgroups. 
+            You can browse and select any network/talkgroup to proceed to PTT. 
+            Use the Personal Directory section to save your favorite entries for quick access.
           </AlertDescription>
         </Alert>
 
-        <Tabs defaultValue="browse" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="browse">
-              <BookOpen className="mr-2 h-4 w-4" />
-              Browse Networks
-            </TabsTrigger>
-            <TabsTrigger value="personal">
-              <Star className="mr-2 h-4 w-4" />
-              Personal Entries
-            </TabsTrigger>
-          </TabsList>
+        {canGoToPtt && (
+          <Card className="console-panel border-primary/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Ready to Transmit</CardTitle>
+              <CardDescription className="text-xs">
+                {selectedNetwork.networkLabel} - TG {selectedTalkgroup}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={handleGoToPtt} className="w-full text-xs">
+                <Radio className="mr-2 h-3.5 w-3.5" />
+                Go to PTT
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
-          <TabsContent value="browse" className="space-y-4">
-            {canProceedToPtt && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>
-                    Ready to connect to <strong>{selectedNetwork.networkLabel}</strong> on TG <strong>{selectedTalkgroup}</strong>
-                  </span>
-                  <Button onClick={handleGoToPtt} size="sm" className="ml-4">
-                    <Radio className="mr-2 h-4 w-4" />
-                    Go to PTT
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
+        <DirectoryBrowser
+          onNetworkSelect={handleNetworkSelect}
+          onTalkgroupSelect={handleTalkgroupSelect}
+          selectedNetwork={selectedNetwork}
+          selectedTalkgroup={selectedTalkgroup}
+        />
 
-            <DirectoryBrowser
-              onNetworkSelect={setSelectedNetwork}
-              onTalkgroupSelect={setSelectedTalkgroup}
-              selectedNetwork={selectedNetwork}
-              selectedTalkgroup={selectedTalkgroup}
-              showFavorites
-            />
-          </TabsContent>
-
-          <TabsContent value="personal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Directory Entries</CardTitle>
-                <CardDescription>
-                  Add your own networks and talkgroups. These are stored locally on this device only and are not synced to your profile.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PersonalDirectoryEntries />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <PersonalDirectoryEntries />
       </div>
     </div>
   );

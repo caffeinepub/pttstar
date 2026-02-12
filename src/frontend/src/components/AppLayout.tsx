@@ -22,16 +22,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      {/* Compact Console Header */}
+      <header className="border-b border-border bg-card shadow-console">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/assets/generated/pttstar-logo.dim_512x512.png" alt="PTTStar" className="h-8 w-8" />
-            <span className="text-xl font-bold tracking-tight text-foreground">PTTStar</span>
+            <img src="/assets/generated/pttstar-logo.dim_512x512.png" alt="PTTStar" className="h-7 w-7" />
+            <span className="text-lg font-bold tracking-tight text-foreground">PTTStar</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-1 md:flex">
+          {/* Desktop Navigation - Compact */}
+          <nav className="hidden items-center gap-0.5 md:flex">
             {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPath === item.path;
@@ -39,13 +39,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium uppercase tracking-wide transition-colors ${
                     isActive
-                      ? 'bg-accent text-accent-foreground'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-3.5 w-3.5" />
                   {item.label}
                 </Link>
               );
@@ -59,11 +59,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Main Content with dark page background */}
+      {/* Main Content */}
       <main className="flex-1 bg-background">{children}</main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card md:hidden">
+      {/* Mobile Bottom Navigation - Compact */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card shadow-console md:hidden">
         <div className="flex items-center justify-around">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
@@ -72,11 +72,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs transition-colors ${
-                  isActive ? 'text-accent-foreground' : 'text-muted-foreground'
+                className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] uppercase tracking-wide transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? 'text-status-active' : ''}`} />
+                <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -84,9 +84,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </nav>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card py-6 pb-20 md:pb-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground space-y-2">
+      {/* Footer - Compact */}
+      <footer className="border-t border-border bg-card py-4 pb-16 md:pb-4">
+        <div className="container mx-auto px-4 text-center text-xs text-muted-foreground space-y-1.5">
           <p className="font-medium text-foreground">
             KO4RXE — Creator & Developer
           </p>

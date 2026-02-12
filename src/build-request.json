@@ -1,82 +1,93 @@
 {
   "kind": "build_request",
-  "title": "Refine post-login transition flow",
+  "title": "Auto-select BrandMeister US and AllStarLink servers so users enter credentials only (no URLs)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
-      "target": "frontend",
+      "text": "Update the built-in BrandMeister United States network address to the correct BrandMeister US master hostname \"3102.master.brandmeister.network\" so that any default/preset selection uses this value.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Yes refine"
+          "3102.master.brandmeister.network this is the United States server for brandmeister"
         ]
       },
       "acceptanceCriteria": [
-        "When a user logs in for the first time and has no profile yet, the ProfileSetupDialog appears and no automatic navigation to /connect occurs until after the profile has been successfully saved.",
-        "When a user logs in and already has a profile, the redirect logic continues to be evaluated using the existing prerequisites (auth initialized + profile fetched)."
+        "Calling the backend getBuiltinNetworks() returns a network with networkLabel \"BrandMeister United States\" whose address is exactly \"3102.master.brandmeister.network\".",
+        "No migration is introduced (no stable state schema changes)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
+      "text": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Yes refine"
+          "I don't want the user to input anything about URL keep in mind applications like droidstar and Dvswitch only ask for login credentials never a URL"
         ]
       },
       "acceptanceCriteria": [
-        "After a successful login, if the caller profile query is still loading, the UI presents a dedicated in-app loading state (not an error) indicating the app is finishing sign-in.",
-        "The loading/interstitial state is removed automatically once the profile fetch completes and either navigation happens or the user remains on the current route."
+        "On the Connect page, choosing BrandMeister DMR quick setup results in a saved Digital Voice configuration that includes a non-empty bmServerAddress without the user typing any URL/hostname.",
+        "The default selected BrandMeister server is the built-in \"BrandMeister United States\" entry when available.",
+        "Any UI control that allows freeform BrandMeister server URL/hostname entry is not shown in the default/basic view (only allowed in an Advanced section if kept)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+      "text": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-4"
         ],
         "quotes": [
-          "Yes refine"
+          "the same thing with the allstarlink.org server once user login to there allstar with username and password the connection for IAX should be established. I don't want the user to input anything about URL"
         ]
       },
       "acceptanceCriteria": [
-        "If PostLoginRedirector redirects to /connect, the redirect uses history replacement behavior (no extra entry).",
-        "Pressing Back after being redirected to /connect does not return the user to an intermediate post-login transition state."
+        "On the Connect page, choosing AllStar Network quick setup pre-fills gateway/server with \"allstarlink.org\" (or selects an AllStarLink directory entry if one exists) without requiring the user to type any URL/hostname.",
+        "Saving an IAX/DVSwitch configuration does not require typing any gateway/server URL/hostname in the default/basic view.",
+        "Any UI control that allows freeform gateway/server URL/hostname entry is not shown in the default/basic view (only allowed in an Advanced section if kept)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "only ask for login credentials never a URL"
+        ]
+      },
+      "acceptanceCriteria": [
+        "For BrandMeister preset: after the user enters BrandMeister username + hotspot security password (and any other already-required non-URL fields), the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
+        "For AllStar preset: after the user enters AllStar username/password (and any other already-required non-URL fields such as node number if still required), the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
+        "No part of the default Connect UI requires the user to supply a URL/hostname to proceed."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (shadcn components are read-only).",
-    "Do not modify immutable paths listed in SYSTEM_CONTEXT (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx).",
-    "Backend must remain single-actor (no additional canisters/services)."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Use English for all user-facing text.",
+    "Do not add third-party authentication; Internet Identity remains the only auth mechanism."
   ],
   "nonGoals": [
-    "Changing the authentication provider (Internet Identity) or adding third-party authentication.",
-    "Adding new product features unrelated to post-login transition (e.g., new pages, new connection types, real-time features).",
-    "Changing backend data schemas or introducing state migrations unless strictly required for the UX refinement."
+    "Implementing real IAX/DMR protocol connectivity from the browser (the request is about configuration UX and default server selection).",
+    "Adding geo-location based server auto-selection.",
+    "Building a full BrandMeister/AllStar account creation flow."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

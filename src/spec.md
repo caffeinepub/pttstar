@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Make the post-login transition feel seamless by preventing redirects from competing with first-time profile onboarding, adding a clear post-login loading state, and ensuring redirects don’t pollute browser history.
+**Goal:** Let users connect to BrandMeister and AllStar using credentials only, with servers auto-selected (no manual URL/hostname entry in the basic flow).
 
 **Planned changes:**
-- Update post-login redirect logic to avoid navigating to `/connect` while first-time onboarding is active (authenticated + caller profile is null), and only evaluate redirect after the profile is confirmed present.
-- Add a dedicated, non-error interstitial/loading state shown after successful Internet Identity login while required post-login data (e.g., caller profile) is still loading and redirect decisions are being prepared.
-- Change the one-time redirect to `/connect` (with `preset=brandmeister-dmr`) to use history replacement so the Back button doesn’t return users to a transient post-login state.
+- Update the backend built-in network entry for “BrandMeister United States” to use address `3102.master.brandmeister.network`.
+- On the Connect page, when BrandMeister (DMR) quick setup is chosen, automatically select a built-in BrandMeister master (prefer “BrandMeister United States”) and save a non-empty `bmServerAddress` without user-entered URLs/hostnames; hide freeform server entry behind an Advanced section (or remove it from the basic view).
+- On the Connect page, when AllStar (IAX/DVSwitch) quick setup is chosen, automatically set/select the gateway/server to `allstarlink.org` (or an AllStarLink directory entry if available) without user-entered URLs/hostnames; hide freeform gateway/server entry behind an Advanced section (or remove it from the basic view).
+- Adjust the post-credential flow so that after required non-URL fields are entered for BrandMeister or AllStar, the app auto-saves the configuration and navigates to `/ptt` without prompting for any URL/hostname.
 
-**User-visible outcome:** After logging in, users see a smooth “finishing sign-in” state while data loads; first-time users complete profile setup without being redirected away; returning users redirect as before, and Back navigation no longer bounces through an intermediate transition.
+**User-visible outcome:** Users can choose BrandMeister or AllStar quick setup, enter only their credentials (and any other required non-URL fields), and be taken to PTT with server/gateway automatically set—without typing or pasting any URL/hostname in the default Connect flow.

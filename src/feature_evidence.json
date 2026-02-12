@@ -2,31 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-refine-the-post-login-redirect-behavior-so-it-feels-seamless-and-never-competes-with-first-time-profile-onboarding-specifically-do-not-perform-the-post-login-redirect-to-connect-while-the-profilesetupdialog-is-expected-to-be-shown-i-e-authenticated-and-caller-profile-is-null-and-only-consider-redirecting-after-the-profile-state-is-confirmed-present",
-      "featureTitle": "Refine the post-login redirect behavior so it feels seamless and never competes with first-time profile onboarding. Specifically: do not perform the post-login redirect to /connect while the ProfileSetupDialog is expected to be shown (i.e., authenticated and caller profile is null), and only consider redirecting after the profile state is confirmed present.",
+      "featureId": "feature-modify-the-brandmeister-dmr-connection-flow-so-users-are-not-required-to-type-or-paste-any-server-url-hostname-when-the-brandmeister-preset-quick-setup-is-chosen-automatically-select-a-brandmeister-master-server-prefer-brandmeister-united-states-when-present-and-keep-manual-server-entry-hidden-behind-an-advanced-section-or-removed",
+      "featureTitle": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
       "files": [
-        "frontend/src/App.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-improve-the-post-login-transition-ux-by-showing-a-clear-non-error-loading-interstitial-state-when-the-user-has-completed-internet-identity-authentication-but-the-app-is-still-fetching-required-post-login-data-e-g-caller-profile-and-or-preparing-the-redirect-decision-so-the-user-does-not-briefly-see-unrelated-page-content-during-this-window",
-      "featureTitle": "Improve the post-login transition UX by showing a clear, non-error loading/interstitial state when the user has completed Internet Identity authentication but the app is still fetching required post-login data (e.g., caller profile) and/or preparing the redirect decision, so the user does not briefly see unrelated page content during this window.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/PostLoginInterstitial.tsx"
+        "frontend/src/components/DigitalVoiceConnectForm.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,10 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-when-postloginredirector-performs-the-one-time-redirect-to-connect-with-preset-brandmeister-dmr-ensure-the-navigation-does-not-create-an-extra-history-entry-so-that-using-the-browser-back-button-does-not-bounce-the-user-through-a-transient-post-login-route-state",
-      "featureTitle": "When PostLoginRedirector performs the one-time redirect to /connect (with preset=brandmeister-dmr), ensure the navigation does not create an extra history entry so that using the browser Back button does not bounce the user through a transient post-login route state.",
+      "featureId": "feature-modify-the-allstar-iax-dvswitch-connection-flow-so-users-are-not-required-to-type-or-paste-any-gateway-server-url-hostname-when-the-allstar-preset-quick-setup-is-chosen-automatically-set-the-iax-gateway-server-to-allstarlink-org-or-a-directory-provided-allstarlink-entry-when-available-and-keep-any-freeform-gateway-server-input-hidden-behind-an-advanced-section-or-removed",
+      "featureTitle": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
       "files": [
-        "frontend/src/App.tsx"
+        "frontend/src/components/IaxDvswitchConnectForm.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -59,6 +38,28 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-the-app-s-post-credential-flow-auto-saves-and-navigates-to-ptt-once-required-non-url-fields-are-provided-for-brandmeister-and-allstar-matching-the-credentials-only-onboarding-expectation-similar-to-droidstar-dvswitch",
+      "featureTitle": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+      "files": [
+        "frontend/src/components/DigitalVoiceConnectForm.tsx",
+        "frontend/src/components/IaxDvswitchConnectForm.tsx",
+        "frontend/src/hooks/usePreferredConnection.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

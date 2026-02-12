@@ -1,30 +1,102 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T21:43:25.994Z",
-  "summary": "All three requested post-login transition requirements appear implemented in the provided diff: redirect is gated until profile fetch completes and is skipped during first-time onboarding (profile null), an in-app interstitial is shown while post-login profile data is still loading, and the /connect redirect uses history replacement.",
-  "missing_requirements": [],
-  "hallucinated_features": [
+  "generatedAt": "2026-02-12T11:44:23.782Z",
+  "summary": "Diff shows substantial new frontend work around preset-driven BrandMeister/AllStar setup (server directories, advanced sections, normalization, and auto-save scaffolding), but the backend change required for the built-in BrandMeister US hostname is not evidenced in the truncated backend diff. The diff also includes multiple unrelated UI/content/features not requested by the BuildRequest (landing page copy, footer attribution, auth error UX, settings server directory sources, etc.).",
+  "missing_requirements": [
     {
-      "description": "Session-scoped “one-time redirect per principal” behavior using sessionStorage (pttstar_redirected_<principal>) to prevent repeated redirects.",
-      "reason": "The BuildRequest only specifies redirect timing, interstitial UX, and history replacement; it does not request introducing a sessionStorage-based one-time redirect mechanism keyed by principal.",
+      "id": "REQ-1",
+      "requirement": "Update the built-in BrandMeister United States network address to exactly \"3102.master.brandmeister.network\" so getBuiltinNetworks() returns that address for networkLabel \"BrandMeister United States\"; no migration/stable schema changes.",
+      "reason": "backend/main.mo is truncated and the diff excerpt does not show any initialization/update of the built-in network list or the BrandMeister United States entry, so the required hostname change cannot be verified from the provided evidence.",
       "evidence": [
-        "frontend/src/App.tsx"
+        "backend/main.mo (truncated)"
       ]
     },
     {
-      "description": "Added console logging for redirector state/decisions.",
-      "reason": "Not requested as part of the UX/redirect requirements.",
+      "id": "REQ-2",
+      "requirement": "BrandMeister quick setup auto-selects a master (prefer built-in \"BrandMeister United States\") and does not require manual server URL in the basic view (only in Advanced if kept). Saving results in non-empty bmServerAddress without user typing a URL/hostname.",
+      "reason": "DigitalVoiceConnectForm.tsx shows state for selectedBmServer, an Advanced section flag, and merged builtin+directory BM servers, but the provided excerpt is truncated before the preset-application logic and before the rendered UI controls; therefore the acceptance criteria (auto-select preference for \"BrandMeister United States\", hiding freeform input in default view, and saved bmServerAddress without typing) cannot be confirmed from the evidence shown.",
       "evidence": [
-        "frontend/src/App.tsx"
+        "frontend/src/components/DigitalVoiceConnectForm.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "AllStar quick setup auto-sets gateway/server to \"allstarlink.org\" (or directory entry) and does not require freeform gateway/server input in the basic view (only in Advanced if kept).",
+      "reason": "IaxDvswitchConnectForm.tsx includes DEFAULT_ALLSTAR_GATEWAY and an Advanced section flag, but the excerpt is truncated before the preset-application logic and before the rendered UI controls; thus the default/basic view behavior and directory-preferred selection cannot be verified from the provided evidence.",
+      "evidence": [
+        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "After entering required non-URL fields for BrandMeister/AllStar presets, the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
+      "reason": "Both connect forms import useNavigate and define AUTO_SAVE_ATTEMPTED_KEY constants, but the provided excerpts are truncated before any auto-save trigger and navigation calls. The diff summary mentions other pages (ConnectPage/PttPage) changes, but no concrete code excerpt is provided to verify the exact post-credential auto-save + /ptt navigation behavior.",
+      "evidence": [
+        "frontend/src/components/DigitalVoiceConnectForm.tsx (truncated)",
+        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)",
+        "frontend-file-summaries.txt (ConnectPage.tsx, PttPage.tsx summaries only)"
       ]
     }
   ],
-  "confidence": 0.78,
+  "hallucinated_features": [
+    {
+      "description": "Added/modified extensive authentication-gating and login error recovery UI (AuthGate, LoginButton) including retry/clear-session actions and actor initialization fallback UI.",
+      "reason": "Not requested by any REQ; BuildRequest is specifically about auto-selecting BrandMeister/AllStar servers and removing URL entry requirements.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/AuthGate.tsx, frontend/src/components/LoginButton.tsx)"
+      ]
+    },
+    {
+      "description": "Profile setup modal changes including removing DMR ID field and adding explicit license acknowledgement validation.",
+      "reason": "Not requested; BuildRequest does not ask to alter profile fields or onboarding beyond connection credential UX.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/ProfileSetupDialog.tsx)"
+      ]
+    },
+    {
+      "description": "Landing page rewritten/expanded with a comprehensive getting-started guide and external BrandMeister account recommendation/link.",
+      "reason": "Not requested; BuildRequest explicitly calls out non-goals like full account creation flows and focuses on Connect UX defaults.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/LandingPage.tsx)"
+      ]
+    },
+    {
+      "description": "Footer/header attribution change displaying \"KO4RXE — Creator & Developer\".",
+      "reason": "Not requested; unrelated to server auto-selection/URL entry removal.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/components/AppLayout.tsx, frontend/src/pages/AboutCompliancePage.tsx)"
+      ]
+    },
+    {
+      "description": "Settings page adds \"Server Directory Sources\" management UI with GitHub raw URLs, refresh buttons, last-updated timestamps, and fetch error display.",
+      "reason": "Not requested; BuildRequest does not ask for new settings configuration for server directory sources (only to auto-select servers in Connect flow).",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/SettingsPage.tsx)"
+      ]
+    },
+    {
+      "description": "Activity page styling changes (removal of green accents) and other non-specified visual tweaks.",
+      "reason": "Not requested; unrelated to connection setup requirements.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/ActivityPage.tsx)"
+      ]
+    },
+    {
+      "description": "Directory page enhancements (favorites, in-page action to proceed to PTT, updated intro copy, and DirectoryBasedConnection saving).",
+      "reason": "Not requested in BuildRequest; the request is specifically about Connect page UX defaults and backend built-in BM US address.",
+      "evidence": [
+        "frontend-file-summaries.txt (frontend/src/pages/DirectoryPage.tsx)"
+      ]
+    }
+  ],
+  "confidence": 0.58,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/PostLoginInterstitial.tsx",
+    "frontend/src/components/DigitalVoiceConnectForm.tsx",
+    "frontend/src/components/IaxDvswitchConnectForm.tsx",
+    "frontend/src/hooks/usePreferredConnection.ts",
     "project_state.json"
   ]
 }
