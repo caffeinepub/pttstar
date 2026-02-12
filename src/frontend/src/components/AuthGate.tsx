@@ -1,4 +1,4 @@
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useRegeneratedAuth } from '../auth/iiAuthProvider';
 import { useActorWithError } from '../hooks/useActorWithError';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,8 @@ import AuthenticatedFlowFallback from './AuthenticatedFlowFallback';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
-  const { identity, login, loginStatus, clear, isLoginError, loginError } = useInternetIdentity();
-  const { actor, isFetching, error, isError } = useActorWithError();
+  const { identity, login, loginStatus, clear, isLoginError, error } = useRegeneratedAuth();
+  const { actor, isFetching, error: actorError, isError: actorIsError } = useActorWithError();
   const queryClient = useQueryClient();
 
   const handleClearSession = async () => {
@@ -45,12 +45,12 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             <CardDescription>You must be logged in to access this feature.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isLoginError && loginError && (
+            {isLoginError && error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="ml-2">
-                  <div className="font-semibold">Login failed</div>
-                  <div className="mt-1 text-sm">{loginError.message}</div>
+                  <div className="font-semibold">Sign-in failed</div>
+                  <div className="mt-1 text-sm">{error.message}</div>
                 </AlertDescription>
               </Alert>
             )}
@@ -84,11 +84,11 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   // Authenticated but actor initialization failed
-  if (isError && error) {
+  if (actorIsError && actorError) {
     return (
       <AuthenticatedFlowFallback
-        error={error}
-        context="actor initialization"
+        error={actorError}
+        context="backend initialization"
         onRetry={handleRetry}
         onClearSession={handleClearSession}
       />

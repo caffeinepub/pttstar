@@ -1,6 +1,7 @@
 /**
  * Server Directory Sources Configuration
  * Manages GitHub raw source URLs for BrandMeister and AllStar server lists
+ * with DroidStar-style defaults and metadata persistence
  */
 
 const STORAGE_KEY_PREFIX = 'pttstar_server_directory_';
@@ -15,7 +16,7 @@ export interface ServerDirectoryMetadata {
   lastError: string | null;
 }
 
-// Default GitHub raw URLs for server lists
+// Default GitHub raw URLs for server lists (DroidStar-style defaults)
 const DEFAULT_SOURCES: ServerDirectorySource = {
   brandmeister: 'https://raw.githubusercontent.com/brandmeister/brandmeister-hosts/master/BM_Hosts.txt',
   allstar: 'https://raw.githubusercontent.com/AllStarLink/ASL-Nodes-Diff/main/asl-nodes.txt',

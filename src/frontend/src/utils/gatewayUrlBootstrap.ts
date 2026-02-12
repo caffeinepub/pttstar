@@ -1,12 +1,15 @@
 /**
  * Gateway URL Bootstrap
  * Captures gateway-related URL parameters on app load and persists them to sessionStorage.
- * Infers connection presets (BrandMeister DMR or AllStar) from captured parameters.
+ * Infers connection presets (BrandMeister DMR, TGIF DMR, or AllStar) from captured parameters.
  * 
  * Reference: DroidStar-like behavior replicated from
- * https://dudestar.gw8szl.co.uk/Droidstar/DroidStar-build-f050489.apk
+ * http://pizzanbeer.net/droidstar/DroidStar-1faf794-android-arm32.apk
  * See frontend/docs/droidstar-settings-reference.md for details.
  */
+
+import { normalizeServerAddress } from './serverAddress';
+import type { PresetId } from './connectionPresets';
 
 const GATEWAY_PARAMS_KEY = 'pttstar_gateway_params';
 const AUTO_FLOW_ATTEMPTED_KEY = 'pttstar_auto_flow_attempted';
@@ -29,14 +32,14 @@ export function captureGatewayParameters(): void {
   const captured: GatewayParameters = {};
 
   // Digital Voice gateway parameters
-  if (params.has('gatewayUrl')) captured.gatewayUrl = params.get('gatewayUrl')!;
+  if (params.has('gatewayUrl')) captured.gatewayUrl = normalizeServerAddress(params.get('gatewayUrl')!);
   if (params.has('gatewayToken')) captured.gatewayToken = params.get('gatewayToken')!;
   if (params.has('gatewayRoom')) captured.gatewayRoom = params.get('gatewayRoom')!;
   if (params.has('gatewayUsername')) captured.gatewayUsername = params.get('gatewayUsername')!;
-  if (params.has('server')) captured.server = params.get('server')!;
+  if (params.has('server')) captured.server = normalizeServerAddress(params.get('server')!);
 
   // IAX/AllStar parameters
-  if (params.has('gateway')) captured.gateway = params.get('gateway')!;
+  if (params.has('gateway')) captured.gateway = normalizeServerAddress(params.get('gateway')!);
   if (params.has('port')) captured.port = params.get('port')!;
   if (params.has('node')) captured.node = params.get('node')!;
 
@@ -61,7 +64,7 @@ export function getPersistedGatewayParameter(key: keyof GatewayParameters): stri
   }
 }
 
-export function getInferredPreset(): 'brandmeister-dmr' | 'allstar' | null {
+export function getInferredPreset(): PresetId | null {
   if (typeof window === 'undefined') return null;
 
   try {
@@ -69,6 +72,12 @@ export function getInferredPreset(): 'brandmeister-dmr' | 'allstar' | null {
     if (!stored) return null;
 
     const params: GatewayParameters = JSON.parse(stored);
+
+    // Check for TGIF DMR: server contains 'tgif'
+    if (params.server && params.server.toLowerCase().includes('tgif')) {
+      console.log('Inferred preset: tgif-dmr');
+      return 'tgif-dmr';
+    }
 
     // BrandMeister DMR: has gatewayUrl or server
     if (params.gatewayUrl || params.server) {
@@ -97,4 +106,9 @@ export function hasAutoFlowBeenAttempted(): boolean {
 export function markAutoFlowAttempted(): void {
   if (typeof window === 'undefined') return;
   sessionStorage.setItem(AUTO_FLOW_ATTEMPTED_KEY, 'true');
+}
+
+export function clearAutoFlowAttempted(): void {
+  if (typeof window === 'undefined') return;
+  sessionStorage.removeItem(AUTO_FLOW_ATTEMPTED_KEY);
 }

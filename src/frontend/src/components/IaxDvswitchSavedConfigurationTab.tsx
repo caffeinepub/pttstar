@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Server, Edit, AlertCircle, Hash } from 'lucide-react';
+import { Server, Edit, AlertCircle, Hash, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { loadConnection, isIaxDvswitchConnection } from '../hooks/usePreferredConnection';
 import AutoGatewayStatusIndicator from './AutoGatewayStatusIndicator';
@@ -47,6 +47,9 @@ export default function IaxDvswitchSavedConfigurationTab({ onEdit }: IaxDvswitch
     return '••••••••';
   };
 
+  const phoneToIaxStatus = connection.phoneToIaxConfirmed ? 'Yes' : 'No';
+  const codecTypeDisplay = connection.codecType ?? 'ulaw';
+
   return (
     <Card className="console-panel">
       <CardHeader className="pb-3">
@@ -60,65 +63,69 @@ export default function IaxDvswitchSavedConfigurationTab({ onEdit }: IaxDvswitch
         {/* Auto Gateway Status Indicator */}
         <AutoGatewayStatusIndicator />
 
-        {/* Gateway Configuration Section */}
+        {/* Primary Connection Settings */}
         <div className="console-section">
-          <h4 className="console-label mb-2">Gateway / Server</h4>
+          <h4 className="console-label mb-2">Connection Settings</h4>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Gateway / Server</span>
+              <span className="text-xs text-muted-foreground">Hostname</span>
               <span className="console-value">{connection.gateway}</span>
             </div>
-            {connection.port && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Port</span>
+              <span className="console-value">{connection.port || '4569'}</span>
+            </div>
+            {connection.iaxUsername && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Port</span>
-                <span className="console-value">{connection.port}</span>
+                <span className="text-xs text-muted-foreground">Username</span>
+                <span className="console-value">{connection.iaxUsername}</span>
               </div>
             )}
-            {connection.userCallsign && (
+            {connection.iaxPassword && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">User Callsign</span>
-                <span className="console-value uppercase">{connection.userCallsign}</span>
+                <span className="text-xs text-muted-foreground">Password</span>
+                <span className="console-value">{maskPassword(connection.iaxPassword)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Callsign</span>
+              <span className="console-value uppercase">{connection.userCallsign}</span>
+            </div>
+            {connection.nodeNumber && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Node Number</span>
+                <span className="console-value">{connection.nodeNumber}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Node Number Section */}
-        {connection.nodeNumber && (
-          <div className="console-section">
-            <div className="flex items-center gap-2 mb-2">
-              <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-              <h4 className="console-label">Node Number</h4>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Node Number</span>
-              <span className="console-value">{connection.nodeNumber}</span>
+        {/* Phone to IAX Connection Status */}
+        <div className="console-section">
+          <h4 className="console-label mb-2">Connection Type</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Phone to IAX connection</span>
+            <div className="flex items-center gap-2">
+              {connection.phoneToIaxConfirmed ? (
+                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+              <span className="console-value">{phoneToIaxStatus}</span>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* IAX Credentials Section */}
-        {(connection.iaxUsername || connection.iaxPassword) && (
-          <div className="console-section">
-            <h4 className="console-label mb-2">IAX Credentials</h4>
-            <div className="space-y-2">
-              {connection.iaxUsername && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">IAX Username</span>
-                  <span className="console-value">{connection.iaxUsername}</span>
-                </div>
-              )}
-              {connection.iaxPassword && (
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">IAX Password</span>
-                  <span className="console-value">{maskPassword(connection.iaxPassword)}</span>
-                </div>
-              )}
-            </div>
+        {/* Codec Types */}
+        <div className="console-section">
+          <h4 className="console-label mb-2">Codec Types</h4>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Selected Codec</span>
+            <span className="console-value uppercase">{codecTypeDisplay}</span>
           </div>
-        )}
+        </div>
 
-        {/* AllStar Credentials Section */}
+        {/* AllStar Credentials Section - Optional */}
         {(connection.allstarUsername || connection.allstarPassword) && (
           <div className="console-section">
             <div className="flex items-center gap-2 mb-2">

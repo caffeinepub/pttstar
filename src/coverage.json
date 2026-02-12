@@ -1,70 +1,91 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T11:44:23.785Z",
+  "generatedAt": "2026-02-12T18:35:49.522Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 5,
+    "implemented": 5,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the built-in BrandMeister United States network address to the correct BrandMeister US master hostname \"3102.master.brandmeister.network\" so that any default/preset selection uses this value.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ]
       },
       {
         "id": "REQ-2",
-        "summary": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
+        "summary": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
+        "summary": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts",
+          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "frontend/src/hooks/usePreferredConnection.ts",
+          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+        "summary": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts"
+          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/DigitalVoiceConnectForm.tsx",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts"
+          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/usePreferredConnection.ts",
+          "frontend/src/utils/roomKey.ts",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/usePreferredConnection.ts",
+          "frontend/src/utils/roomKey.ts",
+          "frontend/src/components/IaxDvswitchConnectForm.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/DigitalVoiceConnectForm.tsx",
     "frontend/src/components/IaxDvswitchConnectForm.tsx",
+    "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
     "frontend/src/hooks/usePreferredConnection.ts",
+    "frontend/src/utils/roomKey.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

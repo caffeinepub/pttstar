@@ -2,10 +2,31 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-modify-the-brandmeister-dmr-connection-flow-so-users-are-not-required-to-type-or-paste-any-server-url-hostname-when-the-brandmeister-preset-quick-setup-is-chosen-automatically-select-a-brandmeister-master-server-prefer-brandmeister-united-states-when-present-and-keep-manual-server-entry-hidden-behind-an-advanced-section-or-removed",
-      "featureTitle": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
+      "featureId": "feature-update-the-iax-dvswitch-configuration-form-ui-to-use-a-dvswitch-style-field-order-and-labeling-hostname-port-username-password-callsign-node-number",
+      "featureTitle": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
       "files": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx"
+        "frontend/src/components/IaxDvswitchConnectForm.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-phone-to-iax-connection-checkbox-to-the-iax-dvswitch-configuration-and-require-it-to-be-checked-before-allowing-the-user-to-save-the-iax-dvswitch-configuration",
+      "featureTitle": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
+      "files": [
+        "frontend/src/components/IaxDvswitchConnectForm.tsx",
+        "frontend/src/hooks/usePreferredConnection.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,10 +43,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-modify-the-allstar-iax-dvswitch-connection-flow-so-users-are-not-required-to-type-or-paste-any-gateway-server-url-hostname-when-the-allstar-preset-quick-setup-is-chosen-automatically-set-the-iax-gateway-server-to-allstarlink-org-or-a-directory-provided-allstarlink-entry-when-available-and-keep-any-freeform-gateway-server-input-hidden-behind-an-advanced-section-or-removed",
-      "featureTitle": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
+      "featureId": "feature-add-a-codec-types-selection-control-to-the-iax-dvswitch-configuration-presented-as-a-tab-or-clearly-labeled-segmented-option-with-allowed-values-ulaw-slin-adpcm-and-persist-the-selected-codec-with-the-saved-iax-dvswitch-connection",
+      "featureTitle": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
       "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        "frontend/src/components/IaxDvswitchConnectForm.tsx",
+        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
+        "frontend/src/hooks/usePreferredConnection.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -42,12 +65,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-app-s-post-credential-flow-auto-saves-and-navigates-to-ptt-once-required-non-url-fields-are-provided-for-brandmeister-and-allstar-matching-the-credentials-only-onboarding-expectation-similar-to-droidstar-dvswitch",
-      "featureTitle": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+      "featureId": "feature-extend-the-iax-dvswitch-saved-configuration-display-to-include-the-new-phone-to-iax-connection-state-and-the-selected-codec-type-while-continuing-to-mask-passwords",
+      "featureTitle": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
       "files": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx",
-        "frontend/src/components/IaxDvswitchConnectForm.tsx",
-        "frontend/src/hooks/usePreferredConnection.ts"
+        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -60,6 +81,28 @@
       ],
       "testIds": [
         "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-connection-settings-storage-types-used-by-the-frontend-so-the-iax-dvswitch-connection-can-persist-a-phone-to-iax-confirmation-and-b-codec-type-without-breaking-existing-saved-sessions",
+      "featureTitle": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
+      "files": [
+        "frontend/src/components/IaxDvswitchConnectForm.tsx",
+        "frontend/src/hooks/usePreferredConnection.ts",
+        "frontend/src/utils/roomKey.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

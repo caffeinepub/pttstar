@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Let users connect to BrandMeister and AllStar using credentials only, with servers auto-selected (no manual URL/hostname entry in the basic flow).
+**Goal:** Redesign the IAX / DVSwitch configuration UI to match DVSwitch-style layout and add persisted codec selection plus a required phone-to-IAX confirmation.
 
 **Planned changes:**
-- Update the backend built-in network entry for “BrandMeister United States” to use address `3102.master.brandmeister.network`.
-- On the Connect page, when BrandMeister (DMR) quick setup is chosen, automatically select a built-in BrandMeister master (prefer “BrandMeister United States”) and save a non-empty `bmServerAddress` without user-entered URLs/hostnames; hide freeform server entry behind an Advanced section (or remove it from the basic view).
-- On the Connect page, when AllStar (IAX/DVSwitch) quick setup is chosen, automatically set/select the gateway/server to `allstarlink.org` (or an AllStarLink directory entry if available) without user-entered URLs/hostnames; hide freeform gateway/server entry behind an Advanced section (or remove it from the basic view).
-- Adjust the post-credential flow so that after required non-URL fields are entered for BrandMeister or AllStar, the app auto-saves the configuration and navigates to `/ptt` without prompting for any URL/hostname.
+- Reorder and relabel IAX / DVSwitch configuration inputs to: Hostname, Port, Username, Password, Callsign, Node Number (English labels with consistent capitalization).
+- Add a required checkbox labeled “Phone to IAX connection” that must be checked before Save is allowed, with an English validation message when not confirmed.
+- Add a “Codec Types” selector (tab/segmented control) with options: ulaw, slin, adpcm; ensure a default is selected when none is saved.
+- Extend the saved IAX / DVSwitch configuration display to show Phone to IAX connection (Yes/No) and Codec Types, while keeping passwords masked.
+- Update frontend settings storage/types to persist the new checkbox state and selected codec, while remaining backward-compatible with previously saved IAX / DVSwitch configurations.
 
-**User-visible outcome:** Users can choose BrandMeister or AllStar quick setup, enter only their credentials (and any other required non-URL fields), and be taken to PTT with server/gateway automatically set—without typing or pasting any URL/hostname in the default Connect flow.
+**User-visible outcome:** Users see a DVSwitch-style IAX settings form, must confirm “Phone to IAX connection” to save, can choose a codec type, and can view the saved confirmation/codec values alongside other saved settings.

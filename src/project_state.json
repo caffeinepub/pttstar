@@ -1,35 +1,50 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App should auto-connect to BrandMeister and AllStar (IAX) using only user credentials, with server URLs preconfigured (no user-entered URL).",
+  "summary": "PTT Star app: enhance IAX/DVSwitch-style connection settings UI (host/port/username/password/callsign/node) with explicit phone-to-IAX mode and selectable codec types.",
   "architectural_notes": [
-    "Maintain a predefined list of BrandMeister master servers (including 3102.master.brandmeister.network for US) and select/connect automatically after successful login.",
-    "Connection endpoints (BrandMeister masters, AllStar IAX) should be derived from provider selection and/or credentials, not user-entered URLs."
+    "IAX configuration UX should support explicit credential fields (including username) and codec negotiation/selection (ulaw/slin/adpcm)."
   ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-modify-the-brandmeister-dmr-connection-flow-so-users-are-not-required-to-type-or-paste-any-server-url-hostname-when-the-brandmeister-preset-quick-setup-is-chosen-automatically-select-a-brandmeister-master-server-prefer-brandmeister-united-states-when-present-and-keep-manual-server-entry-hidden-behind-an-advanced-section-or-removed",
-      "title": "Modify the BrandMeister (DMR) connection flow so users are not required to type or paste any server URL/hostname: when the BrandMeister preset/quick setup is chosen, automatically select a BrandMeister master server (prefer \"BrandMeister United States\" when present) and keep manual server entry hidden behind an Advanced section (or removed).",
+      "id": "feature-update-the-iax-dvswitch-configuration-form-ui-to-use-a-dvswitch-style-field-order-and-labeling-hostname-port-username-password-callsign-node-number",
+      "title": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-phone-to-iax-connection-checkbox-to-the-iax-dvswitch-configuration-and-require-it-to-be-checked-before-allowing-the-user-to-save-the-iax-dvswitch-configuration",
+      "title": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-modify-the-allstar-iax-dvswitch-connection-flow-so-users-are-not-required-to-type-or-paste-any-gateway-server-url-hostname-when-the-allstar-preset-quick-setup-is-chosen-automatically-set-the-iax-gateway-server-to-allstarlink-org-or-a-directory-provided-allstarlink-entry-when-available-and-keep-any-freeform-gateway-server-input-hidden-behind-an-advanced-section-or-removed",
-      "title": "Modify the AllStar (IAX/DVSwitch) connection flow so users are not required to type or paste any gateway/server URL/hostname: when the AllStar preset/quick setup is chosen, automatically set the IAX gateway/server to \"allstarlink.org\" (or a directory-provided AllStarLink entry when available), and keep any freeform gateway/server input hidden behind an Advanced section (or removed).",
+      "id": "feature-add-a-codec-types-selection-control-to-the-iax-dvswitch-configuration-presented-as-a-tab-or-clearly-labeled-segmented-option-with-allowed-values-ulaw-slin-adpcm-and-persist-the-selected-codec-with-the-saved-iax-dvswitch-connection",
+      "title": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-app-s-post-credential-flow-auto-saves-and-navigates-to-ptt-once-required-non-url-fields-are-provided-for-brandmeister-and-allstar-matching-the-credentials-only-onboarding-expectation-similar-to-droidstar-dvswitch",
-      "title": "Ensure the app’s post-credential flow auto-saves and navigates to PTT once required non-URL fields are provided for BrandMeister and AllStar, matching the \"credentials only\" onboarding expectation (similar to DroidStar/DVSwitch).",
+      "id": "feature-extend-the-iax-dvswitch-saved-configuration-display-to-include-the-new-phone-to-iax-connection-state-and-the-selected-codec-type-while-continuing-to-mask-passwords",
+      "title": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
       "reqIds": [
         "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-connection-settings-storage-types-used-by-the-frontend-so-the-iax-dvswitch-connection-can-persist-a-phone-to-iax-confirmation-and-b-codec-type-without-breaking-existing-saved-sessions",
+      "title": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -37,33 +52,25 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "BrandMeister login should auto-select/connect to the appropriate master server(s) (e.g., 3102.master.brandmeister.network US) using only username + hotspot security password (no URL input).",
+      "summary": "Redesign IAX settings form to match DVSwitch layout: hostname, port, username, password, callsign, node number.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "AllStarLink login should automatically establish the IAX connection using only username + password (no URL input).",
+      "summary": "Add 'Phone to IAX connection' checkbox to explicitly indicate/enable phone-to-IAX mode.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Remove/avoid any UI requiring users to enter server URLs; apps should only prompt for login credentials similar to DroidStar/DVSwitch.",
+      "summary": "Add 'Codec Types' server-selection tab/option with choices: ulaw, slin, adpcm.",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Update the built-in BrandMeister United States network address to the correct BrandMeister US master hostname \"3102.master.brandmeister.network\" so that any default/preset selection uses this value.",
-      "reqIds": [
-        "REQ-1"
-      ],
       "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Auto-select BrandMeister US and AllStarLink servers so users enter credentials only (no URLs)",
+  "projectName": "Redesign IAX/DVSwitch settings to match DVSwitch layout with codec selection and phone-to-IAX confirmation",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

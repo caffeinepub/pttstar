@@ -2,12 +2,12 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { Radio, Wifi, Activity, Settings, Info } from 'lucide-react';
 import LoginButton from './LoginButton';
 import InstallAppAction from './InstallAppAction';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useRegeneratedAuth } from '../auth/iiAuthProvider';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const { identity } = useInternetIdentity();
+  const { identity } = useRegeneratedAuth();
   const isAuthenticated = !!identity;
 
   const navItems = [
@@ -60,11 +60,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 bg-background">{children}</main>
+      <main className="flex-1">{children}</main>
 
-      {/* Mobile Bottom Navigation - Compact */}
+      {/* Compact Console Footer */}
+      <footer className="border-t border-border bg-card py-4 shadow-console">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center gap-2 text-center text-xs text-muted-foreground">
+            <div className="font-semibold text-foreground">KO4RXE — Creator & Developer</div>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <span>© {new Date().getFullYear()} PTTStar</span>
+              <span className="hidden sm:inline">•</span>
+              <a
+                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
+                  typeof window !== 'undefined' ? window.location.hostname : 'pttstar'
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-foreground"
+              >
+                Built with ❤️ using caffeine.ai
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card shadow-console md:hidden">
-        <div className="flex items-center justify-around">
+        <div className="flex items-center justify-around px-2 py-2">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPath === item.path;
@@ -72,39 +95,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] uppercase tracking-wide transition-colors ${
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                className={`flex flex-col items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? 'text-primary' : ''}`} />
-                <span>{item.label}</span>
+                <Icon className="h-4 w-4" />
+                <span className="text-[10px] font-medium uppercase tracking-wide">{item.label}</span>
               </Link>
             );
           })}
         </div>
       </nav>
-
-      {/* Footer - Compact */}
-      <footer className="border-t border-border bg-card py-4 pb-16 md:pb-4">
-        <div className="container mx-auto px-4 text-center text-xs text-muted-foreground space-y-1.5">
-          <p className="font-medium text-foreground">
-            KO4RXE — Creator & Developer
-          </p>
-          <p>
-            © {new Date().getFullYear()} PTTStar. Built with ❤️ using{' '}
-            <a
-              href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                typeof window !== 'undefined' ? window.location.hostname : 'pttstar'
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground underline hover:text-accent-foreground"
-            >
-              caffeine.ai
-            </a>
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

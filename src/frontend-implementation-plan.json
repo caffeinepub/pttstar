@@ -1,63 +1,111 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Credentials-only quick setup for BrandMeister and AllStar (auto-select servers, hide URLs)",
+  "title": "IAX / DVSwitch settings UI redesign with codec selection and phone-to-IAX confirmation",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "BrandMeister DMR quick setup auto-selects a built-in master (prefer US) and hides manual server entry behind Advanced.",
+      "id": "REQ-1",
+      "summary": "Reorder and relabel the IAX / DVSwitch configuration form fields to match the DVSwitch-style layout.",
       "acceptanceCriteria": [
-        "On the Connect page, choosing BrandMeister DMR quick setup results in a saved Digital Voice configuration that includes a non-empty bmServerAddress without the user typing any URL/hostname.",
-        "The default selected BrandMeister server is the built-in \"BrandMeister United States\" entry when available.",
-        "Any UI control that allows freeform BrandMeister server URL/hostname entry is not shown in the default/basic view (only allowed in an Advanced section if kept)."
+        "In the IAX / DVSwitch Configure UI, the primary inputs are shown in this order: Hostname, Port, Username, Password, Callsign, Node Number.",
+        "User-facing labels are in English and use consistent capitalization: \"Hostname\", \"Port\", \"Username\", \"Password\", \"Callsign\", \"Node Number\".",
+        "Existing behaviors still work: saved IAX connection values are loaded into the form on mount, and Save persists the updated values."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
           "operation": "modify",
-          "description": "Adjust the BrandMeister (DMR) preset UX to be credentials-only by default: ensure the preset auto-selects a BrandMeister server (preferring the built-in \"BrandMeister United States\" when present) and persists bmServerAddress without any user-entered hostname; move the BrandMeister server selection control into the existing Advanced section (show only a non-editable summary in the basic view). Verify the component's usage instructions before implementing."
+          "description": "Update the IAX / DVSwitch Configure form to present the primary inputs in DVSwitch-style order and with exact English labels: Hostname, Port, Username, Password, Callsign, Node Number. Map these UI fields to the existing saved properties (gateway->Hostname, port->Port, iaxUsername->Username, iaxPassword->Password, userCallsign->Callsign, nodeNumber->Node Number) while preserving existing load-on-mount and save behavior. Keep optional/advanced sections (e.g., AllStar server picker, AllStar credentials) accessible without editing any files under frontend/src/components/ui. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a required \"Phone to IAX connection\" confirmation checkbox to the IAX / DVSwitch configuration form and persist it.",
+      "acceptanceCriteria": [
+        "The IAX / DVSwitch Configure UI includes a checkbox labeled \"Phone to IAX connection\".",
+        "When the checkbox is unchecked, the Save action is blocked and the UI shows an English validation message explaining that confirmation is required.",
+        "When the checkbox is checked, Save works normally and the value is persisted with the saved IAX / DVSwitch connection settings."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "operation": "modify",
+          "description": "Add a checkbox control labeled \"Phone to IAX connection\" to the IAX / DVSwitch Configure UI, load its initial value from saved settings, and enforce validation that blocks Save when unchecked with an English message (e.g., confirmation required). Ensure the checkbox value is included when saving the IAX / DVSwitch connection. Use existing shadcn/ui form building blocks already used in the project (do not modify frontend/src/components/ui). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/usePreferredConnection.ts",
+          "operation": "modify",
+          "description": "Extend the persisted IAX / DVSwitch connection shape to include an optional boolean for the phone-to-IAX confirmation, ensuring older saved connections still parse safely and default the missing value in a backward-compatible way."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "AllStar quick setup auto-sets gateway/server (default allstarlink.org or directory entry) and hides freeform gateway entry behind Advanced.",
+      "summary": "Add a \"Codec Types\" selector (tab/segmented control) for ulaw/slin/adpcm, persist it, and display it in the saved configuration view.",
       "acceptanceCriteria": [
-        "On the Connect page, choosing AllStar Network quick setup pre-fills gateway/server with \"allstarlink.org\" (or selects an AllStarLink directory entry if one exists) without requiring the user to type any URL/hostname.",
-        "Saving an IAX/DVSwitch configuration does not require typing any gateway/server URL/hostname in the default/basic view.",
-        "Any UI control that allows freeform gateway/server URL/hostname entry is not shown in the default/basic view (only allowed in an Advanced section if kept)."
+        "The IAX / DVSwitch Configure UI includes a codec selector labeled \"Codec Types\" with options \"ulaw\", \"slin\", and \"adpcm\".",
+        "A codec is always selected (use a sensible default if none is saved).",
+        "The selected codec is stored alongside the other IAX / DVSwitch connection settings and is restored when revisiting the Configure UI.",
+        "The Saved IAX / DVSwitch Configuration view shows the selected codec type in a readable way."
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
           "operation": "modify",
-          "description": "Update the AllStar preset flow to set the gateway/server automatically (prefer an AllStarLink directory entry when available; otherwise default to \"allstarlink.org\") and remove the need for users to type/paste a gateway/server in the basic view by moving the freeform gateway input into a new/expanded Advanced section (or removing it from basic view). Verify the component's usage instructions before implementing."
+          "description": "Add a \"Codec Types\" selection control (implemented as a tab or clearly labeled segmented option) with allowed values ulaw/slin/adpcm. Ensure a default selection (e.g., ulaw) when no saved value exists, restore saved selection on mount, and include the selection in the saved IAX / DVSwitch connection when saving. Prefer existing shadcn/ui primitives already used in the app (e.g., Tabs) without modifying frontend/src/components/ui. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/usePreferredConnection.ts",
+          "operation": "modify",
+          "description": "Extend the persisted IAX / DVSwitch connection shape to include an optional codec type field, and apply a backward-compatible default when loading older saved connections that do not have this field."
+        },
+        {
+          "path": "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
+          "operation": "modify",
+          "description": "Update the Saved IAX / DVSwitch Configuration display to include a readable \"Codec Types\" row that shows the saved codec (ulaw/slin/adpcm) and uses the default when missing, while keeping existing layout and password masking intact. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "After entering required non-URL credential fields for BrandMeister or AllStar presets, auto-save the configuration and navigate to /ptt.",
+      "summary": "Show \"Phone to IAX connection\" state and codec type in the saved IAX / DVSwitch configuration card while continuing to mask passwords.",
       "acceptanceCriteria": [
-        "For BrandMeister preset: after the user enters BrandMeister username + hotspot security password (and any other already-required non-URL fields), the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
-        "For AllStar preset: after the user enters AllStar username/password (and any other already-required non-URL fields such as node number if still required), the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
-        "No part of the default Connect UI requires the user to supply a URL/hostname to proceed."
+        "The Saved IAX / DVSwitch Configuration card shows \"Phone to IAX connection\" as Yes/No (or Enabled/Disabled) based on the saved setting.",
+        "The Saved IAX / DVSwitch Configuration card shows \"Codec Types\" with the saved value (ulaw/slin/adpcm).",
+        "Passwords remain masked as they are today."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/DigitalVoiceConnectForm.tsx",
+          "path": "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
           "operation": "modify",
-          "description": "Refactor the BrandMeister preset auto-save logic to trigger only after the user has provided required non-URL fields in the basic view (e.g., BrandMeister username + hotspot security password, plus any existing required fields) while keeping any URL/hostname fields out of the default flow; then auto-save and navigate to /ptt. Verify the component's usage instructions before implementing."
+          "description": "Extend the saved-configuration card to display \"Phone to IAX connection\" as Yes/No (or Enabled/Disabled) and display \"Codec Types\" with the saved codec value. Keep password masking exactly as it is today for IAX/AllStar password fields, and keep all user-facing text in English. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Update frontend connection storage/types to persist phone-to-IAX confirmation and codec type without breaking existing saved sessions.",
+      "acceptanceCriteria": [
+        "The IAX / DVSwitch connection type includes new optional fields for phone-to-IAX confirmation and codec type, and the app continues to load older saved IAX configurations without runtime errors.",
+        "Room key/label derivation and PTT navigation continue to work for IAX / DVSwitch connections after the type change.",
+        "No changes are required from users who already have an IAX / DVSwitch configuration saved; the app selects defaults for newly introduced fields if missing."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/usePreferredConnection.ts",
+          "operation": "modify",
+          "description": "Update the IaxDvswitchConnection type to include new optional fields for phone-to-IAX confirmation and codec type. Add a small backward-compatibility normalization in loadConnection (or a helper used by it) so older saved IAX / DVSwitch JSON values load without runtime errors and receive defaults for missing new fields."
+        },
+        {
+          "path": "frontend/src/utils/roomKey.ts",
+          "operation": "modify",
+          "description": "Confirm that room key/label derivation continues to work with the updated IAX / DVSwitch connection type (including optional new fields) without incorporating the new fields into the room key, so existing navigation and session identification behavior remains stable."
         },
         {
           "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
           "operation": "modify",
-          "description": "Implement a credentials-only onboarding flow for the AllStar preset: once required non-URL fields (e.g., AllStar username/password and node number if required) are provided, auto-save and navigate to /ptt without requiring any gateway/server hostname entry in the basic view. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/usePreferredConnection.ts",
-          "operation": "modify",
-          "description": "Align saved-configuration validation helpers with the credentials-only preset flows (BrandMeister and AllStar) so auto-save readiness reflects required non-URL fields while not forcing any user-entered URL/hostname in the default Connect UI. Verify the component's usage instructions before implementing."
+          "description": "Ensure the IAX / DVSwitch Configure form can load older saved configurations that lack the new fields by applying defaults in UI state (codec default; phone-to-IAX unchecked), and that Save persists the new fields alongside existing settings without affecting existing preset/auto-save flows. Verify the component's usage instructions before implementing."
         }
       ]
     }

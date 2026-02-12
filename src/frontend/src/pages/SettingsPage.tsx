@@ -90,6 +90,8 @@ export default function SettingsPage() {
   };
 
   const handleSaveSources = async () => {
+    setValidationError('');
+    setSuccessMessage('');
     try {
       await updateSourcesMutation.mutateAsync({
         brandmeister: bmSourceUrl,
@@ -108,7 +110,7 @@ export default function SettingsPage() {
       await refreshBrandmeisterMutation.mutateAsync();
       setSuccessMessage('BrandMeister server list refreshed successfully');
     } catch (error: any) {
-      setValidationError(`Failed to refresh BrandMeister servers: ${error.message}`);
+      setValidationError(`Failed to refresh BrandMeister servers: ${error.message}. The app will continue using cached data if available.`);
     }
   };
 
@@ -119,7 +121,7 @@ export default function SettingsPage() {
       await refreshAllstarMutation.mutateAsync();
       setSuccessMessage('AllStar server list refreshed successfully');
     } catch (error: any) {
-      setValidationError(`Failed to refresh AllStar servers: ${error.message}`);
+      setValidationError(`Failed to refresh AllStar servers: ${error.message}. The app will continue using cached data if available.`);
     }
   };
 
@@ -213,13 +215,14 @@ export default function SettingsPage() {
               <Label htmlFor="dmrId" className="text-xs">DMR ID (Optional)</Label>
               <Input
                 id="dmrId"
+                type="number"
                 placeholder="e.g., 3123456"
                 value={dmrId}
                 onChange={(e) => setDmrId(e.target.value)}
                 className="text-xs font-mono"
               />
               <p className="text-[10px] text-muted-foreground">
-                Your registered DMR ID from radioid.net or your regional DMR registry. Required for DMR networks.
+                Your DMR ID from radioid.net. Required for DMR networks.
               </p>
             </div>
 
@@ -227,126 +230,35 @@ export default function SettingsPage() {
               <Label htmlFor="ssid" className="text-xs">SSID (Optional)</Label>
               <Input
                 id="ssid"
-                placeholder="e.g., 01"
+                type="number"
+                placeholder="e.g., 1"
                 value={ssid}
                 onChange={(e) => setSsid(e.target.value)}
                 className="text-xs font-mono"
               />
               <p className="text-[10px] text-muted-foreground">
-                DMR SSID (00-99) for multiple devices under one DMR ID. Leave blank if you only use one device.
+                Your SSID (typically 1-15). Used with DMR ID for network identification.
               </p>
             </div>
 
-            <div className="console-section">
-              <div className="flex items-start gap-3">
-                <Switch
-                  id="license"
-                  checked={licenseAcknowledgement}
-                  onCheckedChange={setLicenseAcknowledgement}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="license" className="text-xs cursor-pointer">
-                    I hold a valid amateur radio license <span className="text-destructive">*</span>
-                  </Label>
-                  <p className="text-[10px] text-muted-foreground">
-                    You must acknowledge that you hold a valid amateur radio license to use transmit functionality. Disabling this will prevent you from transmitting.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={handleSave} disabled={saveProfileMutation.isPending} className="w-full text-xs">
-              <Save className="mr-2 h-3.5 w-3.5" />
-              {saveProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="console-panel">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              <CardTitle className="text-base">Server Directory Sources</CardTitle>
-            </div>
-            <CardDescription className="text-xs">
-              Configure GitHub sources for BrandMeister and AllStar server lists
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Alert className="console-panel">
-              <Info className="h-3.5 w-3.5" />
-              <AlertDescription className="text-xs">
-                Server lists are fetched from GitHub and cached locally. Refresh manually to get the latest servers.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bmSource" className="text-xs">BrandMeister Source URL</Label>
-                <Input
-                  id="bmSource"
-                  placeholder="GitHub raw URL"
-                  value={bmSourceUrl}
-                  onChange={(e) => setBmSourceUrl(e.target.value)}
-                  className="text-xs font-mono"
-                />
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>Last updated: {formatTimestamp(bmMetadata?.lastUpdated || null)}</span>
-                  <span>Cache: {formatCacheAge('brandmeister')}</span>
-                </div>
-                {bmMetadata?.lastError && (
-                  <p className="text-[10px] text-destructive">{bmMetadata.lastError}</p>
-                )}
-                <Button
-                  onClick={handleRefreshBrandmeister}
-                  disabled={refreshBrandmeisterMutation.isPending}
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                >
-                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshBrandmeisterMutation.isPending ? 'animate-spin' : ''}`} />
-                  {refreshBrandmeisterMutation.isPending ? 'Refreshing...' : 'Refresh BrandMeister List'}
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="allstarSource" className="text-xs">AllStar Source URL</Label>
-                <Input
-                  id="allstarSource"
-                  placeholder="GitHub raw URL"
-                  value={allstarSourceUrl}
-                  onChange={(e) => setAllstarSourceUrl(e.target.value)}
-                  className="text-xs font-mono"
-                />
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>Last updated: {formatTimestamp(allstarMetadata?.lastUpdated || null)}</span>
-                  <span>Cache: {formatCacheAge('allstar')}</span>
-                </div>
-                {allstarMetadata?.lastError && (
-                  <p className="text-[10px] text-destructive">{allstarMetadata.lastError}</p>
-                )}
-                <Button
-                  onClick={handleRefreshAllstar}
-                  disabled={refreshAllstarMutation.isPending}
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs"
-                >
-                  <RefreshCw className={`mr-2 h-3.5 w-3.5 ${refreshAllstarMutation.isPending ? 'animate-spin' : ''}`} />
-                  {refreshAllstarMutation.isPending ? 'Refreshing...' : 'Refresh AllStar List'}
-                </Button>
-              </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="license"
+                checked={licenseAcknowledgement}
+                onCheckedChange={setLicenseAcknowledgement}
+              />
+              <Label htmlFor="license" className="text-xs cursor-pointer">
+                I hold a valid amateur radio license <span className="text-destructive">*</span>
+              </Label>
             </div>
 
             <Button
-              onClick={handleSaveSources}
-              disabled={updateSourcesMutation.isPending}
-              variant="secondary"
-              size="sm"
+              onClick={handleSave}
+              disabled={saveProfileMutation.isPending}
               className="w-full text-xs"
             >
               <Save className="mr-2 h-3.5 w-3.5" />
-              {updateSourcesMutation.isPending ? 'Saving...' : 'Save Source URLs'}
+              {saveProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
             </Button>
           </CardContent>
         </Card>
@@ -357,30 +269,147 @@ export default function SettingsPage() {
             <CardDescription className="text-xs">Control how your login session is managed</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="console-section">
-              <div className="flex items-start gap-3">
-                <Switch
-                  id="rememberLogin"
-                  checked={rememberLogin}
-                  onCheckedChange={setRememberLogin}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="rememberLogin" className="text-xs cursor-pointer">
-                    Remember my login on this device
-                  </Label>
-                  <p className="text-[10px] text-muted-foreground">
-                    When enabled, you'll stay logged in across browser sessions. Disable this on shared devices for security.
-                  </p>
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="remember-login" className="text-xs">Remember my login on this device</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Stay logged in between sessions
+                </p>
               </div>
+              <Switch
+                id="remember-login"
+                checked={rememberLogin}
+                onCheckedChange={setRememberLogin}
+              />
             </div>
+          </CardContent>
+        </Card>
 
+        <Card className="console-panel">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              <CardTitle className="text-base">Server Directory Sources</CardTitle>
+            </div>
+            <CardDescription className="text-xs">
+              Configure GitHub raw URLs for BrandMeister and AllStar server lists. 
+              These lists are cached locally and can be manually refreshed.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <Alert className="console-panel">
               <Info className="h-3.5 w-3.5" />
               <AlertDescription className="text-xs">
-                <strong>Shared Device Warning:</strong> If you're using a shared or public device, disable "Remember my login" and log out when finished to protect your account.
+                <strong>DroidStar-style behavior:</strong> Server lists are fetched from GitHub and cached locally. 
+                If a refresh fails, the app continues using cached data or built-in defaults. 
+                Default source URLs are shown below when no custom overrides exist.
               </AlertDescription>
             </Alert>
+
+            {/* BrandMeister Section */}
+            <div className="space-y-3 rounded-md border border-border/50 p-3">
+              <div className="space-y-2">
+                <Label htmlFor="bm-source" className="text-xs font-semibold">BrandMeister Source URL</Label>
+                <Input
+                  id="bm-source"
+                  placeholder="GitHub raw URL for BrandMeister servers"
+                  value={bmSourceUrl}
+                  onChange={(e) => setBmSourceUrl(e.target.value)}
+                  className="text-xs font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Default: https://raw.githubusercontent.com/brandmeister/brandmeister-hosts/master/BM_Hosts.txt
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div>
+                  <span className="console-label">Last updated:</span>
+                  <span className="console-value ml-1">{formatTimestamp(bmMetadata?.lastUpdated || null)}</span>
+                </div>
+                <div>
+                  <span className="console-label">Cache age:</span>
+                  <span className="console-value ml-1">{formatCacheAge('brandmeister')}</span>
+                </div>
+              </div>
+
+              {bmMetadata?.lastError && (
+                <Alert variant="destructive" className="console-panel">
+                  <AlertCircle className="h-3 w-3" />
+                  <AlertDescription className="text-[10px]">
+                    Last fetch error: {bmMetadata.lastError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button
+                onClick={handleRefreshBrandmeister}
+                disabled={refreshBrandmeisterMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+              >
+                <RefreshCw className={`mr-2 h-3 w-3 ${refreshBrandmeisterMutation.isPending ? 'animate-spin' : ''}`} />
+                {refreshBrandmeisterMutation.isPending ? 'Refreshing...' : 'Refresh BrandMeister List'}
+              </Button>
+            </div>
+
+            {/* AllStar Section */}
+            <div className="space-y-3 rounded-md border border-border/50 p-3">
+              <div className="space-y-2">
+                <Label htmlFor="allstar-source" className="text-xs font-semibold">AllStar Source URL</Label>
+                <Input
+                  id="allstar-source"
+                  placeholder="GitHub raw URL for AllStar servers"
+                  value={allstarSourceUrl}
+                  onChange={(e) => setAllstarSourceUrl(e.target.value)}
+                  className="text-xs font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Default: https://raw.githubusercontent.com/AllStarLink/ASL-Nodes-Diff/main/asl-nodes.txt
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[10px]">
+                <div>
+                  <span className="console-label">Last updated:</span>
+                  <span className="console-value ml-1">{formatTimestamp(allstarMetadata?.lastUpdated || null)}</span>
+                </div>
+                <div>
+                  <span className="console-label">Cache age:</span>
+                  <span className="console-value ml-1">{formatCacheAge('allstar')}</span>
+                </div>
+              </div>
+
+              {allstarMetadata?.lastError && (
+                <Alert variant="destructive" className="console-panel">
+                  <AlertCircle className="h-3 w-3" />
+                  <AlertDescription className="text-[10px]">
+                    Last fetch error: {allstarMetadata.lastError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <Button
+                onClick={handleRefreshAllstar}
+                disabled={refreshAllstarMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+              >
+                <RefreshCw className={`mr-2 h-3 w-3 ${refreshAllstarMutation.isPending ? 'animate-spin' : ''}`} />
+                {refreshAllstarMutation.isPending ? 'Refreshing...' : 'Refresh AllStar List'}
+              </Button>
+            </div>
+
+            <Button
+              onClick={handleSaveSources}
+              disabled={updateSourcesMutation.isPending}
+              className="w-full text-xs"
+            >
+              <Save className="mr-2 h-3.5 w-3.5" />
+              {updateSourcesMutation.isPending ? 'Saving...' : 'Save Source URLs'}
+            </Button>
           </CardContent>
         </Card>
       </div>

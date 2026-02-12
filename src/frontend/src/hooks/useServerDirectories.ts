@@ -1,6 +1,7 @@
 /**
  * Server Directories Hook
  * React Query-based hook for managing BrandMeister and AllStar server directories
+ * with failure-tolerant caching (preserves cached data on fetch failure)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -54,21 +55,31 @@ export function useBrandmeisterServers() {
 
       // Fetch from GitHub
       if (!sources?.brandmeister) {
-        throw new Error('BrandMeister source URL not configured');
+        console.warn('BrandMeister source URL not configured, returning empty list');
+        return [];
       }
 
-      const entries = await fetchBrandmeisterServers(sources.brandmeister);
-      setCachedServerList('brandmeister', entries);
-      setServerDirectoryMetadata('brandmeister', {
-        lastUpdated: Date.now(),
-        lastError: null,
-      });
-
-      return entries;
+      try {
+        const entries = await fetchBrandmeisterServers(sources.brandmeister);
+        setCachedServerList('brandmeister', entries);
+        setServerDirectoryMetadata('brandmeister', {
+          lastUpdated: Date.now(),
+          lastError: null,
+        });
+        return entries;
+      } catch (error: any) {
+        console.error('Failed to fetch BrandMeister servers, using cached data:', error);
+        setServerDirectoryMetadata('brandmeister', {
+          lastUpdated: getServerDirectoryMetadata('brandmeister').lastUpdated,
+          lastError: error.message || 'Fetch failed',
+        });
+        // Return cached data even if fetch failed
+        return cached || [];
+      }
     },
     enabled: !!sources,
     staleTime: 60 * 60 * 1000, // 1 hour
-    retry: 1,
+    retry: false, // Don't retry, use cached data instead
   });
 }
 
@@ -86,21 +97,31 @@ export function useAllstarServers() {
 
       // Fetch from GitHub
       if (!sources?.allstar) {
-        throw new Error('AllStar source URL not configured');
+        console.warn('AllStar source URL not configured, returning empty list');
+        return [];
       }
 
-      const entries = await fetchAllstarServers(sources.allstar);
-      setCachedServerList('allstar', entries);
-      setServerDirectoryMetadata('allstar', {
-        lastUpdated: Date.now(),
-        lastError: null,
-      });
-
-      return entries;
+      try {
+        const entries = await fetchAllstarServers(sources.allstar);
+        setCachedServerList('allstar', entries);
+        setServerDirectoryMetadata('allstar', {
+          lastUpdated: Date.now(),
+          lastError: null,
+        });
+        return entries;
+      } catch (error: any) {
+        console.error('Failed to fetch AllStar servers, using cached data:', error);
+        setServerDirectoryMetadata('allstar', {
+          lastUpdated: getServerDirectoryMetadata('allstar').lastUpdated,
+          lastError: error.message || 'Fetch failed',
+        });
+        // Return cached data even if fetch failed
+        return cached || [];
+      }
     },
     enabled: !!sources,
     staleTime: 60 * 60 * 1000, // 1 hour
-    retry: 1,
+    retry: false, // Don't retry, use cached data instead
   });
 }
 
@@ -125,12 +146,15 @@ export function useRefreshBrandmeisterServers() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['brandmeisterServers'], data);
+      queryClient.invalidateQueries({ queryKey: ['brandmeisterMetadata'] });
     },
     onError: (error: Error) => {
+      const metadata = getServerDirectoryMetadata('brandmeister');
       setServerDirectoryMetadata('brandmeister', {
-        lastUpdated: getServerDirectoryMetadata('brandmeister').lastUpdated,
+        lastUpdated: metadata.lastUpdated,
         lastError: error.message,
       });
+      queryClient.invalidateQueries({ queryKey: ['brandmeisterMetadata'] });
     },
   });
 }
@@ -156,12 +180,15 @@ export function useRefreshAllstarServers() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['allstarServers'], data);
+      queryClient.invalidateQueries({ queryKey: ['allstarMetadata'] });
     },
     onError: (error: Error) => {
+      const metadata = getServerDirectoryMetadata('allstar');
       setServerDirectoryMetadata('allstar', {
-        lastUpdated: getServerDirectoryMetadata('allstar').lastUpdated,
+        lastUpdated: metadata.lastUpdated,
         lastError: error.message,
       });
+      queryClient.invalidateQueries({ queryKey: ['allstarMetadata'] });
     },
   });
 }

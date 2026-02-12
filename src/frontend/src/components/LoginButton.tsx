@@ -1,4 +1,4 @@
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useRegeneratedAuth } from '../auth/iiAuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -6,7 +6,7 @@ import { LogIn, LogOut, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 
 export default function LoginButton() {
-  const { login, clear, loginStatus, identity, isLoginError, loginError } = useInternetIdentity();
+  const { login, clear, loginStatus, identity, isLoginError, error } = useRegeneratedAuth();
   const queryClient = useQueryClient();
   const [showError, setShowError] = useState(false);
 
@@ -38,13 +38,9 @@ export default function LoginButton() {
       try {
         setShowError(false);
         await login();
-      } catch (error: any) {
-        console.error('Login error:', error);
+      } catch (err: any) {
+        console.error('Login error:', err);
         setShowError(true);
-        if (error.message === 'User is already authenticated') {
-          await clear();
-          setTimeout(() => login(), 300);
-        }
       }
     }
   };
@@ -66,15 +62,15 @@ export default function LoginButton() {
           </>
         )}
       </Button>
-      {(isLoginError || showError) && loginError && !isAuthenticated && (
+      {(isLoginError || showError) && error && !isAuthenticated && (
         <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="ml-2">
-            <div className="text-xs font-semibold">Login failed</div>
-            <div className="mt-1 text-xs">{loginError.message}</div>
+            <div className="text-xs font-semibold">Sign-in failed</div>
+            <div className="mt-1 text-xs">{error.message}</div>
             <div className="mt-2 flex gap-2">
               <Button onClick={handleRetryLogin} variant="outline" size="sm" className="h-7 text-xs">
-                Retry
+                Retry Login
               </Button>
               <Button onClick={handleClearSession} variant="outline" size="sm" className="h-7 text-xs">
                 Clear Session

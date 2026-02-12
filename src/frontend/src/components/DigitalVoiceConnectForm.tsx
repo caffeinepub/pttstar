@@ -12,14 +12,15 @@ import { useGetCallerUserProfile } from '../hooks/useCurrentUserProfile';
 import { useGetBuiltinNetworks } from '../hooks/useNetworks';
 import { useBrandmeisterServers } from '../hooks/useServerDirectories';
 import { useNavigate } from '@tanstack/react-router';
-import { saveConnection, loadConnection, isDigitalVoiceConnection, areBrandmeisterRequiredFieldsSatisfied } from '../hooks/usePreferredConnection';
+import { saveConnection, loadConnection, isDigitalVoiceConnection, areBrandmeisterRequiredFieldsSatisfied, areTgifRequiredFieldsSatisfied } from '../hooks/usePreferredConnection';
 import type { PersistentNetwork } from '../backend';
 import { getPersistedGatewayParameter } from '../utils/gatewayUrlBootstrap';
 import { normalizeServerAddress } from '../utils/serverAddress';
+import type { PresetId } from '../utils/connectionPresets';
 
 interface DigitalVoiceConnectFormProps {
   onSaved?: () => void;
-  preset?: 'brandmeister-dmr' | 'allstar' | null;
+  preset?: PresetId | null;
   onPresetApplied?: () => void;
 }
 
@@ -56,8 +57,11 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
   // TGIF hotspot security password
   const [tgifHotspotSecurityPassword, setTgifHotspotSecurityPassword] = useState('');
 
-  // Track if BrandMeister preset was applied internally
-  const [isBrandmeisterPresetApplied, setIsBrandmeisterPresetApplied] = useState(false);
+  // Track if preset was applied internally
+  const [appliedPreset, setAppliedPreset] = useState<PresetId | null>(null);
+
+  // Track if user has edited the form during this session
+  const [hasUserEdited, setHasUserEdited] = useState(false);
 
   // Advanced section state
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -90,6 +94,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
       setGatewayRoom(connection.gatewayRoom || '');
       setGatewayUsername(connection.gatewayUsername || '');
       setTgifHotspotSecurityPassword(connection.tgifHotspotSecurityPassword || '');
+      setHasUserEdited(true); // Existing connection means user has edited
     } else {
       // No saved connection, try to prefill from URL parameters
       const urlGatewayUrl = getPersistedGatewayParameter('gatewayUrl');
@@ -131,36 +136,52 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
     }
   }, [userProfile]);
 
-  // Apply BrandMeister preset - auto-select US server and hide URL inputs
+  // Apply preset - only if no existing connection and user hasn't edited
   useEffect(() => {
-    if (preset === 'brandmeister-dmr' && onPresetApplied) {
-      const connection = loadConnection();
-      const hasExistingConnection = connection && isDigitalVoiceConnection(connection);
-      
-      if (!hasExistingConnection) {
-        console.log('DigitalVoiceConnectForm: Applying BrandMeister DMR preset');
-        setActiveMode('dmr');
-        
-        // Auto-select BrandMeister United States server
-        if (!selectedBmServer && allBmServers.length > 0) {
-          const usNetwork = allBmServers.find(n => n.networkLabel === 'BrandMeister United States');
-          const selectedNetwork = usNetwork || allBmServers[0];
-          
-          console.log('DigitalVoiceConnectForm: Auto-selected BrandMeister network:', selectedNetwork.networkLabel);
-          setSelectedBmServer(normalizeServerAddress(selectedNetwork.address));
-          setSelectedReflector(selectedNetwork.networkLabel);
-        }
-        
-        setIsBrandmeisterPresetApplied(true);
-      }
-      
-      onPresetApplied();
-    }
-  }, [preset, onPresetApplied, allBmServers, selectedBmServer]);
+    if (!preset || !onPresetApplied) return;
+    if (appliedPreset === preset) return; // Already applied this preset
 
-  // Auto-save and navigate when BrandMeister preset required fields are complete
+    const connection = loadConnection();
+    const hasExistingConnection = connection && isDigitalVoiceConnection(connection);
+    
+    if (hasExistingConnection || hasUserEdited) {
+      console.log('DigitalVoiceConnectForm: Skipping preset application (existing connection or user has edited)');
+      onPresetApplied();
+      return;
+    }
+
+    console.log('DigitalVoiceConnectForm: Applying preset:', preset);
+    setActiveMode('dmr');
+    
+    if (preset === 'brandmeister-dmr') {
+      // Auto-select BrandMeister United States server
+      if (!selectedBmServer && allBmServers.length > 0) {
+        const usNetwork = allBmServers.find(n => n.networkLabel === 'BrandMeister United States');
+        const selectedNetwork = usNetwork || allBmServers[0];
+        
+        console.log('DigitalVoiceConnectForm: Auto-selected BrandMeister network:', selectedNetwork.networkLabel);
+        setSelectedBmServer(normalizeServerAddress(selectedNetwork.address));
+        setSelectedReflector(selectedNetwork.networkLabel);
+      }
+    } else if (preset === 'tgif-dmr') {
+      // Set TGIF as reflector label
+      setSelectedReflector('TGIF DMR Network');
+      
+      // Check if URL has TGIF server
+      const urlServer = getPersistedGatewayParameter('server');
+      if (urlServer && urlServer.toLowerCase().includes('tgif')) {
+        console.log('DigitalVoiceConnectForm: Using TGIF server from URL:', urlServer);
+        setSelectedBmServer(normalizeServerAddress(urlServer));
+      }
+    }
+    
+    setAppliedPreset(preset);
+    onPresetApplied();
+  }, [preset, onPresetApplied, allBmServers, selectedBmServer, appliedPreset, hasUserEdited]);
+
+  // Auto-save and navigate when preset required fields are complete
   useEffect(() => {
-    if (!isBrandmeisterPresetApplied) return;
+    if (!appliedPreset) return;
     
     const autoSaveAttempted = sessionStorage.getItem(AUTO_SAVE_ATTEMPTED_KEY) === 'true';
     if (autoSaveAttempted) return;
@@ -170,40 +191,54 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
       mode: activeMode,
       reflector: selectedReflector,
       talkgroup,
-      bmServerAddress: normalizeServerAddress(selectedBmServer),
-      gatewayUrl,
-      gatewayToken,
-      gatewayRoom,
-      gatewayUsername,
       bmUsername,
       bmPassword,
       dmrId,
       ssid,
+      bmServerAddress: selectedBmServer,
+      gatewayUrl,
+      gatewayToken,
+      gatewayRoom,
+      gatewayUsername,
       tgifHotspotSecurityPassword,
     };
+
+    let requiredFieldsSatisfied = false;
     
-    const requiredFieldsSatisfied = areBrandmeisterRequiredFieldsSatisfied(tempConnection);
-    
+    if (appliedPreset === 'brandmeister-dmr') {
+      requiredFieldsSatisfied = areBrandmeisterRequiredFieldsSatisfied(tempConnection);
+    } else if (appliedPreset === 'tgif-dmr') {
+      requiredFieldsSatisfied = areTgifRequiredFieldsSatisfied(tempConnection);
+    }
+
     if (requiredFieldsSatisfied) {
-      console.log('DigitalVoiceConnectForm: BrandMeister required fields satisfied, auto-saving and navigating to PTT');
+      console.log('DigitalVoiceConnectForm: Preset required fields satisfied, auto-saving and navigating to PTT');
       sessionStorage.setItem(AUTO_SAVE_ATTEMPTED_KEY, 'true');
       handleSave();
     }
-  }, [isBrandmeisterPresetApplied, activeMode, selectedReflector, talkgroup, selectedBmServer, gatewayUrl, gatewayToken, gatewayRoom, gatewayUsername, bmUsername, bmPassword, dmrId, ssid, tgifHotspotSecurityPassword]);
+  }, [appliedPreset, activeMode, selectedReflector, talkgroup, bmUsername, bmPassword, dmrId, ssid, selectedBmServer, gatewayUrl, gatewayToken, gatewayRoom, gatewayUsername, tgifHotspotSecurityPassword]);
+
+  // Track user edits
+  const handleUserEdit = () => {
+    if (!hasUserEdited) {
+      console.log('DigitalVoiceConnectForm: User has started editing');
+      setHasUserEdited(true);
+    }
+  };
 
   const handleSave = () => {
     setValidationError('');
 
     if (!selectedReflector) {
-      setValidationError('Please select a network/reflector');
+      setValidationError('Network/Reflector is required');
       return;
     }
 
-    const selectedNetwork = allBmServers.find(n => 
-      normalizeServerAddress(n.address) === normalizeServerAddress(selectedBmServer) ||
-      n.networkLabel === selectedReflector
-    );
-    const bmServerLabel = selectedNetwork?.networkLabel || '';
+    // Validate TGIF-specific requirements
+    if (selectedReflector.toLowerCase().includes('tgif') && !tgifHotspotSecurityPassword) {
+      setValidationError('TGIF Hotspot Security Password is required for TGIF networks');
+      return;
+    }
 
     const connection = {
       type: 'digital-voice' as const,
@@ -214,13 +249,13 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
       bmPassword,
       dmrId,
       ssid,
-      bmServerAddress: normalizeServerAddress(selectedBmServer),
-      bmServerLabel,
-      gatewayUrl,
-      gatewayToken,
-      gatewayRoom,
-      gatewayUsername,
-      tgifHotspotSecurityPassword,
+      bmServerAddress: selectedBmServer ? normalizeServerAddress(selectedBmServer) : undefined,
+      bmServerLabel: selectedReflector,
+      gatewayUrl: gatewayUrl ? normalizeServerAddress(gatewayUrl) : undefined,
+      gatewayToken: gatewayToken || undefined,
+      gatewayRoom: gatewayRoom || undefined,
+      gatewayUsername: gatewayUsername || undefined,
+      tgifHotspotSecurityPassword: tgifHotspotSecurityPassword || undefined,
     };
 
     saveConnection(connection);
@@ -228,20 +263,21 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
     navigate({ to: '/ptt' });
   };
 
-  const handleBmServerChange = (address: string) => {
-    const normalized = normalizeServerAddress(address);
-    setSelectedBmServer(normalized);
-    
-    const server = allBmServers.find(s => normalizeServerAddress(s.address) === normalized);
-    if (server) {
-      setSelectedReflector(server.networkLabel);
+  const handleNetworkChange = (address: string) => {
+    const network = allBmServers.find(n => normalizeServerAddress(n.address) === normalizeServerAddress(address));
+    if (network) {
+      setSelectedBmServer(normalizeServerAddress(network.address));
+      setSelectedReflector(network.networkLabel);
+      handleUserEdit();
     }
   };
 
-  // Get selected server label for display
-  const selectedServerLabel = allBmServers.find(s => 
+  // Get display label for current server
+  const serverDisplayLabel = allBmServers.find(s => 
     normalizeServerAddress(s.address) === normalizeServerAddress(selectedBmServer)
-  )?.networkLabel || 'BrandMeister United States';
+  )?.networkLabel || selectedReflector || 'No server selected';
+
+  const isTgifNetwork = selectedReflector.toLowerCase().includes('tgif');
 
   return (
     <Card className="console-panel">
@@ -262,47 +298,55 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
           </Alert>
         )}
 
-        <Tabs value={activeMode} onValueChange={setActiveMode}>
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeMode} onValueChange={(v) => { setActiveMode(v); handleUserEdit(); }}>
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="dmr" className="text-xs">DMR</TabsTrigger>
             <TabsTrigger value="dstar" className="text-xs">D-Star</TabsTrigger>
             <TabsTrigger value="ysf" className="text-xs">YSF</TabsTrigger>
+            <TabsTrigger value="p25" className="text-xs">P25</TabsTrigger>
+            <TabsTrigger value="nxdn" className="text-xs">NXDN</TabsTrigger>
+            <TabsTrigger value="m17" className="text-xs">M17</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dmr" className="space-y-4 mt-4">
             {/* Server display (non-editable in basic view) */}
             <div className="space-y-2">
-              <Label className="text-xs">BrandMeister Server</Label>
+              <Label className="text-xs">DMR Network</Label>
               <div className="console-panel p-3 rounded-md border border-border">
-                <p className="text-xs font-mono">{selectedServerLabel}</p>
+                <p className="text-xs font-mono">{serverDisplayLabel}</p>
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Connected to {selectedServerLabel}. Change server in Advanced Settings below.
+                Connected to {serverDisplayLabel}. Change network in Advanced Settings below.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bmUsername" className="text-xs">BrandMeister Username</Label>
-              <Input
-                id="bmUsername"
-                placeholder="Your BrandMeister username"
-                value={bmUsername}
-                onChange={(e) => setBmUsername(e.target.value)}
-                className="text-xs"
-              />
-            </div>
+            {isTgifNetwork && (
+              <Alert className="console-panel border-primary/30">
+                <Info className="h-3.5 w-3.5" />
+                <AlertDescription className="text-xs">
+                  <strong>TGIF Network:</strong> You must provide your TGIF Hotspot Security Password below to connect.
+                </AlertDescription>
+              </Alert>
+            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="bmPassword" className="text-xs">Hotspot Security Password</Label>
-              <Input
-                id="bmPassword"
-                type="password"
-                placeholder="Your hotspot security password"
-                value={bmPassword}
-                onChange={(e) => setBmPassword(e.target.value)}
-                className="text-xs"
-              />
-            </div>
+            {isTgifNetwork && (
+              <div className="space-y-2">
+                <Label htmlFor="tgifPassword" className="text-xs">
+                  TGIF Hotspot Security Password <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="tgifPassword"
+                  type="password"
+                  placeholder="Your TGIF hotspot security password"
+                  value={tgifHotspotSecurityPassword}
+                  onChange={(e) => { setTgifHotspotSecurityPassword(e.target.value); handleUserEdit(); }}
+                  className="text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Find this in your TGIF account settings at tgif.network
+                </p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="talkgroup" className="text-xs">Talkgroup (Optional)</Label>
@@ -310,7 +354,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
                 id="talkgroup"
                 placeholder="e.g., 3100"
                 value={talkgroup}
-                onChange={(e) => setTalkgroup(e.target.value)}
+                onChange={(e) => { setTalkgroup(e.target.value); handleUserEdit(); }}
                 className="text-xs font-mono"
               />
             </div>
@@ -323,34 +367,79 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 mt-4">
+                {allBmServers.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bmNetwork" className="text-xs">DMR Network</Label>
+                    <Select value={selectedBmServer} onValueChange={handleNetworkChange}>
+                      <SelectTrigger id="bmNetwork" className="text-xs">
+                        <SelectValue placeholder={bmServersLoading ? "Loading networks..." : "Select a DMR network"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allBmServers.map((network) => (
+                          <SelectItem key={network.address} value={network.address} className="text-xs">
+                            {network.networkLabel}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground">
+                      {allBmServers.length} networks available. Configure sources in Settings.
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="bmServer" className="text-xs">BrandMeister Server</Label>
-                  <Select value={selectedBmServer} onValueChange={handleBmServerChange}>
-                    <SelectTrigger id="bmServer" className="text-xs">
-                      <SelectValue placeholder={bmServersLoading ? "Loading servers..." : "Select a BrandMeister server"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allBmServers.map((server) => (
-                        <SelectItem key={server.address} value={server.address} className="text-xs">
-                          {server.networkLabel}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground">
-                    {fetchedBmServers.length > 0 
-                      ? `${builtinNetworks.filter(n => n.networkLabel.toLowerCase().includes('brandmeister')).length} built-in + ${fetchedBmServers.length} from GitHub`
-                      : 'Built-in servers only. Configure GitHub sources in Settings to load more.'}
-                  </p>
+                  <Label htmlFor="bmUsername" className="text-xs">BrandMeister Username</Label>
+                  <Input
+                    id="bmUsername"
+                    placeholder="Optional"
+                    value={bmUsername}
+                    onChange={(e) => { setBmUsername(e.target.value); handleUserEdit(); }}
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bmPassword" className="text-xs">BrandMeister Password</Label>
+                  <Input
+                    id="bmPassword"
+                    type="password"
+                    placeholder="Optional"
+                    value={bmPassword}
+                    onChange={(e) => { setBmPassword(e.target.value); handleUserEdit(); }}
+                    className="text-xs"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dmrId" className="text-xs">DMR ID</Label>
+                  <Input
+                    id="dmrId"
+                    placeholder="From your profile"
+                    value={dmrId}
+                    onChange={(e) => { setDmrId(e.target.value); handleUserEdit(); }}
+                    className="text-xs font-mono"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ssid" className="text-xs">SSID</Label>
+                  <Input
+                    id="ssid"
+                    placeholder="From your profile"
+                    value={ssid}
+                    onChange={(e) => { setSsid(e.target.value); handleUserEdit(); }}
+                    className="text-xs font-mono"
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="gatewayUrl" className="text-xs">Gateway URL</Label>
                   <Input
                     id="gatewayUrl"
-                    placeholder="wss://gateway.example.com"
+                    placeholder="Optional"
                     value={gatewayUrl}
-                    onChange={(e) => setGatewayUrl(e.target.value)}
+                    onChange={(e) => { setGatewayUrl(e.target.value); handleUserEdit(); }}
                     className="text-xs font-mono"
                   />
                 </div>
@@ -362,7 +451,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
                     type="password"
                     placeholder="Optional"
                     value={gatewayToken}
-                    onChange={(e) => setGatewayToken(e.target.value)}
+                    onChange={(e) => { setGatewayToken(e.target.value); handleUserEdit(); }}
                     className="text-xs font-mono"
                   />
                 </div>
@@ -373,7 +462,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
                     id="gatewayRoom"
                     placeholder="Optional"
                     value={gatewayRoom}
-                    onChange={(e) => setGatewayRoom(e.target.value)}
+                    onChange={(e) => { setGatewayRoom(e.target.value); handleUserEdit(); }}
                     className="text-xs font-mono"
                   />
                 </div>
@@ -384,7 +473,7 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
                     id="gatewayUsername"
                     placeholder="Your callsign"
                     value={gatewayUsername}
-                    onChange={(e) => setGatewayUsername(e.target.value)}
+                    onChange={(e) => { setGatewayUsername(e.target.value); handleUserEdit(); }}
                     className="text-xs font-mono"
                   />
                 </div>
@@ -392,23 +481,16 @@ export default function DigitalVoiceConnectForm({ onSaved, preset, onPresetAppli
             </Collapsible>
           </TabsContent>
 
-          <TabsContent value="dstar" className="space-y-4 mt-4">
-            <Alert className="console-panel">
-              <Info className="h-3.5 w-3.5" />
-              <AlertDescription className="text-xs">
-                D-Star configuration coming soon
-              </AlertDescription>
-            </Alert>
-          </TabsContent>
-
-          <TabsContent value="ysf" className="space-y-4 mt-4">
-            <Alert className="console-panel">
-              <Info className="h-3.5 w-3.5" />
-              <AlertDescription className="text-xs">
-                YSF configuration coming soon
-              </AlertDescription>
-            </Alert>
-          </TabsContent>
+          {['dstar', 'ysf', 'p25', 'nxdn', 'm17'].map((mode) => (
+            <TabsContent key={mode} value={mode} className="space-y-4 mt-4">
+              <Alert className="console-panel">
+                <Info className="h-3.5 w-3.5" />
+                <AlertDescription className="text-xs">
+                  {mode.toUpperCase()} configuration coming soon. Use DMR for now.
+                </AlertDescription>
+              </Alert>
+            </TabsContent>
+          ))}
         </Tabs>
 
         <Button onClick={handleSave} className="w-full text-xs">

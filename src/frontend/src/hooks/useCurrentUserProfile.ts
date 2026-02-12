@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
+import { useActorWithError } from './useActorWithError';
 import type { ImmutableUserProfile } from '../backend';
 
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching: actorFetching, isError: actorError } = useActorWithError();
 
   const query = useQuery<ImmutableUserProfile | null>({
     queryKey: ['currentUserProfile'],
@@ -22,7 +22,7 @@ export function useGetCallerUserProfile() {
         throw error;
       }
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !actorFetching && !actorError,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
@@ -35,7 +35,7 @@ export function useGetCallerUserProfile() {
 }
 
 export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
+  const { actor } = useActorWithError();
   const queryClient = useQueryClient();
 
   return useMutation({

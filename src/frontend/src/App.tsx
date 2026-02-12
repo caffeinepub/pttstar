@@ -1,5 +1,5 @@
 import { createRouter, RouterProvider, createRoute, createRootRoute, Outlet, useNavigate, useLocation } from '@tanstack/react-router';
-import { useInternetIdentity } from './hooks/useInternetIdentity';
+import { useRegeneratedAuth } from './auth/iiAuthProvider';
 import { useGetCallerUserProfile } from './hooks/useCurrentUserProfile';
 import { getRememberLoginPreference } from './hooks/useRememberLoginPreference';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,13 +16,16 @@ import AuthGate from './components/AuthGate';
 import ProfileSetupDialog from './components/ProfileSetupDialog';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import PostLoginInterstitial from './components/PostLoginInterstitial';
+import AuthenticatedFlowFallback from './components/AuthenticatedFlowFallback';
 import { loadConnection } from './hooks/usePreferredConnection';
 import { captureGatewayParameters } from './utils/gatewayUrlBootstrap';
+import { useActorWithError } from './hooks/useActorWithError';
+import { RegeneratedAuthProvider } from './auth/iiAuthProvider';
 
 function PostLoginRedirector() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { identity, isInitializing } = useInternetIdentity();
+  const { identity, isInitializing } = useRegeneratedAuth();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
 
   useEffect(() => {
@@ -65,19 +68,50 @@ function PostLoginRedirector() {
 }
 
 function RootLayout() {
-  const { identity, isInitializing } = useInternetIdentity();
-  const { isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const { identity, isInitializing, clear } = useRegeneratedAuth();
+  const { actor: actorWithError, isError: actorError, error: actorErrorObj } = useActorWithError();
+  const { data: userProfile, isLoading: profileLoading, isFetched: profileFetched, error: profileError, refetch: refetchProfile } = useGetCallerUserProfile();
+  const queryClient = useQueryClient();
 
   const isAuthenticated = !!identity;
   
-  // Show interstitial when authenticated but profile state is not yet confirmed
-  const showInterstitial = isAuthenticated && !isInitializing && (profileLoading || !isFetched);
+  // Show interstitial when authenticated but profile state is not yet confirmed AND no errors
+  const showInterstitial = isAuthenticated && !isInitializing && (profileLoading || !profileFetched) && !actorError && !profileError;
+  
+  // Show error fallback when authenticated and either actor or profile failed
+  const showErrorFallback = isAuthenticated && !isInitializing && (actorError || profileError);
+
+  const handleRetry = () => {
+    console.log('RootLayout: Retrying actor and profile initialization');
+    queryClient.invalidateQueries({ queryKey: ['actor'] });
+    queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
+    refetchProfile();
+  };
+
+  const handleClearSession = async () => {
+    console.log('RootLayout: Clearing session from error fallback');
+    await clear();
+    queryClient.clear();
+  };
 
   return (
     <AppLayout>
       <PostLoginRedirector />
-      {showInterstitial && <PostLoginInterstitial />}
-      <Outlet />
+      {showInterstitial && (
+        <PostLoginInterstitial 
+          onRetry={handleRetry}
+          onClearSession={handleClearSession}
+        />
+      )}
+      {showErrorFallback && (
+        <AuthenticatedFlowFallback
+          error={actorErrorObj || profileError || new Error('Initialization failed')}
+          context="backend initialization"
+          onRetry={handleRetry}
+          onClearSession={handleClearSession}
+        />
+      )}
+      {!showErrorFallback && <Outlet />}
     </AppLayout>
   );
 }
@@ -166,8 +200,8 @@ declare module '@tanstack/react-router' {
   }
 }
 
-export default function App() {
-  const { identity, isInitializing, clear } = useInternetIdentity();
+function AppContent() {
+  const { identity, isInitializing, clear } = useRegeneratedAuth();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const queryClient = useQueryClient();
   const rememberLoginCheckedRef = useRef(false);
@@ -221,5 +255,13 @@ export default function App() {
       <RouterProvider router={router} />
       {showProfileSetup && <ProfileSetupDialog />}
     </AppErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <RegeneratedAuthProvider>
+      <AppContent />
+    </RegeneratedAuthProvider>
   );
 }

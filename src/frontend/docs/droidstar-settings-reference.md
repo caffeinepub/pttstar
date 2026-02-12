@@ -2,7 +2,9 @@
 
 ## Reference APK
 This implementation replicates behaviors observed in DroidStar:
-**Reference APK URL:** https://dudestar.gw8szl.co.uk/Droidstar/DroidStar-build-f050489.apk
+**Reference APK URL:** http://pizzanbeer.net/droidstar/DroidStar-1faf794-android-arm32.apk
+
+**Important:** This project replicates user-facing behavior only. We do NOT decompile, reverse-engineer, or import any code or assets from the APK. All functionality is implemented using standard web technologies (fetch API, localStorage, React Query) based on observable user interactions and documented behaviors.
 
 ## Replicated Behaviors
 
@@ -17,6 +19,7 @@ DroidStar fetches BrandMeister and AllStar server lists from GitHub raw URLs:
 - Cache includes a last-updated timestamp
 - On fetch failure, the app continues using the last cached data or built-in defaults
 - TTL (Time To Live) is enforced to prevent stale data
+- Cache age is displayed to users so they know when data was last refreshed
 
 ### UI Population & Selection
 - Fetched server entries populate dropdown/selection UI in the Connect forms
@@ -24,6 +27,7 @@ DroidStar fetches BrandMeister and AllStar server lists from GitHub raw URLs:
 - AllStar servers appear in the IAX/DVSwitch configuration
 - Selecting a server from the fetched list fills the appropriate connection field
 - Manual entry is still supported as a fallback
+- Default source URLs are always visible in Settings when no user overrides exist
 
 ### Connection Consistency
 - Server addresses are normalized (trimmed, consistent formatting) before saving

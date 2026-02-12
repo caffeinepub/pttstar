@@ -1,102 +1,51 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T11:44:23.782Z",
-  "summary": "Diff shows substantial new frontend work around preset-driven BrandMeister/AllStar setup (server directories, advanced sections, normalization, and auto-save scaffolding), but the backend change required for the built-in BrandMeister US hostname is not evidenced in the truncated backend diff. The diff also includes multiple unrelated UI/content/features not requested by the BuildRequest (landing page copy, footer attribution, auth error UX, settings server directory sources, etc.).",
+  "generatedAt": "2026-02-12T18:35:49.519Z",
+  "summary": "Diff adds new IAX/DVSwitch connection fields (phoneToIaxConfirmed, codecType) to the stored connection type with backward-compatible defaults on load, and begins integrating these fields into the IAX/DVSwitch connect form and saved-configuration UI. However, the diff excerpt is truncated around the connect form UI and save logic, and the saved-configuration rendering is also truncated, so multiple UI/behavior acceptance criteria cannot be confirmed from the provided evidence.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Update the built-in BrandMeister United States network address to exactly \"3102.master.brandmeister.network\" so getBuiltinNetworks() returns that address for networkLabel \"BrandMeister United States\"; no migration/stable schema changes.",
-      "reason": "backend/main.mo is truncated and the diff excerpt does not show any initialization/update of the built-in network list or the BrandMeister United States entry, so the required hostname change cannot be verified from the provided evidence.",
+      "requirement": "Update the IAX / DVSwitch configuration form UI to use DVSwitch-style field order and English labels (Hostname, Port, Username, Password, Callsign, Node Number) while preserving load-on-mount and Save persistence.",
+      "reason": "The diff shows state variables in the desired order and loading existing values on mount, but the actual rendered form field order/labels and the Save persistence behavior are not visible in the truncated snippet.",
       "evidence": [
-        "backend/main.mo (truncated)"
+        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated around UI/render and save handling)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "BrandMeister quick setup auto-selects a master (prefer built-in \"BrandMeister United States\") and does not require manual server URL in the basic view (only in Advanced if kept). Saving results in non-empty bmServerAddress without user typing a URL/hostname.",
-      "reason": "DigitalVoiceConnectForm.tsx shows state for selectedBmServer, an Advanced section flag, and merged builtin+directory BM servers, but the provided excerpt is truncated before the preset-application logic and before the rendered UI controls; therefore the acceptance criteria (auto-select preference for \"BrandMeister United States\", hiding freeform input in default view, and saved bmServerAddress without typing) cannot be confirmed from the evidence shown.",
-      "evidence": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "AllStar quick setup auto-sets gateway/server to \"allstarlink.org\" (or directory entry) and does not require freeform gateway/server input in the basic view (only in Advanced if kept).",
-      "reason": "IaxDvswitchConnectForm.tsx includes DEFAULT_ALLSTAR_GATEWAY and an Advanced section flag, but the excerpt is truncated before the preset-application logic and before the rendered UI controls; thus the default/basic view behavior and directory-preferred selection cannot be verified from the provided evidence.",
+      "requirement": "Add a \"Phone to IAX connection\" checkbox and block Save with an English validation message unless checked; persist the confirmation value.",
+      "reason": "State for phoneToIaxConfirmed is added and loaded from storage, but the diff excerpt does not show a checkbox labeled exactly \"Phone to IAX connection\", nor any Save-blocking/validation messaging logic tied to it, nor that it is included in the saved payload.",
       "evidence": [
         "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)"
       ]
     },
     {
-      "id": "REQ-4",
-      "requirement": "After entering required non-URL fields for BrandMeister/AllStar presets, the app auto-saves the configuration and navigates to /ptt without prompting for any URL/hostname.",
-      "reason": "Both connect forms import useNavigate and define AUTO_SAVE_ATTEMPTED_KEY constants, but the provided excerpts are truncated before any auto-save trigger and navigation calls. The diff summary mentions other pages (ConnectPage/PttPage) changes, but no concrete code excerpt is provided to verify the exact post-credential auto-save + /ptt navigation behavior.",
+      "id": "REQ-3",
+      "requirement": "Add a \"Codec Types\" selector (ulaw/slin/adpcm) with a default selection; persist and restore the codec; show it in the Saved Configuration view.",
+      "reason": "codecType is added to the connection type and defaulted/restored on load, but the diff excerpt does not show the actual selector UI labeled \"Codec Types\", nor that Save persists the chosen codec, nor that the saved-configuration UI renders the codec value (the saved tab is truncated before showing it).",
       "evidence": [
-        "frontend/src/components/DigitalVoiceConnectForm.tsx (truncated)",
         "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)",
-        "frontend-file-summaries.txt (ConnectPage.tsx, PttPage.tsx summaries only)"
+        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx (truncated)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Extend the IAX / DVSwitch saved-configuration display to include \"Phone to IAX connection\" as Yes/No and \"Codec Types\" while continuing to mask passwords.",
+      "reason": "The saved configuration tab computes phoneToIaxStatus and codecTypeDisplay and still masks passwords, but the snippet is truncated before showing whether these new fields are actually rendered in the card.",
+      "evidence": [
+        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx (truncated)"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Added/modified extensive authentication-gating and login error recovery UI (AuthGate, LoginButton) including retry/clear-session actions and actor initialization fallback UI.",
-      "reason": "Not requested by any REQ; BuildRequest is specifically about auto-selecting BrandMeister/AllStar servers and removing URL entry requirements.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/AuthGate.tsx, frontend/src/components/LoginButton.tsx)"
-      ]
-    },
-    {
-      "description": "Profile setup modal changes including removing DMR ID field and adding explicit license acknowledgement validation.",
-      "reason": "Not requested; BuildRequest does not ask to alter profile fields or onboarding beyond connection credential UX.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/ProfileSetupDialog.tsx)"
-      ]
-    },
-    {
-      "description": "Landing page rewritten/expanded with a comprehensive getting-started guide and external BrandMeister account recommendation/link.",
-      "reason": "Not requested; BuildRequest explicitly calls out non-goals like full account creation flows and focuses on Connect UX defaults.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/LandingPage.tsx)"
-      ]
-    },
-    {
-      "description": "Footer/header attribution change displaying \"KO4RXE — Creator & Developer\".",
-      "reason": "Not requested; unrelated to server auto-selection/URL entry removal.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/AppLayout.tsx, frontend/src/pages/AboutCompliancePage.tsx)"
-      ]
-    },
-    {
-      "description": "Settings page adds \"Server Directory Sources\" management UI with GitHub raw URLs, refresh buttons, last-updated timestamps, and fetch error display.",
-      "reason": "Not requested; BuildRequest does not ask for new settings configuration for server directory sources (only to auto-select servers in Connect flow).",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/SettingsPage.tsx)"
-      ]
-    },
-    {
-      "description": "Activity page styling changes (removal of green accents) and other non-specified visual tweaks.",
-      "reason": "Not requested; unrelated to connection setup requirements.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/ActivityPage.tsx)"
-      ]
-    },
-    {
-      "description": "Directory page enhancements (favorites, in-page action to proceed to PTT, updated intro copy, and DirectoryBasedConnection saving).",
-      "reason": "Not requested in BuildRequest; the request is specifically about Connect page UX defaults and backend built-in BM US address.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/DirectoryPage.tsx)"
-      ]
-    }
-  ],
-  "confidence": 0.58,
+  "hallucinated_features": [],
+  "confidence": 0.56,
   "changed_files": [
-    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/DigitalVoiceConnectForm.tsx",
     "frontend/src/components/IaxDvswitchConnectForm.tsx",
+    "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
     "frontend/src/hooks/usePreferredConnection.ts",
+    "frontend/src/utils/roomKey.ts",
     "project_state.json"
   ]
 }

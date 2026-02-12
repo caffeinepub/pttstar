@@ -2,53 +2,47 @@ import { normalizeServerAddress } from './serverAddress';
 import type { PreferredConnection } from '../hooks/usePreferredConnection';
 
 /**
- * Derives a stable room key from connection settings for WebRTC room identification.
- * Uses normalized server addresses to ensure consistency.
+ * Derives a stable room key from connection settings.
+ * Used for WebRTC signaling and activity tracking.
  */
 export function deriveRoomKey(connection: PreferredConnection): string {
   if (connection.type === 'iax-dvswitch') {
+    // Use normalized gateway address for stable key
     const normalizedGateway = normalizeServerAddress(connection.gateway);
-    return `iax-${normalizedGateway}-${connection.nodeNumber || 'default'}`;
+    return `iax:${normalizedGateway}`;
   }
 
   if (connection.type === 'digital-voice') {
-    const normalizedBmServer = normalizeServerAddress(connection.bmServerAddress || '');
-    const normalizedGatewayUrl = normalizeServerAddress(connection.gatewayUrl || '');
-    const gatewayRoom = connection.gatewayRoom || '';
-    
-    // Include gateway room in key for gateway-based sessions
-    if (normalizedGatewayUrl && gatewayRoom) {
-      return `dv-${connection.mode}-${normalizedBmServer}-${normalizedGatewayUrl}-${gatewayRoom}`;
-    }
-    
-    return `dv-${connection.mode}-${normalizedBmServer}-${connection.talkgroup || 'default'}`;
+    // Use normalized reflector for stable key
+    const normalizedReflector = normalizeServerAddress(connection.reflector);
+    return `dv:${connection.mode}:${normalizedReflector}:${connection.talkgroup || 'default'}`;
   }
 
   if (connection.type === 'directory-based') {
+    // Use normalized network address for stable key
     const normalizedAddress = normalizeServerAddress(connection.networkAddress);
-    return `dir-${normalizedAddress}-${connection.talkgroupId}`;
+    return `dir:${normalizedAddress}:${connection.talkgroupId}`;
   }
 
   return 'unknown';
 }
 
 /**
- * Derives a human-readable room label from connection settings.
+ * Derives a human-readable label from connection settings.
+ * Used for UI display.
  */
 export function deriveRoomLabel(connection: PreferredConnection): string {
   if (connection.type === 'iax-dvswitch') {
-    return `${connection.gateway} Node ${connection.nodeNumber || 'Default'}`;
+    return `IAX: ${connection.gateway}`;
   }
 
   if (connection.type === 'digital-voice') {
-    const serverLabel = connection.bmServerLabel || connection.bmServerAddress || 'Unknown Server';
-    const talkgroupLabel = connection.talkgroup ? ` TG${connection.talkgroup}` : '';
-    return `${serverLabel}${talkgroupLabel}`;
+    return `${connection.mode}: ${connection.reflector} / TG ${connection.talkgroup || 'default'}`;
   }
 
   if (connection.type === 'directory-based') {
-    return `${connection.networkLabel} - ${connection.talkgroupName}`;
+    return `${connection.networkLabel} / ${connection.talkgroupName}`;
   }
 
-  return 'Unknown Room';
+  return 'Unknown Connection';
 }
