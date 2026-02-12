@@ -1,51 +1,62 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T18:35:49.519Z",
-  "summary": "Diff adds new IAX/DVSwitch connection fields (phoneToIaxConfirmed, codecType) to the stored connection type with backward-compatible defaults on load, and begins integrating these fields into the IAX/DVSwitch connect form and saved-configuration UI. However, the diff excerpt is truncated around the connect form UI and save logic, and the saved-configuration rendering is also truncated, so multiple UI/behavior acceptance criteria cannot be confirmed from the provided evidence.",
+  "generatedAt": "2026-02-12T22:56:54.085Z",
+  "summary": "The diff adds Version 55 promotion/deployment documentation indexes and records, but also includes application code changes (backend and multiple frontend files) and leaves production canister IDs/URLs as placeholders, which conflicts with the deployment-only/no-changes constraint and prevents meeting the documented access-details acceptance criteria.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Update the IAX / DVSwitch configuration form UI to use DVSwitch-style field order and English labels (Hostname, Port, Username, Password, Callsign, Node Number) while preserving load-on-mount and Save persistence.",
-      "reason": "The diff shows state variables in the desired order and loading existing values on mount, but the actual rendered form field order/labels and the Save persistence behavior are not visible in the truncated snippet.",
+      "requirement": "Promote the currently deployed preview build (Version 55) to production following the runbook, as a deployment-only operation with no application code or configuration changes, using the same build artifacts as preview.",
+      "reason": "The diff shows application code changes (backend and referenced frontend changes), which violates the constraint/AC that the promotion must not introduce any code or configuration changes; the diff also does not provide evidence of using identical preview artifacts beyond documentation assertions.",
       "evidence": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated around UI/render and save handling)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Add a \"Phone to IAX connection\" checkbox and block Save with an English validation message unless checked; persist the confirmation value.",
-      "reason": "State for phoneToIaxConfirmed is added and loaded from storage, but the diff excerpt does not show a checkbox labeled exactly \"Phone to IAX connection\", nor any Save-blocking/validation messaging logic tied to it, nor that it is included in the saved payload.",
-      "evidence": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)"
+        "backend/main.mo",
+        "frontend-file-summaries.txt",
+        "frontend/docs/promotions/version-55-preview-to-production.md",
+        "frontend/docs/deployments/version-55-production-deployment.md"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Add a \"Codec Types\" selector (ulaw/slin/adpcm) with a default selection; persist and restore the codec; show it in the Saved Configuration view.",
-      "reason": "codecType is added to the connection type and defaulted/restored on load, but the diff excerpt does not show the actual selector UI labeled \"Codec Types\", nor that Save persists the chosen codec, nor that the saved-configuration UI renders the codec value (the saved tab is truncated before showing it).",
+      "requirement": "Record the production frontend canister URL and backend canister ID for Version 55 in a deployment record and ensure the live links are discoverable from documentation.",
+      "reason": "The Version 55 production deployment record contains placeholders instead of actual frontend canister ID, default IC URL, and backend canister ID, so the required access details are not actually provided.",
       "evidence": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx (truncated)",
-        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Extend the IAX / DVSwitch saved-configuration display to include \"Phone to IAX connection\" as Yes/No and \"Codec Types\" while continuing to mask passwords.",
-      "reason": "The saved configuration tab computes phoneToIaxStatus and codecTypeDisplay and still masks passwords, but the snippet is truncated before showing whether these new fields are actually rendered in the card.",
-      "evidence": [
-        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx (truncated)"
+        "frontend/docs/deployments/version-55-production-deployment.md",
+        "frontend/docs/deployments/README.md"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.56,
+  "hallucinated_features": [
+    {
+      "description": "Implemented/modified backend application logic during what should be a deployment-only promotion.",
+      "reason": "BuildRequest explicitly prohibits application code changes during promotion; however the diff includes modifications to backend code.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "description": "Implemented/modified multiple frontend application features (auth provider changes, UI/flow changes, presets, directory sources, etc.) during what should be a deployment-only promotion.",
+      "reason": "BuildRequest explicitly prohibits application code changes and adding new app features as part of the promotion; the diff summary enumerates many frontend feature/code changes.",
+      "evidence": [
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Documentation asserts and lists “Key Features” for Version 55 (e.g., Enhanced BrandMeister detection, TGIF DMR support, AllStar preset, improved error handling), implying feature work as part of the promotion.",
+      "reason": "Adding new app features is a stated non-goal for the promotion; including feature-forward changes/documentation as part of the promotion is not requested and conflicts with the intended deployment-only scope.",
+      "evidence": [
+        "frontend/docs/deployments/README.md",
+        "frontend/docs/promotions/README.md"
+      ]
+    }
+  ],
+  "confidence": 0.78,
   "changed_files": [
+    "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/IaxDvswitchConnectForm.tsx",
-    "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-    "frontend/src/hooks/usePreferredConnection.ts",
-    "frontend/src/utils/roomKey.ts",
+    "frontend/docs/deployments/README.md",
+    "frontend/docs/deployments/version-55-production-deployment.md",
+    "frontend/docs/promotions/README.md",
+    "frontend/docs/promotions/version-55-preview-to-production.md",
     "project_state.json"
   ]
 }

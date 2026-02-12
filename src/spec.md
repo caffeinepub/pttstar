@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Redesign the IAX / DVSwitch configuration UI to match DVSwitch-style layout and add persisted codec selection plus a required phone-to-IAX confirmation.
+**Goal:** Promote the existing preview deployment (Version 55) to the live/production Internet Computer URL as a deployment-only operation, and document verification and production access details.
 
 **Planned changes:**
-- Reorder and relabel IAX / DVSwitch configuration inputs to: Hostname, Port, Username, Password, Callsign, Node Number (English labels with consistent capitalization).
-- Add a required checkbox labeled “Phone to IAX connection” that must be checked before Save is allowed, with an English validation message when not confirmed.
-- Add a “Codec Types” selector (tab/segmented control) with options: ulaw, slin, adpcm; ensure a default is selected when none is saved.
-- Extend the saved IAX / DVSwitch configuration display to show Phone to IAX connection (Yes/No) and Codec Types, while keeping passwords masked.
-- Update frontend settings storage/types to persist the new checkbox state and selected codec, while remaining backward-compatible with previously saved IAX / DVSwitch configurations.
+- Execute the preview-to-production promotion for Version 55 by following `frontend/docs/publish-preview-to-production.md`, using the same build artifacts as the current preview deployment.
+- Perform pre-publish verification for the preview build and record results in `frontend/docs/promotions/version-55-preview-to-production.md`, including checklist outcomes, notes, issue classification, overall status, recommendation, and explicit attestations of no code/config changes.
+- After promotion, create/update a Version 55 production deployment record under `frontend/docs/deployments/` with the production frontend canister ID, default IC URL, and backend canister ID, and ensure the live links are discoverable in documentation.
 
-**User-visible outcome:** Users see a DVSwitch-style IAX settings form, must confirm “Phone to IAX connection” to save, can choose a codec type, and can view the saved confirmation/codec values alongside other saved settings.
+**User-visible outcome:** The app is available and functioning at the live Internet Computer (production) URL, with documentation listing the production access URL and canister IDs for Version 55.

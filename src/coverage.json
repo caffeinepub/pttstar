@@ -1,91 +1,65 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T18:35:49.522Z",
+  "generatedAt": "2026-02-12T22:56:54.089Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 5,
+    "total": 3,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
+        "summary": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/docs/promotions/version-55-preview-to-production.md",
+          "frontend/docs/publish-preview-to-production.md"
         ],
         "matchedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/docs/promotions/version-55-preview-to-production.md"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
+        "summary": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts"
+          "frontend/docs/promotions/version-55-preview-to-production.md"
         ],
         "matchedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts"
+          "frontend/docs/promotions/version-55-preview-to-production.md"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
+        "summary": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts",
-          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
+          "frontend/docs/deployments/version-55-production-deployment.md",
+          "frontend/docs/deployments/README.md",
+          "frontend/docs/promotions/README.md"
         ],
         "matchedFiles": [
-          "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "frontend/src/hooks/usePreferredConnection.ts",
-          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/usePreferredConnection.ts",
-          "frontend/src/utils/roomKey.ts",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/usePreferredConnection.ts",
-          "frontend/src/utils/roomKey.ts",
-          "frontend/src/components/IaxDvswitchConnectForm.tsx"
+          "frontend/docs/deployments/version-55-production-deployment.md",
+          "frontend/docs/deployments/README.md",
+          "frontend/docs/promotions/README.md"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/IaxDvswitchConnectForm.tsx",
-    "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-    "frontend/src/hooks/usePreferredConnection.ts",
-    "frontend/src/utils/roomKey.ts",
+    "frontend/docs/deployments/README.md",
+    "frontend/docs/deployments/version-55-production-deployment.md",
+    "frontend/docs/promotions/README.md",
+    "frontend/docs/promotions/version-55-preview-to-production.md",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,111 +1,67 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "IAX / DVSwitch settings UI redesign with codec selection and phone-to-IAX confirmation",
+  "title": "Version 55 preview-to-production promotion documentation and records (no code/config changes)",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Reorder and relabel the IAX / DVSwitch configuration form fields to match the DVSwitch-style layout.",
+      "summary": "Document and attest that Version 55 preview build was promoted to production as a deployment-only operation with no code/config changes.",
       "acceptanceCriteria": [
-        "In the IAX / DVSwitch Configure UI, the primary inputs are shown in this order: Hostname, Port, Username, Password, Callsign, Node Number.",
-        "User-facing labels are in English and use consistent capitalization: \"Hostname\", \"Port\", \"Username\", \"Password\", \"Callsign\", \"Node Number\".",
-        "Existing behaviors still work: saved IAX connection values are loaded into the form on mount, and Save persists the updated values."
+        "Promotion is executed as a deployment-only operation (no application code changes, no configuration changes).",
+        "The production/live frontend canister serves the app successfully at the default IC URL.",
+        "The production/live deployment uses the same build artifacts as the current preview build (Version 55)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
+          "path": "frontend/docs/promotions/version-55-preview-to-production.md",
+          "operation": "create",
+          "description": "Create the Version 55 preview-to-production promotion record (or update if it already exists) and include an explicit \"Promotion Execution\" section capturing that promotion used the existing Version 55 preview artifacts and introduced NO application code/config changes."
+        },
+        {
+          "path": "frontend/docs/publish-preview-to-production.md",
           "operation": "modify",
-          "description": "Update the IAX / DVSwitch Configure form to present the primary inputs in DVSwitch-style order and with exact English labels: Hostname, Port, Username, Password, Callsign, Node Number. Map these UI fields to the existing saved properties (gateway->Hostname, port->Port, iaxUsername->Username, iaxPassword->Password, userCallsign->Callsign, nodeNumber->Node Number) while preserving existing load-on-mount and save behavior. Keep optional/advanced sections (e.g., AllStar server picker, AllStar credentials) accessible without editing any files under frontend/src/components/ui. Verify the component's usage instructions before implementing."
+          "description": "Add/confirm documentation guidance that the promotion step is deployment-only and must not introduce any application code or configuration changes, and that Version 55 promotion execution details must be recorded in the version-specific promotion record."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add a required \"Phone to IAX connection\" confirmation checkbox to the IAX / DVSwitch configuration form and persist it.",
+      "summary": "Complete and record the Version 55 pre-publish verification checklist and outcomes in a promotion record markdown file.",
       "acceptanceCriteria": [
-        "The IAX / DVSwitch Configure UI includes a checkbox labeled \"Phone to IAX connection\".",
-        "When the checkbox is unchecked, the Save action is blocked and the UI shows an English validation message explaining that confirmation is required.",
-        "When the checkbox is checked, Save works normally and the value is persisted with the saved IAX / DVSwitch connection settings."
+        "A promotion record exists for Version 55 under `frontend/docs/promotions/` and includes completed checklist sections for the key flows listed in `frontend/docs/publish-preview-to-production.md`.",
+        "The promotion record contains explicit attestation statements that application code changes = NONE and configuration changes = NONE.",
+        "The promotion record includes an overall status and a recommendation (PROCEED WITH PROMOTION / DO NOT PROMOTE)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "operation": "modify",
-          "description": "Add a checkbox control labeled \"Phone to IAX connection\" to the IAX / DVSwitch Configure UI, load its initial value from saved settings, and enforce validation that blocks Save when unchecked with an English message (e.g., confirmation required). Ensure the checkbox value is included when saving the IAX / DVSwitch connection. Use existing shadcn/ui form building blocks already used in the project (do not modify frontend/src/components/ui). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/usePreferredConnection.ts",
-          "operation": "modify",
-          "description": "Extend the persisted IAX / DVSwitch connection shape to include an optional boolean for the phone-to-IAX confirmation, ensuring older saved connections still parse safely and default the missing value in a backward-compatible way."
+          "path": "frontend/docs/promotions/version-55-preview-to-production.md",
+          "operation": "create",
+          "description": "Create `frontend/docs/promotions/version-55-preview-to-production.md` based on the existing promotion record templates, including: PASS/PASS WITH NOTES/FAIL outcomes per checklist section in `frontend/docs/publish-preview-to-production.md`, issue classification (critical/non-critical), overall status, recommendation, and explicit attestations: application code changes = NONE; configuration changes = NONE."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Add a \"Codec Types\" selector (tab/segmented control) for ulaw/slin/adpcm, persist it, and display it in the saved configuration view.",
+      "summary": "Record and surface the Version 55 production access details (frontend canister URL and backend canister ID) in deployment documentation.",
       "acceptanceCriteria": [
-        "The IAX / DVSwitch Configure UI includes a codec selector labeled \"Codec Types\" with options \"ulaw\", \"slin\", and \"adpcm\".",
-        "A codec is always selected (use a sensible default if none is saved).",
-        "The selected codec is stored alongside the other IAX / DVSwitch connection settings and is restored when revisiting the Configure UI.",
-        "The Saved IAX / DVSwitch Configuration view shows the selected codec type in a readable way."
+        "A production deployment record for Version 55 exists under `frontend/docs/deployments/` and includes: frontend canister ID, default IC URL, and backend canister ID.",
+        "The documented production URL loads the app and the frontend can reach the backend canister without showing a backend connectivity error under normal conditions."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "operation": "modify",
-          "description": "Add a \"Codec Types\" selection control (implemented as a tab or clearly labeled segmented option) with allowed values ulaw/slin/adpcm. Ensure a default selection (e.g., ulaw) when no saved value exists, restore saved selection on mount, and include the selection in the saved IAX / DVSwitch connection when saving. Prefer existing shadcn/ui primitives already used in the app (e.g., Tabs) without modifying frontend/src/components/ui. Verify the component's usage instructions before implementing."
+          "path": "frontend/docs/deployments/version-55-production-deployment.md",
+          "operation": "create",
+          "description": "Create a Version 55 production deployment record under `frontend/docs/deployments/` including frontend canister ID, default IC URL, backend canister ID, and post-deployment verification results confirming the app loads and backend connectivity is healthy under normal conditions."
         },
         {
-          "path": "frontend/src/hooks/usePreferredConnection.ts",
-          "operation": "modify",
-          "description": "Extend the persisted IAX / DVSwitch connection shape to include an optional codec type field, and apply a backward-compatible default when loading older saved connections that do not have this field."
+          "path": "frontend/docs/deployments/README.md",
+          "operation": "create",
+          "description": "Create an index file that links to the Version 55 production deployment record (and other existing deployment records) so the live links are easily discoverable from documentation."
         },
         {
-          "path": "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-          "operation": "modify",
-          "description": "Update the Saved IAX / DVSwitch Configuration display to include a readable \"Codec Types\" row that shows the saved codec (ulaw/slin/adpcm) and uses the default when missing, while keeping existing layout and password masking intact. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Show \"Phone to IAX connection\" state and codec type in the saved IAX / DVSwitch configuration card while continuing to mask passwords.",
-      "acceptanceCriteria": [
-        "The Saved IAX / DVSwitch Configuration card shows \"Phone to IAX connection\" as Yes/No (or Enabled/Disabled) based on the saved setting.",
-        "The Saved IAX / DVSwitch Configuration card shows \"Codec Types\" with the saved value (ulaw/slin/adpcm).",
-        "Passwords remain masked as they are today."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-          "operation": "modify",
-          "description": "Extend the saved-configuration card to display \"Phone to IAX connection\" as Yes/No (or Enabled/Disabled) and display \"Codec Types\" with the saved codec value. Keep password masking exactly as it is today for IAX/AllStar password fields, and keep all user-facing text in English. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Update frontend connection storage/types to persist phone-to-IAX confirmation and codec type without breaking existing saved sessions.",
-      "acceptanceCriteria": [
-        "The IAX / DVSwitch connection type includes new optional fields for phone-to-IAX confirmation and codec type, and the app continues to load older saved IAX configurations without runtime errors.",
-        "Room key/label derivation and PTT navigation continue to work for IAX / DVSwitch connections after the type change.",
-        "No changes are required from users who already have an IAX / DVSwitch configuration saved; the app selects defaults for newly introduced fields if missing."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/usePreferredConnection.ts",
-          "operation": "modify",
-          "description": "Update the IaxDvswitchConnection type to include new optional fields for phone-to-IAX confirmation and codec type. Add a small backward-compatibility normalization in loadConnection (or a helper used by it) so older saved IAX / DVSwitch JSON values load without runtime errors and receive defaults for missing new fields."
-        },
-        {
-          "path": "frontend/src/utils/roomKey.ts",
-          "operation": "modify",
-          "description": "Confirm that room key/label derivation continues to work with the updated IAX / DVSwitch connection type (including optional new fields) without incorporating the new fields into the room key, so existing navigation and session identification behavior remains stable."
-        },
-        {
-          "path": "frontend/src/components/IaxDvswitchConnectForm.tsx",
-          "operation": "modify",
-          "description": "Ensure the IAX / DVSwitch Configure form can load older saved configurations that lack the new fields by applying defaults in UI state (codec default; phone-to-IAX unchecked), and that Save persists the new fields alongside existing settings without affecting existing preset/auto-save flows. Verify the component's usage instructions before implementing."
+          "path": "frontend/docs/promotions/README.md",
+          "operation": "create",
+          "description": "Create an index file that links to the Version 55 promotion record (and other existing promotion records) so promotion and live access documentation are discoverable."
         }
       ]
     }

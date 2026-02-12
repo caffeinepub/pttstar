@@ -2,10 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-iax-dvswitch-configuration-form-ui-to-use-a-dvswitch-style-field-order-and-labeling-hostname-port-username-password-callsign-node-number",
-      "featureTitle": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
+      "featureId": "feature-promote-the-currently-deployed-preview-build-reported-as-version-55-to-the-live-production-internet-computer-url-following-the-existing-preview-to-production-runbook-without-introducing-any-code-or-configuration-changes",
+      "featureTitle": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
       "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx"
+        "frontend/docs/promotions/version-55-preview-to-production.md"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,11 +22,10 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-phone-to-iax-connection-checkbox-to-the-iax-dvswitch-configuration-and-require-it-to-be-checked-before-allowing-the-user-to-save-the-iax-dvswitch-configuration",
-      "featureTitle": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
+      "featureId": "feature-complete-pre-publish-verification-for-the-preview-build-and-document-the-results-in-a-version-specific-promotion-record-markdown-file-under-frontend-docs-promotions-create-frontend-docs-promotions-version-55-preview-to-production-md-if-it-does-not-exist-including-pass-pass-with-notes-fail-outcomes-notes-issue-classification-and-the-required-attestation-that-no-code-config-changes-were-made",
+      "featureTitle": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
       "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx",
-        "frontend/src/hooks/usePreferredConnection.ts"
+        "frontend/docs/promotions/version-55-preview-to-production.md"
       ],
       "components": [
         "authorization@4.0.0",
@@ -43,12 +42,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-codec-types-selection-control-to-the-iax-dvswitch-configuration-presented-as-a-tab-or-clearly-labeled-segmented-option-with-allowed-values-ulaw-slin-adpcm-and-persist-the-selected-codec-with-the-saved-iax-dvswitch-connection",
-      "featureTitle": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
+      "featureId": "feature-after-promotion-provide-the-new-live-internet-computer-access-details-by-recording-the-production-frontend-canister-url-and-the-backend-canister-id-in-a-deployment-record-under-frontend-docs-deployments-create-a-version-55-production-deployment-record-if-needed-and-ensure-the-live-links-are-discoverable-from-the-documentation",
+      "featureTitle": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
       "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx",
-        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx",
-        "frontend/src/hooks/usePreferredConnection.ts"
+        "frontend/docs/deployments/README.md",
+        "frontend/docs/deployments/version-55-production-deployment.md",
+        "frontend/docs/promotions/README.md"
       ],
       "components": [
         "authorization@4.0.0",
@@ -61,48 +60,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-extend-the-iax-dvswitch-saved-configuration-display-to-include-the-new-phone-to-iax-connection-state-and-the-selected-codec-type-while-continuing-to-mask-passwords",
-      "featureTitle": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
-      "files": [
-        "frontend/src/components/IaxDvswitchSavedConfigurationTab.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-connection-settings-storage-types-used-by-the-frontend-so-the-iax-dvswitch-connection-can-persist-a-phone-to-iax-confirmation-and-b-codec-type-without-breaking-existing-saved-sessions",
-      "featureTitle": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
-      "files": [
-        "frontend/src/components/IaxDvswitchConnectForm.tsx",
-        "frontend/src/hooks/usePreferredConnection.ts",
-        "frontend/src/utils/roomKey.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }

@@ -1,124 +1,73 @@
 {
   "kind": "build_request",
-  "title": "Redesign IAX/DVSwitch settings to match DVSwitch layout with codec selection and phone-to-IAX confirmation",
+  "title": "Promote current preview deployment to live Internet Computer URL (production)",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
-      "target": "frontend",
+      "text": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
+      "target": "unknown",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "I want the IAX field to look like the DV switch IAX field have a host name then pork then username then password then call sign then no number"
+          "Yes proceed"
         ]
       },
       "acceptanceCriteria": [
-        "In the IAX / DVSwitch Configure UI, the primary inputs are shown in this order: Hostname, Port, Username, Password, Callsign, Node Number.",
-        "User-facing labels are in English and use consistent capitalization: \"Hostname\", \"Port\", \"Username\", \"Password\", \"Callsign\", \"Node Number\".",
-        "Existing behaviors still work: saved IAX connection values are loaded into the form on mount, and Save persists the updated values."
+        "Promotion is executed as a deployment-only operation (no application code changes, no configuration changes).",
+        "The production/live frontend canister serves the app successfully at the default IC URL.",
+        "The production/live deployment uses the same build artifacts as the current preview build (Version 55)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
+      "text": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "have phone to IAX connection as a checkbox to confirm that's what they're using"
+          "Yes proceed"
         ]
       },
       "acceptanceCriteria": [
-        "The IAX / DVSwitch Configure UI includes a checkbox labeled \"Phone to IAX connection\".",
-        "When the checkbox is unchecked, the Save action is blocked and the UI shows an English validation message explaining that confirmation is required.",
-        "When the checkbox is checked, Save works normally and the value is persisted with the saved IAX / DVSwitch connection settings."
+        "A promotion record exists for Version 55 under `frontend/docs/promotions/` and includes completed checklist sections for the key flows listed in `frontend/docs/publish-preview-to-production.md`.",
+        "The promotion record contains explicit attestation statements that application code changes = NONE and configuration changes = NONE.",
+        "The promotion record includes an overall status and a recommendation (PROCEED WITH PROMOTION / DO NOT PROMOTE)."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
+      "text": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-4"
         ],
         "quotes": [
-          "put a Codac Types tab for server selection which can be ulaw , slin , adpcm"
+          "Yes proceed"
         ]
       },
       "acceptanceCriteria": [
-        "The IAX / DVSwitch Configure UI includes a codec selector labeled \"Codec Types\" with options \"ulaw\", \"slin\", and \"adpcm\".",
-        "A codec is always selected (use a sensible default if none is saved).",
-        "The selected codec is stored alongside the other IAX / DVSwitch connection settings and is restored when revisiting the Configure UI.",
-        "The Saved IAX / DVSwitch Configuration view shows the selected codec type in a readable way."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "have phone to IAX connection as a checkbox... and put a Codac Types tab..."
-        ]
-      },
-      "acceptanceCriteria": [
-        "The Saved IAX / DVSwitch Configuration card shows \"Phone to IAX connection\" as Yes/No (or Enabled/Disabled) based on the saved setting.",
-        "The Saved IAX / DVSwitch Configuration card shows \"Codec Types\" with the saved value (ulaw/slin/adpcm).",
-        "Passwords remain masked as they are today."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "add a username for the IAX file as well",
-          "have phone to IAX connection as a checkbox",
-          "Codac Types tab... ulaw , slin , adpcm"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The IAX / DVSwitch connection type includes new optional fields for phone-to-IAX confirmation and codec type, and the app continues to load older saved IAX configurations without runtime errors.",
-        "Room key/label derivation and PTT navigation continue to work for IAX / DVSwitch connections after the type change.",
-        "No changes are required from users who already have an IAX / DVSwitch configuration saved; the app selects defaults for newly introduced fields if missing."
+        "A production deployment record for Version 55 exists under `frontend/docs/deployments/` and includes: frontend canister ID, default IC URL, and backend canister ID.",
+        "The documented production URL loads the app and the frontend can reach the backend canister without showing a backend connectivity error under normal conditions."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under frontend/src/components/ui or other frontend immutable paths listed in SYSTEM_CONTEXT.",
-    "Keep backend as a single Motoko actor; only introduce backend changes if strictly necessary for these UI/settings changes.",
-    "Use English for all user-facing text and validation messages."
+    "Follow `frontend/docs/publish-preview-to-production.md` runbook for the promotion process.",
+    "Do not introduce any application code changes during promotion.",
+    "Do not introduce any configuration changes during promotion."
   ],
   "nonGoals": [
-    "Implementing or modifying actual IAX audio transmission/codec negotiation behavior (this request is limited to configuration UI and persisted settings).",
-    "Adding third-party authentication methods beyond Internet Identity.",
-    "Adding real-time networking protocols beyond what the app already uses."
+    "Generate or provide an Android APK build (not supported in this platform flow).",
+    "Add new app features as part of the promotion."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

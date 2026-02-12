@@ -1,50 +1,34 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "PTT Star app: enhance IAX/DVSwitch-style connection settings UI (host/port/username/password/callsign/node) with explicit phone-to-IAX mode and selectable codec types.",
-  "architectural_notes": [
-    "IAX configuration UX should support explicit credential fields (including username) and codec negotiation/selection (ulaw/slin/adpcm)."
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Android APK generation/build pipeline may not be supported on the current platform (may require alternative such as PWA or external build process)."
   ],
-  "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-iax-dvswitch-configuration-form-ui-to-use-a-dvswitch-style-field-order-and-labeling-hostname-port-username-password-callsign-node-number",
-      "title": "Update the IAX / DVSwitch configuration form UI to use a DVSwitch-style field order and labeling: Hostname, Port, Username, Password, Callsign, Node Number.",
+      "id": "feature-promote-the-currently-deployed-preview-build-reported-as-version-55-to-the-live-production-internet-computer-url-following-the-existing-preview-to-production-runbook-without-introducing-any-code-or-configuration-changes",
+      "title": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-phone-to-iax-connection-checkbox-to-the-iax-dvswitch-configuration-and-require-it-to-be-checked-before-allowing-the-user-to-save-the-iax-dvswitch-configuration",
-      "title": "Add a \"Phone to IAX connection\" checkbox to the IAX / DVSwitch configuration and require it to be checked before allowing the user to save the IAX / DVSwitch configuration.",
+      "id": "feature-complete-pre-publish-verification-for-the-preview-build-and-document-the-results-in-a-version-specific-promotion-record-markdown-file-under-frontend-docs-promotions-create-frontend-docs-promotions-version-55-preview-to-production-md-if-it-does-not-exist-including-pass-pass-with-notes-fail-outcomes-notes-issue-classification-and-the-required-attestation-that-no-code-config-changes-were-made",
+      "title": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-codec-types-selection-control-to-the-iax-dvswitch-configuration-presented-as-a-tab-or-clearly-labeled-segmented-option-with-allowed-values-ulaw-slin-adpcm-and-persist-the-selected-codec-with-the-saved-iax-dvswitch-connection",
-      "title": "Add a \"Codec Types\" selection control to the IAX / DVSwitch configuration (presented as a tab or clearly labeled segmented option) with allowed values: ulaw, slin, adpcm, and persist the selected codec with the saved IAX / DVSwitch connection.",
+      "id": "feature-after-promotion-provide-the-new-live-internet-computer-access-details-by-recording-the-production-frontend-canister-url-and-the-backend-canister-id-in-a-deployment-record-under-frontend-docs-deployments-create-a-version-55-production-deployment-record-if-needed-and-ensure-the-live-links-are-discoverable-from-the-documentation",
+      "title": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-extend-the-iax-dvswitch-saved-configuration-display-to-include-the-new-phone-to-iax-connection-state-and-the-selected-codec-type-while-continuing-to-mask-passwords",
-      "title": "Extend the IAX / DVSwitch saved-configuration display to include the new \"Phone to IAX connection\" state and the selected codec type, while continuing to mask passwords.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-connection-settings-storage-types-used-by-the-frontend-so-the-iax-dvswitch-connection-can-persist-a-phone-to-iax-confirmation-and-b-codec-type-without-breaking-existing-saved-sessions",
-      "title": "Update the connection settings storage/types used by the frontend so the IAX / DVSwitch connection can persist (a) phone-to-IAX confirmation and (b) codec type without breaking existing saved sessions.",
-      "reqIds": [
-        "REQ-5"
       ],
       "version": 1
     }
@@ -52,25 +36,18 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Redesign IAX settings form to match DVSwitch layout: hostname, port, username, password, callsign, node number.",
+      "summary": "Promote current deployment to the live IC URL",
       "reqIds": [],
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "id": "AR-2",
-      "summary": "Add 'Phone to IAX connection' checkbox to explicitly indicate/enable phone-to-IAX mode.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Add 'Codec Types' server-selection tab/option with choices: ulaw, slin, adpcm.",
+      "summary": "Provide an Android APK build for download/install (Android app packaging)",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Redesign IAX/DVSwitch settings to match DVSwitch layout with codec selection and phone-to-IAX confirmation",
+  "projectName": "Promote current preview deployment to live Internet Computer URL (production)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
