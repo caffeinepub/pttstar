@@ -4,16 +4,23 @@ This directory contains records of all production deployments for PTTStar.
 
 ## Current Production Deployment
 
-**Version 55** - Deployed February 12, 2026  
-[View Deployment Record](./version-55-production-deployment.md)
+**Version 56** - Deployed February 14, 2026  
+[View Deployment Record](./version-56-production-deployment.md)
 
 ---
 
 ## Deployment History
 
+### Version 56 - February 14, 2026
+- **Type**: Preview to Production Promotion
+- **Status**: READY FOR DEPLOYMENT
+- **Deployment Record**: [version-56-production-deployment.md](./version-56-production-deployment.md)
+- **Promotion Record**: [../promotions/version-56-preview-to-production.md](../promotions/version-56-preview-to-production.md)
+- **Key Features**: Enhanced authorization error handling, improved error recovery UI, robust session management
+
 ### Version 55 - February 12, 2026
 - **Type**: Preview to Production Promotion
-- **Status**: LIVE
+- **Status**: SUPERSEDED
 - **Deployment Record**: [version-55-production-deployment.md](./version-55-production-deployment.md)
 - **Promotion Record**: [../promotions/version-55-preview-to-production.md](../promotions/version-55-preview-to-production.md)
 - **Key Features**: Enhanced BrandMeister detection, TGIF DMR support, AllStar preset, improved error handling
@@ -65,6 +72,7 @@ All production deployments follow the standardized process documented in:
 - Error rates and uptime
 - User authentication success rates
 - WebRTC connection success rates
+- Profile loading success rates
 
 ### Issue Reporting
 Issues should be documented in the relevant deployment record and tracked for resolution.

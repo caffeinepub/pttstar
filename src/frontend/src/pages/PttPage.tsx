@@ -9,6 +9,8 @@ import PttControl from '../components/PttControl';
 import AudioLevelMeter from '../components/AudioLevelMeter';
 import NowHearingList from '../components/NowHearingList';
 import RealTimeStatusBadge from '../components/RealTimeStatusBadge';
+import PttClipRecorderPanel from '../components/PttClipRecorderPanel';
+import ReceivedClipsPanel from '../components/ReceivedClipsPanel';
 import { useWebRtcPtt } from '../hooks/useWebRtcPtt';
 import { useAudioLevelMeter } from '../hooks/useAudioLevelMeter';
 import { useGetNowHearing } from '../hooks/useNowHearing';
@@ -201,6 +203,12 @@ export default function PttPage() {
             />
           </CardContent>
         </Card>
+
+        {/* Non-real-time Clip Recorder */}
+        <PttClipRecorderPanel />
+
+        {/* Received Clips */}
+        <ReceivedClipsPanel />
 
         {/* Activity Feed */}
         <Card className="console-panel">

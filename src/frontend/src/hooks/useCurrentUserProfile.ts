@@ -23,7 +23,16 @@ export function useGetCallerUserProfile() {
       }
     },
     enabled: !!actor && !actorFetching && !actorError,
-    retry: 2,
+    retry: (failureCount, error) => {
+      // Don't retry on Unauthorized errors - they won't resolve with retries
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Unauthorized:')) {
+        console.log('useGetCallerUserProfile: Unauthorized error detected, skipping retries');
+        return false;
+      }
+      // Retry other errors up to 2 times
+      return failureCount < 2;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 

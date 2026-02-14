@@ -1,62 +1,58 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T22:56:54.085Z",
-  "summary": "The diff adds Version 55 promotion/deployment documentation indexes and records, but also includes application code changes (backend and multiple frontend files) and leaves production canister IDs/URLs as placeholders, which conflicts with the deployment-only/no-changes constraint and prevents meeting the documented access-details acceptance criteria.",
+  "generatedAt": "2026-02-14T04:20:35.250Z",
+  "summary": "Diff implements new frontend Unauthorized/authorization error utilities and UI recovery actions, and adds production promotion/deployment documentation for version 56. However, the diff also includes numerous unrelated frontend feature/UI expansions (Connect/Landing/PTT/Settings/About/Directory) that are not requested and may conflict with the stated non-goals. Evidence for the backend-side root cause fix (ensuring authenticated II users are granted/recognized as #user so user-only methods like saveCallerUserProfile stop trapping) is not clearly present in the provided truncated backend diff.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Promote the currently deployed preview build (Version 55) to production following the runbook, as a deployment-only operation with no application code or configuration changes, using the same build artifacts as preview.",
-      "reason": "The diff shows application code changes (backend and referenced frontend changes), which violates the constraint/AC that the promotion must not introduce any code or configuration changes; the diff also does not provide evidence of using identical preview artifacts beyond documentation assertions.",
-      "evidence": [
-        "backend/main.mo",
-        "frontend-file-summaries.txt",
-        "frontend/docs/promotions/version-55-preview-to-production.md",
-        "frontend/docs/deployments/version-55-production-deployment.md"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Record the production frontend canister URL and backend canister ID for Version 55 in a deployment record and ensure the live links are discoverable from documentation.",
-      "reason": "The Version 55 production deployment record contains placeholders instead of actual frontend canister ID, default IC URL, and backend canister ID, so the required access details are not actually provided.",
-      "evidence": [
-        "frontend/docs/deployments/version-55-production-deployment.md",
-        "frontend/docs/deployments/README.md"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Implemented/modified backend application logic during what should be a deployment-only promotion.",
-      "reason": "BuildRequest explicitly prohibits application code changes during promotion; however the diff includes modifications to backend code.",
+      "requirement": "Fix the backend authorization flow so authenticated users do not hit \"Unauthorized: Only users can view profiles\" after Internet Identity login (including first-time profile setup/save and existing user flows) without a security regression.",
+      "reason": "While getCallerUserProfile no longer traps (it simply returns the caller’s profile if present), saveCallerUserProfile still enforces `hasPermission(..., #user)` and would still trap unless the authorization flow assigns/recognizes authenticated callers as `#user`. The diff summary does not show any change that grants `#user` permission on login/first authenticated call or otherwise resolves the underlying permission issue for user-only actions beyond removing the trap on profile read.",
       "evidence": [
         "backend/main.mo"
       ]
     },
     {
-      "description": "Implemented/modified multiple frontend application features (auth provider changes, UI/flow changes, presets, directory sources, etc.) during what should be a deployment-only promotion.",
-      "reason": "BuildRequest explicitly prohibits application code changes and adding new app features as part of the promotion; the diff summary enumerates many frontend feature/code changes.",
+      "id": "REQ-2",
+      "requirement": "Clear Session clears client session storage and React Query cache, then returns the user to a state where they can log in again.",
+      "reason": "UI components now expose an `onClearSession` action and copy that instructs users to clear session, and `useCurrentUserProfile` avoids retries on Unauthorized. However, the diff summary does not include the implementation of the Clear Session action itself (e.g., clearing sessionStorage/localStorage and React Query cache). References to `clearClientSession` appear only in the generated summary file, not in actual code changes shown.",
       "evidence": [
+        "frontend/src/components/AuthenticatedFlowFallback.tsx",
+        "frontend/src/components/PostLoginInterstitial.tsx",
+        "frontend/src/hooks/useCurrentUserProfile.ts",
         "frontend-file-summaries.txt"
-      ]
-    },
-    {
-      "description": "Documentation asserts and lists “Key Features” for Version 55 (e.g., Enhanced BrandMeister detection, TGIF DMR support, AllStar preset, improved error handling), implying feature work as part of the promotion.",
-      "reason": "Adding new app features is a stated non-goal for the promotion; including feature-forward changes/documentation as part of the promotion is not requested and conflicts with the intended deployment-only scope.",
-      "evidence": [
-        "frontend/docs/deployments/README.md",
-        "frontend/docs/promotions/README.md"
       ]
     }
   ],
-  "confidence": 0.78,
+  "hallucinated_features": [
+    {
+      "description": "Large set of new/expanded product features and content across Landing/Connect/PTT/Directory/Settings/About pages (e.g., Quick Setup presets, BrandMeister onboarding content, received clips panel, directory enhancements, audio clip HTTP configuration, extensive getting-started guide, new attribution sections).",
+      "reason": "BuildRequest scope is limited to fixing Unauthorized profile access, adding recovery UI for Unauthorized traps, and documenting preview-to-production promotion/deployment. Non-goals explicitly disallow adding new PTT/Received Clips features beyond what is required to unblock publishing. The diff summary indicates broad feature/UI work unrelated to the requested auth fixes and publishing documentation.",
+      "evidence": [
+        "frontend-file-summaries.txt",
+        "project_state.json"
+      ]
+    },
+    {
+      "description": "Backend change that makes `getCallerUserProfile` return a profile (or null) without any authorization guard, potentially altering security posture for unauthenticated/guest callers.",
+      "reason": "REQ-1 asks to fix authorization flow for authenticated users and avoid Unauthorized traps, while maintaining existing access controls for other users’ profiles. Removing authorization checks entirely from a caller-profile endpoint may be an unrequested behavior change (even if it still only returns the caller’s own data).",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
     "frontend/docs/deployments/README.md",
-    "frontend/docs/deployments/version-55-production-deployment.md",
+    "frontend/docs/deployments/version-56-production-deployment.md",
     "frontend/docs/promotions/README.md",
-    "frontend/docs/promotions/version-55-preview-to-production.md",
+    "frontend/docs/promotions/version-56-preview-to-production.md",
+    "frontend/src/components/AuthenticatedFlowFallback.tsx",
+    "frontend/src/components/PostLoginInterstitial.tsx",
+    "frontend/src/hooks/useCurrentUserProfile.ts",
+    "frontend/src/utils/authErrors.ts",
     "project_state.json"
   ]
 }

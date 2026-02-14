@@ -21,6 +21,7 @@ import { loadConnection } from './hooks/usePreferredConnection';
 import { captureGatewayParameters } from './utils/gatewayUrlBootstrap';
 import { useActorWithError } from './hooks/useActorWithError';
 import { RegeneratedAuthProvider } from './auth/iiAuthProvider';
+import { clearClientSession } from './utils/clearClientSession';
 
 function PostLoginRedirector() {
   const navigate = useNavigate();
@@ -90,6 +91,7 @@ function RootLayout() {
 
   const handleClearSession = async () => {
     console.log('RootLayout: Clearing session from error fallback');
+    clearClientSession();
     await clear();
     queryClient.clear();
   };
@@ -227,6 +229,7 @@ function AppContent() {
       // If remember login is OFF and user is authenticated, clear the session
       if (!rememberLogin) {
         console.log('App: Remember login is OFF, clearing session');
+        clearClientSession();
         clear();
         queryClient.clear();
       }
@@ -235,6 +238,7 @@ function AppContent() {
 
   const handleClearSession = async () => {
     console.log('App: Clearing session from error boundary');
+    clearClientSession();
     await clear();
     queryClient.clear();
   };

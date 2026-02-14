@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldAlert, AlertCircle } from 'lucide-react';
 import AuthenticatedFlowFallback from './AuthenticatedFlowFallback';
 import { useQueryClient } from '@tanstack/react-query';
+import { clearClientSession } from '../utils/clearClientSession';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   const { identity, login, loginStatus, clear, isLoginError, error } = useRegeneratedAuth();
@@ -15,6 +16,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   const handleClearSession = async () => {
     console.log('AuthGate: Clearing session and cache');
+    clearClientSession();
     await clear();
     queryClient.clear();
   };

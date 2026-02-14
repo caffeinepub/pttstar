@@ -1,11 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Promote the existing preview deployment (Version 55) to the live/production Internet Computer URL as a deployment-only operation, and document verification and production access details.
+**Goal:** Unblock production publishing by fixing the post–Internet Identity login authorization issue for user profiles, improving frontend recovery from Unauthorized errors, and promoting the verified preview build to production with required documentation.
 
 **Planned changes:**
-- Execute the preview-to-production promotion for Version 55 by following `frontend/docs/publish-preview-to-production.md`, using the same build artifacts as the current preview deployment.
-- Perform pre-publish verification for the preview build and record results in `frontend/docs/promotions/version-55-preview-to-production.md`, including checklist outcomes, notes, issue classification, overall status, recommendation, and explicit attestations of no code/config changes.
-- After promotion, create/update a Version 55 production deployment record under `frontend/docs/deployments/` with the production frontend canister ID, default IC URL, and backend canister ID, and ensure the live links are discoverable in documentation.
+- Fix backend authorization/identity handling so authenticated users can call `getCallerUserProfile` and complete first-time profile setup / `saveCallerUserProfile` without hitting `Unauthorized: Only users can view profiles`, while preserving existing restrictions on viewing other users’ profiles.
+- Update the frontend authenticated/profile-load flow to handle backend Unauthorized errors with a clear error state and recovery actions (at minimum: Retry and Clear Session), avoiding getting stuck on “Connecting to backend”.
+- Publish the verified preview build to production using the existing runbook, including completing the verification checklist and adding/updating the required promotion and deployment markdown records under `frontend/docs/promotions` and `frontend/docs/deployments`.
 
-**User-visible outcome:** The app is available and functioning at the live Internet Computer (production) URL, with documentation listing the production access URL and canister IDs for Version 55.
+**User-visible outcome:** After logging in with Internet Identity, users can reliably load or set up their profile and continue user-only features without Unauthorized errors; if an Unauthorized error occurs, the app shows actionable recovery options instead of remaining stuck; production is updated and documented per the runbook.

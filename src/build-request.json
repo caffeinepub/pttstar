@@ -1,73 +1,88 @@
 {
   "kind": "build_request",
-  "title": "Promote current preview deployment to live Internet Computer URL (production)",
+  "title": "Publish app to production and resolve Unauthorized profile access error",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
-      "target": "unknown",
+      "text": "Fix the backend authorization flow so authenticated users do not hit \"Unauthorized: Only users can view profiles\" when the frontend calls getCallerUserProfile (and related profile actions) after Internet Identity login.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-connection-error",
+          "recent-publish-app"
         ],
         "quotes": [
-          "Yes proceed"
+          "Error details: Unauthorized: Only users can view profiles",
+          "publish app"
         ]
       },
       "acceptanceCriteria": [
-        "Promotion is executed as a deployment-only operation (no application code changes, no configuration changes).",
-        "The production/live frontend canister serves the app successfully at the default IC URL.",
-        "The production/live deployment uses the same build artifacts as the current preview build (Version 55)."
+        "After a successful Internet Identity login, calling getCallerUserProfile does not trap with \"Unauthorized: Only users can view profiles\".",
+        "First-time users can proceed to profile setup and then successfully save a profile via saveCallerUserProfile without an Unauthorized trap.",
+        "Existing users can load their profile and use user-only flows (e.g., favorites, updateNowHearing, signaling) without Unauthorized traps caused by missing user permission.",
+        "No new security regression: users still cannot read other users' profiles unless allowed by existing admin rules in getUserProfile."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
+      "text": "Update frontend authenticated flow error handling so that when a backend Unauthorized trap occurs during profile load, the UI provides a clear recovery path (retry, re-login, and/or clear session) and does not remain stuck on \"Connecting to backend\".",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-connection-error"
         ],
         "quotes": [
-          "Yes proceed"
+          "Connection Error\nUnable to connect to backend services\nError details: Unauthorized: Only users can view profiles"
         ]
       },
       "acceptanceCriteria": [
-        "A promotion record exists for Version 55 under `frontend/docs/promotions/` and includes completed checklist sections for the key flows listed in `frontend/docs/publish-preview-to-production.md`.",
-        "The promotion record contains explicit attestation statements that application code changes = NONE and configuration changes = NONE.",
-        "The promotion record includes an overall status and a recommendation (PROCEED WITH PROMOTION / DO NOT PROMOTE)."
+        "If the backend returns an Unauthorized trap during current user profile fetch, the app shows an error state with actionable options (Retry and Clear Session at minimum).",
+        "Retry re-attempts the failed query; Clear Session clears client session storage and React Query cache, then returns the user to a state where they can log in again.",
+        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
-      "target": "frontend",
+      "text": "Publish the current verified preview build to production using the existing runbook process in frontend/docs/publish-preview-to-production.md, including completing and documenting the required verification checklist and creating/updating the appropriate promotion/deployment record markdown files under frontend/docs/promotions and frontend/docs/deployments for the new production version.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-publish-app"
         ],
         "quotes": [
-          "Yes proceed"
+          "publish app"
         ]
       },
       "acceptanceCriteria": [
-        "A production deployment record for Version 55 exists under `frontend/docs/deployments/` and includes: frontend canister ID, default IC URL, and backend canister ID.",
-        "The documented production URL loads the app and the frontend can reach the backend canister without showing a backend connectivity error under normal conditions."
+        "A new (or updated) version-specific promotion record exists under frontend/docs/promotions/ documenting the full pre-publish verification checklist with PASS / PASS WITH NOTES / FAIL entries, issue classification, and an explicit attestation of no code/config changes during the promotion step.",
+        "A corresponding production deployment record exists under frontend/docs/deployments/ for the new production version, with the required access/verification notes consistent with prior deployment records.",
+        "Production deployment is reachable by the frontend without \"Unable to connect to backend services\" errors under normal conditions.",
+        "Post-publish, the Authentication & Authorization checklist item \"User profile loads correctly after login\" passes in production."
       ]
     }
   ],
   "constraints": [
-    "Follow `frontend/docs/publish-preview-to-production.md` runbook for the promotion process.",
-    "Do not introduce any application code changes during promotion.",
-    "Do not introduce any configuration changes during promotion."
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo if an upgrade requires state migration.",
+    "Do not edit files under frontend immutablePaths (e.g., frontend/src/hooks/useInternetIdentity.ts(x), frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and frontend/src/components/ui).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Generate or provide an Android APK build (not supported in this platform flow).",
-    "Add new app features as part of the promotion."
+    "Adding new PTT/Received Clips features beyond what is required to unblock publishing.",
+    "Integrating third-party auth providers (only Internet Identity is supported)."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

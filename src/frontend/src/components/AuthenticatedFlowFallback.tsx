@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { isAuthorizationError, getAuthErrorMessage } from '@/utils/authErrors';
 
 interface AuthenticatedFlowFallbackProps {
   error: Error;
@@ -15,10 +16,21 @@ export default function AuthenticatedFlowFallback({
   onRetry,
   onClearSession,
 }: AuthenticatedFlowFallbackProps) {
-  const contextMessage =
-    context === 'sign-in'
-      ? 'Unable to complete sign-in'
-      : 'Unable to connect to backend services';
+  const isAuthError = isAuthorizationError(error);
+  
+  const contextMessage = isAuthError
+    ? 'Authorization required'
+    : context === 'sign-in'
+    ? 'Unable to complete sign-in'
+    : 'Unable to connect to backend services';
+
+  const errorDetails = isAuthError
+    ? getAuthErrorMessage(error)
+    : error.message;
+
+  const helpText = isAuthError
+    ? 'Your session may have expired or you may not have the required permissions. Try clearing your session and signing in again.'
+    : 'There was a problem connecting to the backend. This could be a temporary network issue or a problem with your session.';
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-12rem)] items-center justify-center px-4">
@@ -31,9 +43,12 @@ export default function AuthenticatedFlowFallback({
           <CardDescription>{contextMessage}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-muted p-4">
+          <div className="rounded-lg bg-muted p-4 space-y-2">
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold">Error details:</span> {error.message}
+              <span className="font-semibold">Error details:</span> {errorDetails}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {helpText}
             </p>
           </div>
           <div className="flex gap-2">

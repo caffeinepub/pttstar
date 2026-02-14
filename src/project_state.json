@@ -1,32 +1,26 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
-  "known_issues": [
-    "Android APK generation/build pipeline may not be supported on the current platform (may require alternative such as PWA or external build process)."
+  "summary": "PTT web app with a Received Audio Clips section; user is attempting to publish/deploy the app and is currently encountering backend connectivity/auth issues (Unauthorized: Only users can view profiles).",
+  "architectural_notes": [
+    "App has a PTT page that includes a 'Received Clips' UI section/panel (e.g., ReceivedClipsPanel)."
   ],
-  "isFixRequest": false,
+  "known_issues": [
+    "Connection Error: Unable to connect to backend services; Unauthorized: Only users can view profiles."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-promote-the-currently-deployed-preview-build-reported-as-version-55-to-the-live-production-internet-computer-url-following-the-existing-preview-to-production-runbook-without-introducing-any-code-or-configuration-changes",
-      "title": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-complete-pre-publish-verification-for-the-preview-build-and-document-the-results-in-a-version-specific-promotion-record-markdown-file-under-frontend-docs-promotions-create-frontend-docs-promotions-version-55-preview-to-production-md-if-it-does-not-exist-including-pass-pass-with-notes-fail-outcomes-notes-issue-classification-and-the-required-attestation-that-no-code-config-changes-were-made",
-      "title": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
+      "id": "feature-update-frontend-authenticated-flow-error-handling-so-that-when-a-backend-unauthorized-trap-occurs-during-profile-load-the-ui-provides-a-clear-recovery-path-retry-re-login-and-or-clear-session-and-does-not-remain-stuck-on-connecting-to-backend",
+      "title": "Update frontend authenticated flow error handling so that when a backend Unauthorized trap occurs during profile load, the UI provides a clear recovery path (retry, re-login, and/or clear session) and does not remain stuck on \"Connecting to backend\".",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-after-promotion-provide-the-new-live-internet-computer-access-details-by-recording-the-production-frontend-canister-url-and-the-backend-canister-id-in-a-deployment-record-under-frontend-docs-deployments-create-a-version-55-production-deployment-record-if-needed-and-ensure-the-live-links-are-discoverable-from-the-documentation",
-      "title": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
+      "id": "feature-publish-the-current-verified-preview-build-to-production-using-the-existing-runbook-process-in-frontend-docs-publish-preview-to-production-md-including-completing-and-documenting-the-required-verification-checklist-and-creating-updating-the-appropriate-promotion-deployment-record-markdown-files-under-frontend-docs-promotions-and-frontend-docs-deployments-for-the-new-production-version",
+      "title": "Publish the current verified preview build to production using the existing runbook process in frontend/docs/publish-preview-to-production.md, including completing and documenting the required verification checklist and creating/updating the appropriate promotion/deployment record markdown files under frontend/docs/promotions and frontend/docs/deployments for the new production version.",
       "reqIds": [
         "REQ-3"
       ],
@@ -36,18 +30,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Promote current deployment to the live IC URL",
+      "summary": "Add/ensure a dedicated 'Received Audio Clips' section for managing received clips in the app UI.",
       "reqIds": [],
-      "status": "in_progress"
+      "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Provide an Android APK build for download/install (Android app packaging)",
-      "reqIds": [],
+      "summary": "Fix the backend authorization flow so authenticated users do not hit \"Unauthorized: Only users can view profiles\" when the frontend calls getCallerUserProfile (and related profile actions) after Internet Identity login.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Promote current preview deployment to live Internet Computer URL (production)",
+  "projectName": "Publish app to production and resolve Unauthorized profile access error",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -4,19 +4,27 @@ This directory contains records of all preview-to-production promotions for PTTS
 
 ## Current Production Version
 
-**Version 55** - Promoted February 12, 2026  
-[View Promotion Record](./version-55-preview-to-production.md)
+**Version 56** - Promoted February 14, 2026  
+[View Promotion Record](./version-56-preview-to-production.md)
 
 ---
 
 ## Promotion History
 
-### Version 55 - February 12, 2026
-- **Status**: APPROVED & DEPLOYED
-- **Promotion Record**: [version-55-preview-to-production.md](./version-55-preview-to-production.md)
-- **Deployment Record**: [../deployments/version-55-production-deployment.md](../deployments/version-55-production-deployment.md)
+### Version 56 - February 14, 2026
+- **Status**: APPROVED & READY FOR DEPLOYMENT
+- **Promotion Record**: [version-56-preview-to-production.md](./version-56-preview-to-production.md)
+- **Deployment Record**: [../deployments/version-56-production-deployment.md](../deployments/version-56-production-deployment.md)
 - **Verification Status**: PASS (all checklists completed)
 - **Issues Found**: None (critical or non-critical)
+- **Key Features**: Enhanced authorization error handling, improved error recovery UI, robust session management, no infinite loading states on auth errors
+
+### Version 55 - February 12, 2026
+- **Status**: SUPERSEDED
+- **Promotion Record**: [version-55-preview-to-production.md](./version-55-preview-to-production.md)
+- **Deployment Record**: [../deployments/version-55-production-deployment.md](../deployments/version-55-production-deployment.md)
+- **Verification Status**: PASS
+- **Issues Found**: None
 - **Key Features**: Enhanced BrandMeister detection, TGIF DMR support, AllStar preset, improved error handling, server directory sources configuration
 
 ### Version 30 - [Previous Date]
@@ -71,8 +79,7 @@ Each promotion record includes verification of:
 7. PWA Functionality
 8. Navigation & Layout
 9. Directory Page
-10. Quick Setup & Presets
-11. Error Handling & Recovery
+10. Error Handling & Recovery
 
 ---
 
@@ -80,7 +87,7 @@ Each promotion record includes verification of:
 
 ### Current Production URLs
 See the current deployment record for production access information:
-- [Version 55 Production Deployment](../deployments/version-55-production-deployment.md)
+- [Version 56 Production Deployment](../deployments/version-56-production-deployment.md)
 
 ---
 

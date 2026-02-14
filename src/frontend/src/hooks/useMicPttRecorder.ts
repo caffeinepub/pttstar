@@ -2,9 +2,11 @@ import { useState, useRef, useCallback } from 'react';
 
 export type MicError = 'permission-denied' | 'not-found' | 'unknown';
 
-export function useMicPttRecorder(onRecordingComplete?: (blobUrl: string) => void) {
+export function useMicPttRecorder(onRecordingComplete?: (blobUrl: string, blob: Blob) => void) {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<MicError | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordedBlobUrl, setRecordedBlobUrl] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -28,8 +30,11 @@ export function useMicPttRecorder(onRecordingComplete?: (blobUrl: string) => voi
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(blob);
+        setRecordedBlob(blob);
+        setRecordedBlobUrl(url);
+        
         if (onRecordingComplete) {
-          onRecordingComplete(url);
+          onRecordingComplete(url, blob);
         }
         
         // Clean up stream
@@ -60,10 +65,21 @@ export function useMicPttRecorder(onRecordingComplete?: (blobUrl: string) => voi
     }
   }, [isRecording]);
 
+  const resetRecording = useCallback(() => {
+    if (recordedBlobUrl) {
+      URL.revokeObjectURL(recordedBlobUrl);
+    }
+    setRecordedBlob(null);
+    setRecordedBlobUrl(null);
+  }, [recordedBlobUrl]);
+
   return {
     startRecording,
     stopRecording,
+    resetRecording,
     isRecording,
     error,
+    recordedBlob,
+    recordedBlobUrl,
   };
 }

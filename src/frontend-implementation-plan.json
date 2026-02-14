@@ -1,67 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Version 55 preview-to-production promotion documentation and records (no code/config changes)",
+  "title": "Production publish documentation + frontend recovery for Unauthorized profile load traps",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Document and attest that Version 55 preview build was promoted to production as a deployment-only operation with no code/config changes.",
+      "id": "REQ-2",
+      "summary": "Add robust frontend recovery UI when profile load fails with Unauthorized so the app never remains stuck on “Connecting to backend”.",
       "acceptanceCriteria": [
-        "Promotion is executed as a deployment-only operation (no application code changes, no configuration changes).",
-        "The production/live frontend canister serves the app successfully at the default IC URL.",
-        "The production/live deployment uses the same build artifacts as the current preview build (Version 55)."
+        "If the backend returns an Unauthorized trap during current user profile fetch, the app shows an error state with actionable options (Retry and Clear Session at minimum).",
+        "Retry re-attempts the failed query; Clear Session clears client session storage and React Query cache, then returns the user to a state where they can log in again.",
+        "No changes are made to immutable frontend paths listed in SYSTEM_CONTEXT."
       ],
       "file_operations": [
         {
-          "path": "frontend/docs/promotions/version-55-preview-to-production.md",
+          "path": "frontend/src/utils/authErrors.ts",
           "operation": "create",
-          "description": "Create the Version 55 preview-to-production promotion record (or update if it already exists) and include an explicit \"Promotion Execution\" section capturing that promotion used the existing Version 55 preview artifacts and introduced NO application code/config changes."
+          "description": "Add small shared helpers to identify authorization-related backend trap messages (e.g., matching “Unauthorized: …”) so UI can present tailored recovery messaging. Use guidance from the selected “authorization” component for handling authorization errors gracefully; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/docs/publish-preview-to-production.md",
+          "path": "frontend/src/hooks/useCurrentUserProfile.ts",
           "operation": "modify",
-          "description": "Add/confirm documentation guidance that the promotion step is deployment-only and must not introduce any application code or configuration changes, and that Version 55 promotion execution details must be recorded in the version-specific promotion record."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Complete and record the Version 55 pre-publish verification checklist and outcomes in a promotion record markdown file.",
-      "acceptanceCriteria": [
-        "A promotion record exists for Version 55 under `frontend/docs/promotions/` and includes completed checklist sections for the key flows listed in `frontend/docs/publish-preview-to-production.md`.",
-        "The promotion record contains explicit attestation statements that application code changes = NONE and configuration changes = NONE.",
-        "The promotion record includes an overall status and a recommendation (PROCEED WITH PROMOTION / DO NOT PROMOTE)."
-      ],
-      "file_operations": [
+          "description": "Adjust current-user profile fetch behavior to surface Unauthorized traps promptly and predictably (e.g., avoid repeated retries on Unauthorized), ensuring the error state is reachable and not masked by loading/retry loops. Use the selected “authorization” component guidance for profile setup/loading patterns and auth cache clearing expectations; verify the component's usage instructions before implementing."
+        },
         {
-          "path": "frontend/docs/promotions/version-55-preview-to-production.md",
-          "operation": "create",
-          "description": "Create `frontend/docs/promotions/version-55-preview-to-production.md` based on the existing promotion record templates, including: PASS/PASS WITH NOTES/FAIL outcomes per checklist section in `frontend/docs/publish-preview-to-production.md`, issue classification (critical/non-critical), overall status, recommendation, and explicit attestations: application code changes = NONE; configuration changes = NONE."
+          "path": "frontend/src/components/AuthenticatedFlowFallback.tsx",
+          "operation": "modify",
+          "description": "Enhance the authenticated-flow fallback card to present clearer, authorization-specific recovery text when the error is Unauthorized, while retaining actionable controls (Retry + Clear Session). Use the selected “authorization” component guidance for AccessDenied / unauthorized UX; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update RootLayout authenticated initialization handling so profile-load Unauthorized errors reliably switch from the interstitial/“Connecting” state to the fallback error UI (with Retry and Clear Session wired), and Retry re-attempts actor + profile queries. Use the selected “authorization” component guidance for logout/cache clearing and post-login profile fetch flow; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/PostLoginInterstitial.tsx",
+          "operation": "modify",
+          "description": "Refine the interstitial timeout copy and behavior to explicitly guide users to Retry/Clear Session when post-login profile load is taking too long, reducing the likelihood of the UI appearing stuck. Use the selected “authorization” component guidance for login/logout cache clearing expectations; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/clearClientSession.ts",
+          "operation": "modify",
+          "description": "Confirm Clear Session fully resets client state required for recovery: localStorage auth keys, sessionStorage, and any other app-scoped persisted state used in authenticated flows, aligning with the app’s React Query cache clear behavior. Use the selected “authorization” component guidance for clearing cached application data on logout; verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Record and surface the Version 55 production access details (frontend canister URL and backend canister ID) in deployment documentation.",
+      "summary": "Document promotion of the verified preview build to production using the existing runbook, including new/updated promotion and deployment records for the new production version.",
       "acceptanceCriteria": [
-        "A production deployment record for Version 55 exists under `frontend/docs/deployments/` and includes: frontend canister ID, default IC URL, and backend canister ID.",
-        "The documented production URL loads the app and the frontend can reach the backend canister without showing a backend connectivity error under normal conditions."
+        "A new (or updated) version-specific promotion record exists under frontend/docs/promotions/ documenting the full pre-publish verification checklist with PASS / PASS WITH NOTES / FAIL entries, issue classification, and an explicit attestation of no code/config changes during the promotion step.",
+        "A corresponding production deployment record exists under frontend/docs/deployments/ for the new production version, with the required access/verification notes consistent with prior deployment records.",
+        "Production deployment is reachable by the frontend without \"Unable to connect to backend services\" errors under normal conditions.",
+        "Post-publish, the Authentication & Authorization checklist item \"User profile loads correctly after login\" passes in production."
       ],
       "file_operations": [
         {
-          "path": "frontend/docs/deployments/version-55-production-deployment.md",
+          "path": "frontend/docs/promotions/version-56-preview-to-production.md",
           "operation": "create",
-          "description": "Create a Version 55 production deployment record under `frontend/docs/deployments/` including frontend canister ID, default IC URL, backend canister ID, and post-deployment verification results confirming the app loads and backend connectivity is healthy under normal conditions."
+          "description": "Create the version-specific promotion record for the new production version (Version 56) by following frontend/docs/publish-preview-to-production.md, completing every checklist section with PASS / PASS WITH NOTES / FAIL, issue classification, and explicit attestation of no code/config changes during promotion."
         },
         {
-          "path": "frontend/docs/deployments/README.md",
+          "path": "frontend/docs/deployments/version-56-production-deployment.md",
           "operation": "create",
-          "description": "Create an index file that links to the Version 55 production deployment record (and other existing deployment records) so the live links are easily discoverable from documentation."
+          "description": "Create the corresponding production deployment record for Version 56 consistent with prior deployment records, including production access/verification notes and post-deploy checks (including “User profile loads correctly after login”)."
         },
         {
           "path": "frontend/docs/promotions/README.md",
-          "operation": "create",
-          "description": "Create an index file that links to the Version 55 promotion record (and other existing promotion records) so promotion and live access documentation are discoverable."
+          "operation": "modify",
+          "description": "Update the promotions index to reflect Version 56 as the current production version and add the new promotion/deployment links in the history."
+        },
+        {
+          "path": "frontend/docs/deployments/README.md",
+          "operation": "modify",
+          "description": "Update the deployments index to reflect Version 56 as the current production deployment and link to the new Version 56 deployment record (and associated promotion record)."
         }
       ]
     }

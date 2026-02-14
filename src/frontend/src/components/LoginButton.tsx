@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LogIn, LogOut, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
+import { clearClientSession } from '../utils/clearClientSession';
 
 export default function LoginButton() {
   const { login, clear, loginStatus, identity, isLoginError, error } = useRegeneratedAuth();
@@ -15,6 +16,7 @@ export default function LoginButton() {
 
   const handleClearSession = async () => {
     console.log('LoginButton: Clearing session and cache');
+    clearClientSession();
     await clear();
     queryClient.clear();
     setShowError(false);
@@ -31,6 +33,7 @@ export default function LoginButton() {
 
   const handleAuth = async () => {
     if (isAuthenticated) {
+      clearClientSession();
       await clear();
       queryClient.clear();
       setShowError(false);

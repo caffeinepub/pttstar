@@ -1,51 +1,56 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T22:56:54.089Z",
+  "generatedAt": "2026-02-14T04:20:35.254Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 3,
-    "implemented": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Promote the currently deployed preview build (reported as Version 55) to the live/production Internet Computer URL following the existing preview-to-production runbook, without introducing any code or configuration changes.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/docs/promotions/version-55-preview-to-production.md",
-          "frontend/docs/publish-preview-to-production.md"
-        ],
-        "matchedFiles": [
-          "frontend/docs/promotions/version-55-preview-to-production.md"
-        ]
+        "summary": "Fix the backend authorization flow so authenticated users do not hit \"Unauthorized: Only users can view profiles\" when the frontend calls getCallerUserProfile (and related profile actions) after Internet Identity login.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Complete pre-publish verification for the preview build and document the results in a version-specific promotion record markdown file under `frontend/docs/promotions/` (create `frontend/docs/promotions/version-55-preview-to-production.md` if it does not exist), including PASS/PASS WITH NOTES/FAIL outcomes, notes, issue classification, and the required attestation that no code/config changes were made.",
+        "summary": "Update frontend authenticated flow error handling so that when a backend Unauthorized trap occurs during profile load, the UI provides a clear recovery path (retry, re-login, and/or clear session) and does not remain stuck on \"Connecting to backend\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/docs/promotions/version-55-preview-to-production.md"
+          "frontend/src/utils/authErrors.ts",
+          "frontend/src/hooks/useCurrentUserProfile.ts",
+          "frontend/src/components/AuthenticatedFlowFallback.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/components/PostLoginInterstitial.tsx",
+          "frontend/src/utils/clearClientSession.ts"
         ],
         "matchedFiles": [
-          "frontend/docs/promotions/version-55-preview-to-production.md"
+          "frontend/src/utils/authErrors.ts",
+          "frontend/src/hooks/useCurrentUserProfile.ts",
+          "frontend/src/components/AuthenticatedFlowFallback.tsx",
+          "frontend/src/components/PostLoginInterstitial.tsx"
         ]
       },
       {
         "id": "REQ-3",
-        "summary": "After promotion, provide the new live Internet Computer access details by recording the production frontend canister URL and the backend canister ID in a deployment record under `frontend/docs/deployments/` (create a Version 55 production deployment record if needed) and ensure the live links are discoverable from the documentation.",
+        "summary": "Publish the current verified preview build to production using the existing runbook process in frontend/docs/publish-preview-to-production.md, including completing and documenting the required verification checklist and creating/updating the appropriate promotion/deployment record markdown files under frontend/docs/promotions and frontend/docs/deployments for the new production version.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/docs/deployments/version-55-production-deployment.md",
-          "frontend/docs/deployments/README.md",
-          "frontend/docs/promotions/README.md"
+          "frontend/docs/promotions/version-56-preview-to-production.md",
+          "frontend/docs/deployments/version-56-production-deployment.md",
+          "frontend/docs/promotions/README.md",
+          "frontend/docs/deployments/README.md"
         ],
         "matchedFiles": [
-          "frontend/docs/deployments/version-55-production-deployment.md",
-          "frontend/docs/deployments/README.md",
-          "frontend/docs/promotions/README.md"
+          "frontend/docs/promotions/version-56-preview-to-production.md",
+          "frontend/docs/deployments/version-56-production-deployment.md",
+          "frontend/docs/promotions/README.md",
+          "frontend/docs/deployments/README.md"
         ]
       }
     ]
@@ -57,9 +62,13 @@
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/docs/deployments/README.md",
-    "frontend/docs/deployments/version-55-production-deployment.md",
+    "frontend/docs/deployments/version-56-production-deployment.md",
     "frontend/docs/promotions/README.md",
-    "frontend/docs/promotions/version-55-preview-to-production.md",
+    "frontend/docs/promotions/version-56-preview-to-production.md",
+    "frontend/src/components/AuthenticatedFlowFallback.tsx",
+    "frontend/src/components/PostLoginInterstitial.tsx",
+    "frontend/src/hooks/useCurrentUserProfile.ts",
+    "frontend/src/utils/authErrors.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

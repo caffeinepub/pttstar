@@ -30,16 +30,17 @@ export default function PostLoginInterstitial({ onRetry, onClearSession }: PostL
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-status-warning/20">
               <AlertCircle className="h-6 w-6 text-status-warning" />
             </div>
-            <CardTitle>Connection Error</CardTitle>
-            <CardDescription>Sign-in is taking longer than expected</CardDescription>
+            <CardTitle>Connection Taking Longer Than Expected</CardTitle>
+            <CardDescription>Profile loading is delayed</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">
-              <p className="mb-2">If sign-in doesn't complete:</p>
+            <div className="rounded-lg bg-muted p-4 text-sm text-muted-foreground space-y-2">
+              <p className="font-semibold">If profile loading doesn't complete:</p>
               <ul className="ml-4 list-disc space-y-1">
-                <li>Close any Internet Identity popups</li>
-                <li>Try clearing your session and signing in again</li>
-                <li>Check your browser allows popups for this site</li>
+                <li>Try the <strong>Retry</strong> button to reload your profile</li>
+                <li>Use <strong>Clear Session</strong> to reset and sign in again</li>
+                <li>Check your internet connection</li>
+                <li>Ensure popups are allowed for this site</li>
               </ul>
             </div>
             <div className="flex gap-2">

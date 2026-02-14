@@ -12,217 +12,177 @@ function loadConfig() {
       return (window as any).__ENV__;
     }
     return {
-      DERIVATION_ORIGIN: window.location.origin,
+      II_URL: import.meta.env.VITE_II_URL || 'https://identity.internetcomputer.org',
     };
-  } catch (error) {
-    console.error('[RegeneratedAuth] Failed to load config:', error);
+  } catch (err) {
+    console.warn('Failed to load config, using defaults:', err);
     return {
-      DERIVATION_ORIGIN: window.location.origin,
+      II_URL: 'https://identity.internetcomputer.org',
     };
   }
 }
 
-type LoginStatus = 'idle' | 'logging-in' | 'success' | 'error' | 'timeout';
+const config = loadConfig();
+
+type LoginStatus = 'idle' | 'logging-in' | 'success' | 'error';
 
 interface RegeneratedAuthContextType {
   identity: Identity | null;
   isInitializing: boolean;
   loginStatus: LoginStatus;
+  isLoginError: boolean;
   error: Error | null;
   login: () => Promise<void>;
   clear: () => Promise<void>;
-  isLoggingIn: boolean;
-  isLoginError: boolean;
-  isLoginSuccess: boolean;
 }
 
-const RegeneratedAuthContext = createContext<RegeneratedAuthContextType | null>(null);
-
-const LOGIN_TIMEOUT_MS = 12000; // 12 seconds to match existing interstitial behavior
+const RegeneratedAuthContext = createContext<RegeneratedAuthContextType | undefined>(undefined);
 
 export function RegeneratedAuthProvider({ children }: { children: React.ReactNode }) {
-  const [authClient, setAuthClient] = useState<AuthClient | null>(null);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [loginStatus, setLoginStatus] = useState<LoginStatus>('idle');
   const [error, setError] = useState<Error | null>(null);
-  
-  const loginTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isLoginInProgressRef = useRef(false);
+  const authClientRef = useRef<AuthClient | null>(null);
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize AuthClient on mount
   useEffect(() => {
     let mounted = true;
 
-    async function initAuthClient() {
+    const initAuth = async () => {
       try {
-        console.log('[RegeneratedAuth] Initializing AuthClient...');
+        console.log('RegeneratedAuthProvider: Initializing AuthClient');
         
+        // Set a timeout to prevent infinite initialization
+        initTimeoutRef.current = setTimeout(() => {
+          if (mounted && isInitializing) {
+            console.warn('RegeneratedAuthProvider: Initialization timeout, forcing completion');
+            setIsInitializing(false);
+          }
+        }, 10000); // 10 second timeout
+
         const client = await AuthClient.create({
           idleOptions: {
             disableIdle: true,
-            disableDefaultIdleCallback: true,
           },
         });
 
         if (!mounted) return;
 
+        authClientRef.current = client;
         const isAuthenticated = await client.isAuthenticated();
-        console.log('[RegeneratedAuth] AuthClient initialized, authenticated:', isAuthenticated);
-
-        setAuthClient(client);
 
         if (isAuthenticated) {
           const currentIdentity = client.getIdentity();
+          console.log('RegeneratedAuthProvider: Found existing authenticated identity');
           setIdentity(currentIdentity);
           setLoginStatus('success');
-          console.log('[RegeneratedAuth] Restored identity:', currentIdentity.getPrincipal().toString());
+        } else {
+          console.log('RegeneratedAuthProvider: No existing authentication found');
         }
-      } catch (err) {
-        console.error('[RegeneratedAuth] Failed to initialize AuthClient:', err);
+      } catch (err: any) {
+        console.error('RegeneratedAuthProvider: Initialization error:', err);
         if (mounted) {
-          setError(err instanceof Error ? err : new Error('Failed to initialize authentication'));
-          setLoginStatus('error');
+          setError(err);
         }
       } finally {
         if (mounted) {
+          if (initTimeoutRef.current) {
+            clearTimeout(initTimeoutRef.current);
+            initTimeoutRef.current = null;
+          }
           setIsInitializing(false);
         }
       }
-    }
+    };
 
-    initAuthClient();
+    initAuth();
 
     return () => {
       mounted = false;
-      if (loginTimeoutRef.current) {
-        clearTimeout(loginTimeoutRef.current);
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
       }
     };
   }, []);
 
-  const clearLoginTimeout = useCallback(() => {
-    if (loginTimeoutRef.current) {
-      clearTimeout(loginTimeoutRef.current);
-      loginTimeoutRef.current = null;
+  const login = useCallback(async () => {
+    if (!authClientRef.current) {
+      const err = new Error('AuthClient not initialized');
+      setError(err);
+      setLoginStatus('error');
+      throw err;
+    }
+
+    try {
+      setLoginStatus('logging-in');
+      setError(null);
+
+      console.log('RegeneratedAuthProvider: Starting login flow');
+
+      await authClientRef.current.login({
+        identityProvider: config.II_URL,
+        onSuccess: () => {
+          console.log('RegeneratedAuthProvider: Login successful');
+          const newIdentity = authClientRef.current!.getIdentity();
+          setIdentity(newIdentity);
+          setLoginStatus('success');
+        },
+        onError: (err?: string) => {
+          console.error('RegeneratedAuthProvider: Login error:', err);
+          const error = new Error(err || 'Login failed');
+          setError(error);
+          setLoginStatus('error');
+        },
+      });
+    } catch (err: any) {
+      console.error('RegeneratedAuthProvider: Login exception:', err);
+      setError(err);
+      setLoginStatus('error');
+      throw err;
     }
   }, []);
 
-  const login = useCallback(async () => {
-    if (!authClient) {
-      console.error('[RegeneratedAuth] AuthClient not initialized');
-      setError(new Error('Authentication system not ready'));
-      setLoginStatus('error');
-      return;
-    }
-
-    if (isLoginInProgressRef.current) {
-      console.log('[RegeneratedAuth] Login already in progress, ignoring duplicate call');
-      return;
-    }
-
-    try {
-      isLoginInProgressRef.current = true;
-      setLoginStatus('logging-in');
-      setError(null);
-      clearLoginTimeout();
-
-      console.log('[RegeneratedAuth] Starting login flow...');
-
-      // Set timeout for login handshake
-      loginTimeoutRef.current = setTimeout(() => {
-        console.warn('[RegeneratedAuth] Login timeout - handshake did not complete within', LOGIN_TIMEOUT_MS, 'ms');
-        if (loginStatus === 'logging-in') {
-          setLoginStatus('timeout');
-          setError(new Error('Sign-in timed out. The Internet Identity window may not have completed the handshake.'));
-          isLoginInProgressRef.current = false;
-        }
-      }, LOGIN_TIMEOUT_MS);
-
-      const config = loadConfig();
-      const identityProvider = process.env.II_URL || 'https://identity.internetcomputer.org';
-
-      await authClient.login({
-        identityProvider,
-        derivationOrigin: config.DERIVATION_ORIGIN,
-        maxTimeToLive: BigInt(7 * 24 * 60 * 60 * 1000 * 1000 * 1000), // 7 days in nanoseconds
-        onSuccess: () => {
-          clearLoginTimeout();
-          const newIdentity = authClient.getIdentity();
-          console.log('[RegeneratedAuth] Login successful, principal:', newIdentity.getPrincipal().toString());
-          setIdentity(newIdentity);
-          setLoginStatus('success');
-          setError(null);
-          isLoginInProgressRef.current = false;
-        },
-        onError: (errorMsg) => {
-          clearLoginTimeout();
-          console.error('[RegeneratedAuth] Login error:', errorMsg);
-          const errorMessage = errorMsg || 'Unknown error';
-          setError(new Error(`Sign-in failed: ${errorMessage}`));
-          setLoginStatus('error');
-          isLoginInProgressRef.current = false;
-        },
-      });
-    } catch (err) {
-      clearLoginTimeout();
-      console.error('[RegeneratedAuth] Login exception:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-      setError(new Error(`Sign-in failed: ${errorMessage}`));
-      setLoginStatus('error');
-      isLoginInProgressRef.current = false;
-    }
-  }, [authClient, loginStatus, clearLoginTimeout]);
-
   const clear = useCallback(async () => {
     try {
-      console.log('[RegeneratedAuth] Clearing session...');
-      clearLoginTimeout();
+      console.log('RegeneratedAuthProvider: Clearing authentication');
       
-      if (authClient) {
-        await authClient.logout();
+      if (authClientRef.current) {
+        await authClientRef.current.logout();
       }
       
       clearRegeneratedAuthStorage();
-      
       setIdentity(null);
       setLoginStatus('idle');
       setError(null);
-      isLoginInProgressRef.current = false;
       
-      console.log('[RegeneratedAuth] Session cleared');
-    } catch (err) {
-      console.error('[RegeneratedAuth] Error during logout:', err);
+      console.log('RegeneratedAuthProvider: Authentication cleared');
+    } catch (err: any) {
+      console.error('RegeneratedAuthProvider: Error during clear:', err);
       // Still clear local state even if logout fails
       setIdentity(null);
       setLoginStatus('idle');
       setError(null);
-      isLoginInProgressRef.current = false;
     }
-  }, [authClient, clearLoginTimeout]);
+  }, []);
 
   const value: RegeneratedAuthContextType = {
     identity,
     isInitializing,
     loginStatus,
+    isLoginError: loginStatus === 'error',
     error,
     login,
     clear,
-    isLoggingIn: loginStatus === 'logging-in',
-    isLoginError: loginStatus === 'error' || loginStatus === 'timeout',
-    isLoginSuccess: loginStatus === 'success',
   };
 
-  return (
-    <RegeneratedAuthContext.Provider value={value}>
-      {children}
-    </RegeneratedAuthContext.Provider>
-  );
+  return <RegeneratedAuthContext.Provider value={value}>{children}</RegeneratedAuthContext.Provider>;
 }
 
-export function useRegeneratedAuth(): RegeneratedAuthContextType {
+export function useRegeneratedAuth() {
   const context = useContext(RegeneratedAuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useRegeneratedAuth must be used within RegeneratedAuthProvider');
   }
   return context;
